@@ -71,7 +71,7 @@ function ActivationContent() {
             Activation de votre Abonnement
           </h1>
           <p style={{ color: "#64748B", fontSize: "15px" }}>
-            Vous venez de régler via <strong>Saspay (T-Money ou Flooz)</strong> ? Renseignez votre numéro pour activer vos accès instantanément.
+            Vous venez de régler via <strong>Mixx by yas ou Moov Money</strong> ? Renseignez votre numéro pour activer vos accès instantanément.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ function ActivationContent() {
 
               <div>
                 <label style={{ display: "block", fontSize: "14px", fontWeight: 700, color: "#1E293B", marginBottom: "6px" }}>
-                  Numéro T-Money ou Flooz utilisé pour le paiement :
+                  Numéro Mixx by yas ou Moov Money utilisé pour le paiement :
                 </label>
                 <input
                   type="tel"

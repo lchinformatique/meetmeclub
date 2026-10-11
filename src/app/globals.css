@@ -379,49 +379,51 @@ h1, h2, h3, h4, h5, h6 {
   box-sizing: border-box;
 }
 
-.payment-pill-tmoney {
+.payment-pill-mixx {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  background: #005DAA;
-  color: white;
-  padding: 2px 7px;
-  border-radius: 6px;
+  gap: 5px;
+  background: #002D72;
+  color: #FFD100;
+  padding: 3px 8px;
+  border-radius: 8px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.2px;
+  box-shadow: 0 2px 6px rgba(0, 45, 114, 0.2);
 }
 
-.payment-pill-flooz {
+.payment-pill-moov {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  background: #E36C09;
+  gap: 5px;
+  background: #E85E12;
   color: white;
-  padding: 2px 7px;
-  border-radius: 6px;
+  padding: 3px 8px;
+  border-radius: 8px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.2px;
+  box-shadow: 0 2px 6px rgba(232, 94, 18, 0.2);
 }
 
 /* ── Pricing Grid & Perfect Card Alignment ── */
 .pricing-grid-container {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  gap: 16px;
   align-items: stretch;
   width: 100%;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .pricing-grid-container {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
+    gap: 20px;
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .pricing-grid-container {
     grid-template-columns: 1fr;
     gap: 20px;

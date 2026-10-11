@@ -316,12 +316,18 @@ export default function TarifsPage() {
                     <span style={{ fontSize: "15px" }}>➔</span>
                   </a>
 
-                  {/* Centered T-Money & Flooz Badge */}
-                  <div className="payment-badge-center" style={{ height: "36px" }}>
+                  {/* Centered Mixx by yas & Moov Money Badge */}
+                  <div className="payment-badge-center" style={{ height: "38px" }}>
                     <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 700 }}>Paiement :</span>
-                    <span className="payment-pill-tmoney">📲 T-Money</span>
+                    <span className="payment-pill-mixx">
+                      <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={22} height={14} style={{ objectFit: "contain", borderRadius: "3px" }} />
+                      <span>Mixx by yas</span>
+                    </span>
                     <span style={{ color: "#94A3B8", fontWeight: 800, fontSize: "11px" }}>&</span>
-                    <span className="payment-pill-flooz">📱 Flooz</span>
+                    <span className="payment-pill-moov">
+                      <Image src="/moov-money.png" alt="Moov Money" width={16} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
+                      <span>Moov Money</span>
+                    </span>
                   </div>
                   <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "4px", fontWeight: 600, height: "16px" }}>
                     ⚡ Activation automatique Saspay
@@ -349,9 +355,9 @@ export default function TarifsPage() {
                     {plan.buttonText}
                   </Link>
 
-                  <div className="payment-badge-center" style={{ background: "#F8FAFC", border: "1px dashed #CBD5E1", height: "36px" }}>
+                  <div className="payment-badge-center" style={{ background: "#F8FAFC", border: "1px dashed #CBD5E1", height: "38px" }}>
                     <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 700 }}>
-                      ⭐ 100% Gratuit · Sans carte bancaire
+                      ⭐ 100% Gratuit · Sans engagement
                     </span>
                   </div>
                   <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "4px", fontWeight: 600, height: "16px" }}>
@@ -431,12 +437,12 @@ export default function TarifsPage() {
 
       {/* Payment Methods */}
       <section style={{ background: "white", padding: "50px 20px", borderTop: "1px solid #E2E8F0", textAlign: "center" }}>
-        <div className="container" style={{ maxWidth: "700px" }}>
-          <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "10px" }}>
+        <div className="container" style={{ maxWidth: "800px" }}>
+          <h3 style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", marginBottom: "10px" }}>
             Paiement mobile sécurisé au Togo 🇹🇬
           </h3>
-          <p style={{ color: "#64748B", fontSize: "15px", marginBottom: "24px" }}>
-            Activez votre formule en quelques secondes avec vos moyens de paiement habituels.
+          <p style={{ color: "#64748B", fontSize: "15px", marginBottom: "28px" }}>
+            Réglez instantanément avec vos services de transfert mobile officiels togolais.
           </p>
 
           <div
@@ -448,76 +454,105 @@ export default function TarifsPage() {
               marginBottom: "30px",
             }}
           >
+            {/* Mixx by yas Card */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                padding: "16px 24px",
-                borderRadius: "16px",
-                border: "2px solid #005DAA",
+                gap: "14px",
+                padding: "16px 22px",
+                borderRadius: "18px",
+                border: "2px solid #002D72",
                 background: "white",
-                boxShadow: "0 4px 16px rgba(0, 93, 170, 0.1)",
+                boxShadow: "0 6px 20px rgba(0, 45, 114, 0.12)",
                 textAlign: "left",
               }}
             >
-              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#005DAA", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>
-                📲
+              <div
+                style={{
+                  width: "58px",
+                  height: "38px",
+                  borderRadius: "10px",
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#002D72",
+                  flexShrink: 0,
+                  padding: "2px",
+                }}
+              >
+                <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={54} height={34} style={{ objectFit: "contain" }} />
               </div>
               <div>
-                <div style={{ fontSize: "16px", fontWeight: 800, color: "#005DAA" }}>T-Money</div>
-                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Réseau Togocom Togo</div>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: "#002D72" }}>Mixx by yas</div>
+                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>T-Money (Togocom Togo)</div>
               </div>
             </div>
 
+            {/* Moov Money Card */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                padding: "16px 24px",
-                borderRadius: "16px",
-                border: "2px solid #E36C09",
+                gap: "14px",
+                padding: "16px 22px",
+                borderRadius: "18px",
+                border: "2px solid #E85E12",
                 background: "white",
-                boxShadow: "0 4px 16px rgba(227, 108, 9, 0.1)",
+                boxShadow: "0 6px 20px rgba(232, 94, 18, 0.12)",
                 textAlign: "left",
               }}
             >
-              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#E36C09", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>
-                📱
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "10px",
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "white",
+                  flexShrink: 0,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                }}
+              >
+                <Image src="/moov-money.png" alt="Moov Money" width={44} height={44} style={{ objectFit: "contain" }} />
               </div>
               <div>
-                <div style={{ fontSize: "16px", fontWeight: 800, color: "#E36C09" }}>Flooz</div>
-                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Moov Money Togo</div>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: "#E85E12" }}>Moov Money</div>
+                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Flooz (Moov Africa Togo)</div>
               </div>
             </div>
 
+            {/* Saspay Secured Card */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                padding: "16px 24px",
-                borderRadius: "16px",
+                gap: "14px",
+                padding: "16px 22px",
+                borderRadius: "18px",
                 border: "1px solid #CBD5E1",
                 background: "white",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
                 textAlign: "left",
               }}
             >
-              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#0B2559", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>
+              <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: "#0B2559", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px" }}>
                 🛡️
               </div>
               <div>
                 <div style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A" }}>Saspay Checkout</div>
-                <div style={{ fontSize: "12px", color: "#16A34A", fontWeight: 700 }}>Paiement Sécurisé 100%</div>
+                <div style={{ fontSize: "12px", color: "#16A34A", fontWeight: 700 }}>Passerelle Sécurisée 100%</div>
               </div>
             </div>
           </div>
 
           <div style={{ display: "inline-block", background: "#F1F5F9", padding: "14px 24px", borderRadius: "16px", border: "1px solid #E2E8F0" }}>
             <span style={{ fontSize: "14px", color: "#334155", marginRight: "12px" }}>
-              Vous avez déjà effectué votre paiement T-Money ou Flooz ?
+              Vous avez déjà effectué votre paiement Mixx by yas ou Moov Money ?
             </span>
             <Link
               href="/paiement/activation"

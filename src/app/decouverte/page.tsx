@@ -868,7 +868,7 @@ export default function DecouvertePage() {
                 <span>💳 Débloquer en Illimité (3 000 F · Saspay)</span>
               </a>
               <div style={{ textAlign: "center", fontSize: "12px", color: "#64748B", fontWeight: 600 }}>
-                📱 T-Money (Togocom) & Moov Money (Flooz) acceptés
+                📱 Mixx by yas & Moov Money acceptés
               </div>
 
               {/* View all Tarifs */}
