@@ -30,6 +30,7 @@ const PLANS = [
     ],
     buttonText: "Commencer gratuitement",
     buttonHref: "/inscription",
+    paymentUrl: null,
     highlight: false,
     borderColor: "#E2E8F0",
     badgeColor: "#475569",
@@ -52,8 +53,9 @@ const PLANS = [
       { text: "Badge membre vérifié", ok: true },
       { text: "Réservation de tables et boissons partenaires", ok: false },
     ],
-    buttonText: "Choisir le Pass Essentiel",
-    buttonHref: "/inscription?plan=ESSENTIAL",
+    buttonText: "Payer 3 000 F (T-Money / Flooz)",
+    buttonHref: "https://link.saspay.me/dtpycov9i-k",
+    paymentUrl: "https://link.saspay.me/dtpycov9i-k",
     highlight: true,
     borderColor: "var(--color-blue)",
     badgeColor: "var(--color-blue)",
@@ -76,8 +78,9 @@ const PLANS = [
       { text: "Assurance sécurité & médiation du club", ok: true },
       { text: "Accès salons VIP et dîners gastronomiques", ok: false },
     ],
-    buttonText: "Choisir le Pass Complice",
-    buttonHref: "/inscription?plan=COMPLICE",
+    buttonText: "Payer 6 000 F (T-Money / Flooz)",
+    buttonHref: "https://link.saspay.me/xiigac37eyq",
+    paymentUrl: "https://link.saspay.me/xiigac37eyq",
     highlight: false,
     borderColor: "#CBD5E1",
     badgeColor: "#059669",
@@ -100,8 +103,9 @@ const PLANS = [
       { text: "Conciergerie privée Meet Me Club dédiée", ok: true },
       { text: "Accès événements & soirées privées du club", ok: true },
     ],
-    buttonText: "Devenir Membre VIP",
-    buttonHref: "/inscription?plan=VIP",
+    buttonText: "Payer 15 000 F (T-Money / Flooz)",
+    buttonHref: "https://link.saspay.me/ksev91xlvik",
+    paymentUrl: "https://link.saspay.me/ksev91xlvik",
     highlight: false,
     borderColor: "#E2E8F0",
     badgeColor: "#B45309",
@@ -288,21 +292,50 @@ export default function TarifsPage() {
               </ul>
 
               {/* Call to action */}
-              <Link
-                href={plan.buttonHref}
-                className={`btn ${plan.btnClass}`}
-                style={{
-                  width: "100%",
-                  justifyContent: "center",
-                  padding: "14px",
-                  fontSize: "15px",
-                  fontWeight: 700,
-                  borderRadius: "12px",
-                  textDecoration: "none",
-                }}
-              >
-                {plan.buttonText}
-              </Link>
+              {plan.paymentUrl ? (
+                <div>
+                  <a
+                    href={plan.paymentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`btn ${plan.btnClass}`}
+                    style={{
+                      width: "100%",
+                      justifyContent: "center",
+                      padding: "14px",
+                      fontSize: "15px",
+                      fontWeight: 800,
+                      borderRadius: "12px",
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      boxShadow: plan.highlight ? "0 8px 24px rgba(11, 46, 107, 0.3)" : "none",
+                    }}
+                  >
+                    <span>💳 {plan.buttonText}</span>
+                  </a>
+                  <p style={{ textAlign: "center", fontSize: "11px", color: "#64748B", marginTop: "8px", fontWeight: 600 }}>
+                    ⚡ Paiement T-Money & Flooz (Saspay)
+                  </p>
+                </div>
+              ) : (
+                <Link
+                  href={plan.buttonHref}
+                  className={`btn ${plan.btnClass}`}
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                    padding: "14px",
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    borderRadius: "12px",
+                    textDecoration: "none",
+                  }}
+                >
+                  {plan.buttonText}
+                </Link>
+              )}
             </div>
           ))}
         </div>

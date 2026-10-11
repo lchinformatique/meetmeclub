@@ -843,12 +843,41 @@ export default function DecouvertePage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {/* Primary Direct Saspay Payment */}
+              <a
+                href="https://link.saspay.me/dtpycov9i-k"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  padding: "14px",
+                  borderRadius: "12px",
+                  fontWeight: 800,
+                  fontSize: "15px",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: "#E10600",
+                  borderColor: "#E10600",
+                  boxShadow: "0 8px 24px rgba(225, 6, 0, 0.35)",
+                }}
+              >
+                <span>💳 Débloquer en Illimité (3 000 F · Saspay)</span>
+              </a>
+              <div style={{ textAlign: "center", fontSize: "12px", color: "#64748B", fontWeight: 600 }}>
+                📱 T-Money (Togocom) & Moov Money (Flooz) acceptés
+              </div>
+
+              {/* View all Tarifs */}
               <Link
                 href="/tarifs"
-                className="btn btn-primary"
-                style={{ width: "100%", justifyContent: "center", padding: "12px", borderRadius: "12px", fontWeight: 700 }}
+                className="btn btn-outline-blue"
+                style={{ width: "100%", justifyContent: "center", padding: "11px", borderRadius: "12px", fontWeight: 700 }}
               >
-                Voir les Formules & S'abonner (3 000 FCFA)
+                Voir toutes les formules (Complice 6 000 F, VIP 15 000 F)
               </Link>
 
               {/* Instant 1-click test button */}
@@ -856,17 +885,17 @@ export default function DecouvertePage() {
                 type="button"
                 onClick={() => handleTestUpgrade("ESSENTIAL")}
                 disabled={upgrading}
-                className="btn btn-outline-blue"
-                style={{ width: "100%", justifyContent: "center", padding: "12px", borderRadius: "12px", fontWeight: 700 }}
+                className="btn btn-ghost"
+                style={{ width: "100%", justifyContent: "center", padding: "10px", borderRadius: "12px", fontWeight: 600, fontSize: "12px", color: "#0B2E6B" }}
               >
-                {upgrading ? "Activation..." : "⚡ Activer le Pass Essentiel en mode Démo"}
+                {upgrading ? "Activation..." : "⚡ Tester en 1-clic (Mode Test / Démo)"}
               </button>
 
               <button
                 type="button"
                 onClick={() => setUpgradeModal({ open: false })}
                 className="btn btn-ghost"
-                style={{ width: "100%", justifyContent: "center", color: "#64748B" }}
+                style={{ width: "100%", justifyContent: "center", color: "#64748B", fontSize: "13px" }}
               >
                 Fermer
               </button>

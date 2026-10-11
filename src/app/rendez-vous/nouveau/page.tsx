@@ -2,7 +2,7 @@
 // src/app/rendez-vous/nouveau/page.tsx
 // Multi-step booking flow: Choose partner → Choose pack → Date/time → Note → Confirm
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -107,6 +107,41 @@ function NouveauRdvInner() {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [userPlan, setUserPlan] = useState<string>("FREE");
+  const [lockedModal, setLockedModal] = useState<{ open: boolean; packName?: string; price?: string; link?: string; desc?: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/profiles/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.profile?.plan) setUserPlan(data.profile.plan);
+      })
+      .catch(() => {});
+  }, []);
+
+  function handleSelectPack(pk: (typeof PACKS)[0]) {
+    if (pk.id === "VIP_PREMIUM" && userPlan !== "VIP") {
+      setLockedModal({
+        open: true,
+        packName: "Pack VIP Premium",
+        price: "15 000 FCFA / mois",
+        link: "https://link.saspay.me/ksev91xlvik",
+        desc: "L'accès aux salons privés et prestations de conciergerie VIP nécessite le Pass VIP Club.",
+      });
+      return;
+    }
+    if ((pk.id === "COMPLICE" || pk.id === "DINER") && (userPlan === "FREE" || userPlan === "ESSENTIAL")) {
+      setLockedModal({
+        open: true,
+        packName: pk.name,
+        price: "6 000 FCFA / mois",
+        link: "https://link.saspay.me/xiigac37eyq",
+        desc: "Les réservations de tables avec consommations offertes nécessitent le Pass Complice ou supérieur.",
+      });
+      return;
+    }
+    setSelectedPackId(pk.id);
+  }
 
   const selectedPartner = PARTNERS.find((p) => p.id === selectedPartnerId);
   const selectedPack = PACKS.find((p) => p.id === selectedPackId);
@@ -544,30 +579,35 @@ function NouveauRdvInner() {
                 (pk) =>
                   !selectedPartner ||
                   selectedPartner.acceptedPacks.includes(pk.id)
-              ).map((pk) => (
-                <button
-                  key={pk.id}
-                  onClick={() => setSelectedPackId(pk.id)}
-                  style={{
-                    width: "100%",
-                    background: "white",
-                    border:
-                      selectedPackId === pk.id
-                        ? `2px solid ${pk.color}`
-                        : "1px solid var(--color-gray-200)",
-                    borderRadius: "var(--radius-lg)",
-                    padding: "18px 20px",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    boxShadow:
-                      selectedPackId === pk.id ? "var(--shadow-md)" : "var(--shadow-sm)",
-                    transition: "all var(--transition-fast)",
-                    position: "relative",
-                  }}
-                >
+              ).map((pk) => {
+                const isCompliceRequired = (pk.id === "COMPLICE" || pk.id === "DINER") && (userPlan === "FREE" || userPlan === "ESSENTIAL");
+                const isVipRequired = pk.id === "VIP_PREMIUM" && userPlan !== "VIP";
+                const isLocked = isCompliceRequired || isVipRequired;
+
+                return (
+                  <button
+                    key={pk.id}
+                    onClick={() => handleSelectPack(pk)}
+                    style={{
+                      width: "100%",
+                      background: "white",
+                      border:
+                        selectedPackId === pk.id
+                          ? `2px solid ${pk.color}`
+                          : "1px solid var(--color-gray-200)",
+                      borderRadius: "var(--radius-lg)",
+                      padding: "18px 20px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "16px",
+                      boxShadow:
+                        selectedPackId === pk.id ? "var(--shadow-md)" : "var(--shadow-sm)",
+                      transition: "all var(--transition-fast)",
+                      position: "relative",
+                    }}
+                  >
                   {pk.popular && (
                     <span
                       style={{
@@ -615,9 +655,17 @@ function NouveauRdvInner() {
                           fontWeight: 700,
                           fontSize: "16px",
                           color: pk.color,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
                         }}
                       >
                         {pk.name}
+                        {isLocked && (
+                          <span style={{ fontSize: "11px", fontWeight: 700, background: "#FEF2F2", color: "#B91C1C", border: "1px solid #FECACA", padding: "1px 6px", borderRadius: "6px" }}>
+                            🔒 Abonnement Requis
+                          </span>
+                        )}
                       </span>
                       <span
                         style={{
@@ -686,8 +734,9 @@ function NouveauRdvInner() {
                       ✓
                     </div>
                   )}
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
 
             <div
@@ -1015,6 +1064,96 @@ function NouveauRdvInner() {
               >
                 {loading ? "" : "✅ Envoyer la proposition"}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Plan Lock Modal with Saspay button */}
+        {lockedModal?.open && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(11, 37, 89, 0.75)",
+              backdropFilter: "blur(6px)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+            }}
+            onClick={() => setLockedModal(null)}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: "24px",
+                padding: "36px 28px",
+                maxWidth: "460px",
+                width: "100%",
+                textAlign: "center",
+                boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ fontSize: "56px", marginBottom: "12px" }}>🔒👑</div>
+              <h3 style={{ fontSize: "22px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
+                Abonnement Requis pour ce Pack
+              </h3>
+              <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "20px" }}>
+                {lockedModal.desc}
+              </p>
+
+              <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "16px", marginBottom: "20px", textAlign: "left" }}>
+                <div style={{ fontSize: "12px", color: "#64748B", textTransform: "uppercase", fontWeight: 800 }}>Pack sélectionné :</div>
+                <div style={{ fontSize: "17px", fontWeight: 800, color: "#0F172A", marginTop: "2px" }}>{lockedModal.packName}</div>
+                <div style={{ fontSize: "14px", color: "#E10600", fontWeight: 700, marginTop: "4px" }}>Prix formule : {lockedModal.price}</div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <a
+                  href={lockedModal.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                    padding: "14px",
+                    borderRadius: "12px",
+                    fontWeight: 800,
+                    fontSize: "15px",
+                    textDecoration: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    background: "#E10600",
+                    borderColor: "#E10600",
+                  }}
+                >
+                  <span>💳 Payer via T-Money / Flooz (Saspay)</span>
+                </a>
+                <div style={{ fontSize: "12px", color: "#64748B" }}>
+                  Paiement sécurisé et instantané au Togo
+                </div>
+
+                <Link
+                  href="/tarifs"
+                  className="btn btn-outline-blue"
+                  style={{ width: "100%", justifyContent: "center", padding: "10px", borderRadius: "12px", fontWeight: 700 }}
+                >
+                  Voir toutes les formules & tarifs
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setLockedModal(null)}
+                  className="btn btn-ghost"
+                  style={{ width: "100%", justifyContent: "center", color: "#64748B" }}
+                >
+                  Choisir le pack Découverte (Simple lieu public)
+                </button>
+              </div>
             </div>
           </div>
         )}

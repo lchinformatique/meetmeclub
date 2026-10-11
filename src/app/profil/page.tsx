@@ -211,9 +211,24 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                         : `💡 Il vous reste ${3 - contactedCount} partenaire(s) gratuit(s) à choisir.`}
                     </p>
                   </div>
-                  <Link href="/tarifs" className="btn btn-primary" style={{ width: "100%", textAlign: "center", justifyContent: "center", fontWeight: 700, fontSize: "14px" }}>
-                    🚀 Passer en Illimité (3 000 F)
-                  </Link>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <a
+                      href="https://link.saspay.me/dtpycov9i-k"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-primary"
+                      style={{ width: "100%", textAlign: "center", justifyContent: "center", fontWeight: 800, fontSize: "14px", textDecoration: "none" }}
+                    >
+                      💳 Payer le Pass Illimité (3 000 F · Saspay)
+                    </a>
+                    <Link
+                      href="/tarifs"
+                      className="btn btn-outline-blue btn-sm"
+                      style={{ width: "100%", textAlign: "center", justifyContent: "center", fontWeight: 700 }}
+                    >
+                      Voir les offres Complice (6 000 F) & VIP (15 000 F)
+                    </Link>
+                  </div>
                 </>
               ) : (
                 <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "var(--radius-md)", padding: "12px", marginBottom: "16px" }}>

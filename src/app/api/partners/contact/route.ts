@@ -27,10 +27,16 @@ export async function POST(req: NextRequest) {
           allowed: false,
           error: "Limite du Plan Gratuit atteinte",
           message:
-            "Votre Plan Gratuit vous permet d'échanger avec un maximum de 3 partenaires. Passez au Pass Essentiel (3 000 FCFA/mois) pour discuter et vous faire des amis sans aucune limite !",
+            "Votre Plan Gratuit vous permet d'échanger avec un maximum de 3 partenaires. Passez au Pass Essentiel (3 000 FCFA/mois via T-Money ou Flooz) pour discuter sans aucune limite !",
           contactedCount: check.contactedCount,
           maxAllowed: check.maxAllowed,
           plan: check.plan,
+          saspayUrl: "https://link.saspay.me/dtpycov9i-k",
+          paymentLinks: {
+            ESSENTIAL: "https://link.saspay.me/dtpycov9i-k",
+            COMPLICE: "https://link.saspay.me/xiigac37eyq",
+            VIP: "https://link.saspay.me/ksev91xlvik",
+          },
         },
         { status: 403 }
       );

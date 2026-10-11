@@ -219,10 +219,20 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
 }
 
 // ── Quotas & Subscription check ──────────────────────────────────
+export const SASPAY_LINKS = {
+  ESSENTIAL: "https://link.saspay.me/dtpycov9i-k",
+  COMPLICE: "https://link.saspay.me/xiigac37eyq",
+  VIP: "https://link.saspay.me/ksev91xlvik",
+} as const;
+
 export const PLAN_LIMITS = {
   FREE: {
     maxPartners: 3,
     label: "Plan Gratuit",
+    price: 0,
+    paymentUrl: null,
+    canBookVenues: false,
+    canViewLikes: false,
     features: [
       "Création complète du profil",
       "Visibilité dans le club à Lomé",
@@ -233,6 +243,10 @@ export const PLAN_LIMITS = {
   ESSENTIAL: {
     maxPartners: Infinity,
     label: "Pass Essentiel (3 000 FCFA/mois)",
+    price: 3000,
+    paymentUrl: SASPAY_LINKS.ESSENTIAL,
+    canBookVenues: false,
+    canViewLikes: true,
     features: [
       "Partenaires & contacts illimités",
       "Discussions amicales ou amoureuses libres",
@@ -243,6 +257,10 @@ export const PLAN_LIMITS = {
   COMPLICE: {
     maxPartners: Infinity,
     label: "Pass Complice (6 000 FCFA/mois)",
+    price: 6000,
+    paymentUrl: SASPAY_LINKS.COMPLICE,
+    canBookVenues: true,
+    canViewLikes: true,
     features: [
       "Tout le Pass Essentiel en illimité",
       "Réservations de tables partenaires incluses",
@@ -253,6 +271,10 @@ export const PLAN_LIMITS = {
   VIP: {
     maxPartners: Infinity,
     label: "Pass VIP (15 000 FCFA/mois)",
+    price: 15000,
+    paymentUrl: SASPAY_LINKS.VIP,
+    canBookVenues: true,
+    canViewLikes: true,
     features: [
       "Accès aux salons VIP et rooftops partenaires",
       "Dîners gastronomiques d'exception",
@@ -298,4 +320,19 @@ export function recordContactPartner(userId: string, targetUserId: string): void
       partnersContacted: [...contacted, targetUserId],
     });
   }
+}
+
+/**
+ * Checks if a user has venue booking rights (COMPLICE or VIP)
+ */
+export function canBookVenue(userId: string): { allowed: boolean; plan: string; requiredPlan: string; paymentUrl: string } {
+  const profile = getProfileByUserId(userId);
+  const plan = profile?.plan || "FREE";
+  const allowed = plan === "COMPLICE" || plan === "VIP";
+  return {
+    allowed,
+    plan,
+    requiredPlan: "COMPLICE",
+    paymentUrl: SASPAY_LINKS.COMPLICE,
+  };
 }
