@@ -47,6 +47,13 @@ const PARTNERS = [
   },
 ];
 
+const PACK_PAYMENT_LINKS: Record<string, string> = {
+  DECOUVERTE: "https://link.saspay.me/ge3_of7gd20",   // 2 000 F
+  COMPLICE:   "https://link.saspay.me/zepoyi_pn_o",   // 5 000 F
+  DINER:      "https://link.saspay.me/nimdhviyv4s",   // 12 000 F
+  VIP_PREMIUM: "https://link.saspay.me/ydcp-ktcerw", // 30 000 F
+};
+
 const PACKS = [
   {
     id: "DECOUVERTE",
@@ -56,6 +63,7 @@ const PACKS = [
     color: "var(--color-gray-500)",
     description: "Rencontre simple en lieu public",
     features: ["Lieu public", "Chat inclus", "Rappels automatiques"],
+    paymentUrl: "https://link.saspay.me/ge3_of7gd20",
   },
   {
     id: "COMPLICE",
@@ -65,6 +73,7 @@ const PACKS = [
     color: "var(--color-blue)",
     description: "Table réservée + 1 boisson par personne",
     features: ["Table réservée", "1 boisson incluse", "Chat dédié", "Rappels"],
+    paymentUrl: "https://link.saspay.me/zepoyi_pn_o",
   },
   {
     id: "DINER",
@@ -75,6 +84,7 @@ const PACKS = [
     description: "Menu complet dans un lieu partenaire",
     features: ["Table réservée", "Menu entrée/plat/boisson", "Ambiance soignée"],
     popular: true,
+    paymentUrl: "https://link.saspay.me/nimdhviyv4s",
   },
   {
     id: "VIP_PREMIUM",
@@ -89,6 +99,7 @@ const PACKS = [
       "Boissons au choix",
       "Accueil dédié",
     ],
+    paymentUrl: "https://link.saspay.me/ydcp-ktcerw",
   },
 ];
 
@@ -739,6 +750,69 @@ function NouveauRdvInner() {
               })}
             </div>
 
+            {/* Payment CTA below pack list when pack is selected */}
+            {selectedPackId && (() => {
+              const pk = PACKS.find((p) => p.id === selectedPackId);
+              if (!pk) return null;
+              return (
+                <div style={{
+                  marginTop: "16px",
+                  padding: "16px",
+                  background: "white",
+                  border: `2px solid ${pk.color}`,
+                  borderRadius: "16px",
+                  boxShadow: `0 4px 16px ${pk.color}25`,
+                }}>
+                  <div style={{ fontSize: "13px", color: "#475569", marginBottom: "10px", fontWeight: 600 }}>
+                    💳 Paiement du pack <strong style={{ color: pk.color }}>{pk.icon} {pk.name}</strong> — {pk.price.toLocaleString("fr-FR")} FCFA
+                  </div>
+                  <a
+                    href={pk.paymentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-pay-effect"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "100%",
+                      height: "46px",
+                      background: pk.id === "VIP_PREMIUM"
+                        ? "linear-gradient(135deg, #78350F 0%, #B45309 100%)"
+                        : pk.id === "DINER"
+                        ? "linear-gradient(135deg, #9B1C1C 0%, #E10600 100%)"
+                        : pk.id === "COMPLICE"
+                        ? "linear-gradient(135deg, #0B2559 0%, #17428E 100%)"
+                        : "linear-gradient(135deg, #334155 0%, #475569 100%)",
+                      color: "white",
+                      borderRadius: "10px",
+                      fontWeight: 800,
+                      fontSize: "14px",
+                      textDecoration: "none",
+                      gap: "8px",
+                      letterSpacing: "0.2px",
+                    }}
+                  >
+                    Payer {pk.price.toLocaleString("fr-FR")} FCFA · {pk.name}
+                  </a>
+                  {/* Tiny Mixx & Moov icons */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    marginTop: "8px",
+                  }}>
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Paiement via</span>
+                    <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={24} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
+                    <span style={{ fontSize: "10px", color: "#94A3B8" }}>·</span>
+                    <Image src="/moov-money.png" alt="Moov Money" width={16} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Mixx &amp; Moov</span>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div
               style={{ marginTop: "24px", display: "flex", gap: "10px" }}
             >
@@ -1028,23 +1102,63 @@ function NouveauRdvInner() {
               </div>
             </div>
 
-            {/* Payment note */}
+            {/* Payment CTA: direct Saspay link for the selected pack */}
             <div
               style={{
-                background: "rgba(11,46,107,0.04)",
+                background: `${selectedPack.color}08`,
                 borderRadius: "var(--radius-md)",
-                padding: "14px 16px",
-                border: "1px solid rgba(11,46,107,0.10)",
-                fontSize: "13px",
-                color: "var(--color-gray-600)",
-                lineHeight: 1.6,
+                padding: "16px",
+                border: `1.5px solid ${selectedPack.color}30`,
                 marginBottom: "20px",
               }}
             >
-              🔒{" "}
-              <strong>Paiement sécurisé après acceptation.</strong> Le montant
-              sera débité via T-Money ou Flooz uniquement lorsque les deux
-              parties auront confirmé.
+              <div style={{ fontSize: "13px", color: "#475569", marginBottom: "10px", fontWeight: 600, lineHeight: 1.5 }}>
+                💳 Réglez le pack <strong style={{ color: selectedPack.color }}>{selectedPack.icon} {selectedPack.name}</strong> maintenant pour confirmer votre réservation.
+              </div>
+              <a
+                href={PACK_PAYMENT_LINKS[selectedPack.id]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-pay-effect"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  height: "50px",
+                  background: selectedPack.id === "VIP_PREMIUM"
+                    ? "linear-gradient(135deg, #78350F 0%, #B45309 100%)"
+                    : selectedPack.id === "DINER"
+                    ? "linear-gradient(135deg, #9B1C1C 0%, #E10600 100%)"
+                    : selectedPack.id === "COMPLICE"
+                    ? "linear-gradient(135deg, #0B2559 0%, #17428E 100%)"
+                    : "linear-gradient(135deg, #334155 0%, #475569 100%)",
+                  color: "white",
+                  borderRadius: "12px",
+                  fontWeight: 800,
+                  fontSize: "15px",
+                  textDecoration: "none",
+                  gap: "8px",
+                  letterSpacing: "0.2px",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+                }}
+              >
+                Payer {selectedPack.price.toLocaleString("fr-FR")} FCFA · Pack {selectedPack.name}
+              </a>
+              {/* Tiny Mixx & Moov icons */}
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                marginTop: "8px",
+              }}>
+                <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Paiement via</span>
+                <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={24} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
+                <span style={{ fontSize: "10px", color: "#94A3B8" }}>·</span>
+                <Image src="/moov-money.png" alt="Moov Money" width={16} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
+                <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Mixx &amp; Moov</span>
+              </div>
             </div>
 
             <div style={{ display: "flex", gap: "10px" }}>
@@ -1131,7 +1245,7 @@ function NouveauRdvInner() {
                     borderColor: "#E10600",
                   }}
                 >
-                  <span>💳 Payer via T-Money / Flooz (Saspay)</span>
+                  <span>💳 Payer via Mixx by yas ou Moov Money (Saspay)</span>
                 </a>
                 <div style={{ fontSize: "12px", color: "#64748B" }}>
                   Paiement sécurisé et instantané au Togo
