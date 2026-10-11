@@ -53,7 +53,7 @@ const PLANS = [
       { text: "Badge membre vérifié", ok: true },
       { text: "Réservation de tables et boissons partenaires", ok: false },
     ],
-    buttonText: "Activer le Pass Essentiel (3 000 F)",
+    buttonText: "Activer le Pass · 3 000 F",
     buttonHref: "https://link.saspay.me/dtpycov9i-k",
     paymentUrl: "https://link.saspay.me/dtpycov9i-k",
     highlight: true,
@@ -78,7 +78,7 @@ const PLANS = [
       { text: "Assurance sécurité & médiation du club", ok: true },
       { text: "Accès salons VIP et dîners gastronomiques", ok: false },
     ],
-    buttonText: "Activer le Pass Complice (6 000 F)",
+    buttonText: "Activer le Pass · 6 000 F",
     buttonHref: "https://link.saspay.me/xiigac37eyq",
     paymentUrl: "https://link.saspay.me/xiigac37eyq",
     highlight: false,
@@ -103,7 +103,7 @@ const PLANS = [
       { text: "Conciergerie privée Meet Me Club dédiée", ok: true },
       { text: "Accès événements & soirées privées du club", ok: true },
     ],
-    buttonText: "Devenir Membre VIP (15 000 F)",
+    buttonText: "Devenir Membre VIP · 15 000 F",
     buttonHref: "https://link.saspay.me/ksev91xlvik",
     paymentUrl: "https://link.saspay.me/ksev91xlvik",
     highlight: false,
@@ -283,9 +283,10 @@ export default function TarifsPage() {
                 ))}
               </ul>
 
-              {/* Call to action & Payment Badges (Pinned to bottom) */}
+              {/* Call to action & Payment Info (Pinned to bottom) */}
               {plan.paymentUrl ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "auto" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "auto", gap: "10px" }}>
+                  {/* CTA Button — clean centered text, no emoji clutter */}
                   <a
                     href={plan.paymentUrl}
                     target="_blank"
@@ -299,69 +300,89 @@ export default function TarifsPage() {
                     }`}
                     style={{
                       width: "100%",
-                      height: "48px",
+                      height: "50px",
+                      display: "flex",
+                      alignItems: "center",
                       justifyContent: "center",
-                      padding: "0 16px",
+                      padding: "0 20px",
                       fontSize: "14px",
                       fontWeight: 800,
                       borderRadius: "12px",
                       textDecoration: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      textAlign: "center",
+                      letterSpacing: "0.2px",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <span>💳 {plan.buttonText}</span>
-                    <span style={{ fontSize: "15px" }}>➔</span>
+                    {plan.buttonText}
                   </a>
 
-                  {/* Centered Mixx by yas & Moov Money Badge */}
-                  <div className="payment-badge-center" style={{ height: "38px" }}>
-                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 700 }}>Paiement :</span>
-                    <span className="payment-pill-mixx">
-                      <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={22} height={14} style={{ objectFit: "contain", borderRadius: "3px" }} />
-                      <span>Mixx by yas</span>
-                    </span>
-                    <span style={{ color: "#94A3B8", fontWeight: 800, fontSize: "11px" }}>&</span>
-                    <span className="payment-pill-moov">
-                      <Image src="/moov-money.png" alt="Moov Money" width={16} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
-                      <span>Moov Money</span>
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "4px", fontWeight: 600, height: "16px" }}>
-                    ⚡ Activation automatique Saspay
+                  {/* Minimal payment method line — tiny icons, no repetition */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    width: "100%",
+                    padding: "7px 12px",
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "9999px",
+                    boxSizing: "border-box",
+                  }}>
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600, whiteSpace: "nowrap" }}>Paiement via</span>
+                    <Image
+                      src="/mixx-by-yas.jpg"
+                      alt="Mixx by yas"
+                      width={24}
+                      height={16}
+                      style={{ objectFit: "contain", borderRadius: "3px", flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: "10px", color: "#94A3B8" }}>·</span>
+                    <Image
+                      src="/moov-money.png"
+                      alt="Moov Money"
+                      width={16}
+                      height={16}
+                      style={{ objectFit: "contain", borderRadius: "3px", flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600, whiteSpace: "nowrap" }}>Mixx &amp; Moov</span>
                   </div>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "auto" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "auto", gap: "10px" }}>
                   <Link
                     href={plan.buttonHref}
                     className="btn btn-outline-blue btn-pay-effect"
                     style={{
                       width: "100%",
-                      height: "48px",
+                      height: "50px",
+                      display: "flex",
+                      alignItems: "center",
                       justifyContent: "center",
-                      padding: "0 16px",
+                      padding: "0 20px",
                       fontSize: "14px",
                       fontWeight: 700,
                       borderRadius: "12px",
                       textDecoration: "none",
-                      textAlign: "center",
-                      display: "flex",
-                      alignItems: "center",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {plan.buttonText}
                   </Link>
 
-                  <div className="payment-badge-center" style={{ background: "#F8FAFC", border: "1px dashed #CBD5E1", height: "38px" }}>
-                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 700 }}>
-                      ⭐ 100% Gratuit · Sans engagement
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "4px", fontWeight: 600, height: "16px" }}>
-                    Idéal pour vos 3 premiers partenaires
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    width: "100%",
+                    padding: "7px 12px",
+                    background: "#F8FAFC",
+                    border: "1px dashed #CBD5E1",
+                    borderRadius: "9999px",
+                    boxSizing: "border-box",
+                  }}>
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>⭐ Gratuit · Sans engagement</span>
                   </div>
                 </div>
               )}
@@ -442,7 +463,7 @@ export default function TarifsPage() {
             Paiement mobile sécurisé au Togo 🇹🇬
           </h3>
           <p style={{ color: "#64748B", fontSize: "15px", marginBottom: "28px" }}>
-            Réglez instantanément avec vos services de transfert mobile officiels togolais.
+            Réglez instantanément via les deux services de transfert mobile officiels au Togo.
           </p>
 
           <div
@@ -466,6 +487,7 @@ export default function TarifsPage() {
                 background: "white",
                 boxShadow: "0 6px 20px rgba(0, 45, 114, 0.12)",
                 textAlign: "left",
+                minWidth: "200px",
               }}
             >
               <div
@@ -486,7 +508,7 @@ export default function TarifsPage() {
               </div>
               <div>
                 <div style={{ fontSize: "16px", fontWeight: 800, color: "#002D72" }}>Mixx by yas</div>
-                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>T-Money (Togocom Togo)</div>
+                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>T-Money · Togocom</div>
               </div>
             </div>
 
@@ -502,6 +524,7 @@ export default function TarifsPage() {
                 background: "white",
                 boxShadow: "0 6px 20px rgba(232, 94, 18, 0.12)",
                 textAlign: "left",
+                minWidth: "200px",
               }}
             >
               <div
@@ -522,37 +545,14 @@ export default function TarifsPage() {
               </div>
               <div>
                 <div style={{ fontSize: "16px", fontWeight: 800, color: "#E85E12" }}>Moov Money</div>
-                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Flooz (Moov Africa Togo)</div>
-              </div>
-            </div>
-
-            {/* Saspay Secured Card */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                padding: "16px 22px",
-                borderRadius: "18px",
-                border: "1px solid #CBD5E1",
-                background: "white",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
-                textAlign: "left",
-              }}
-            >
-              <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: "#0B2559", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px" }}>
-                🛡️
-              </div>
-              <div>
-                <div style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A" }}>Saspay Checkout</div>
-                <div style={{ fontSize: "12px", color: "#16A34A", fontWeight: 700 }}>Passerelle Sécurisée 100%</div>
+                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Flooz · Moov Africa</div>
               </div>
             </div>
           </div>
 
-          <div style={{ display: "inline-block", background: "#F1F5F9", padding: "14px 24px", borderRadius: "16px", border: "1px solid #E2E8F0" }}>
-            <span style={{ fontSize: "14px", color: "#334155", marginRight: "12px" }}>
-              Vous avez déjà effectué votre paiement Mixx by yas ou Moov Money ?
+          <div style={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: "12px", background: "#F1F5F9", padding: "14px 24px", borderRadius: "16px", border: "1px solid #E2E8F0", justifyContent: "center" }}>
+            <span style={{ fontSize: "14px", color: "#334155" }}>
+              Vous avez déjà effectué votre paiement ?
             </span>
             <Link
               href="/paiement/activation"
