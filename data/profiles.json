@@ -1,0 +1,217 @@
+[
+  {
+    "id": "prof_1791720509080",
+    "userId": "demo_user_lome",
+    "firstName": "Armand",
+    "lastName": "Adzra",
+    "pseudo": "Armand_MMC",
+    "gender": "MALE",
+    "age": 30,
+    "phone": "+22890123456",
+    "city": "Lomé",
+    "neighborhood": "Bè Plage",
+    "profession": "Informaticien",
+    "educationLevel": "Supérieur",
+    "relationshipStatus": "Célibataire",
+    "bio": "Passionné d'échanges, de rencontres authentiques et de bons moments dans les meilleurs cadres de Lomé. Ouvert pour discuter et faire de belles connaissances !",
+    "relationshipGoal": "SERIOUS",
+    "plan": "FREE",
+    "partnersContacted": [
+      "usr_1"
+    ],
+    "photos": [
+      {
+        "id": "demo_p1",
+        "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
+        "isMain": true
+      }
+    ],
+    "interests": [
+      "Technologie",
+      "Sorties Plage",
+      "Cafés & Lounges",
+      "Musique"
+    ],
+    "availabilities": [
+      {
+        "dayOfWeek": 5,
+        "startTime": "18:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeek": 6,
+        "startTime": "14:00",
+        "endTime": "20:00"
+      }
+    ],
+    "isVerified": true,
+    "isVisible": true,
+    "createdAt": "2026-10-11T12:08:29.080Z",
+    "updatedAt": "2026-10-11T17:21:51.603Z"
+  },
+  {
+    "id": "prof_1",
+    "userId": "usr_1",
+    "firstName": "Ama",
+    "lastName": "Agbéyomé",
+    "pseudo": "Ama_Lomé",
+    "gender": "FEMALE",
+    "age": 24,
+    "city": "Lomé",
+    "neighborhood": "Nyékonakpoè",
+    "profession": "Styliste de mode",
+    "bio": "Passionnée de culture togolaise, de bonne musique acoustique et de sorties conviviales. Ouverte pour discuter, se faire des amis ou trouver une belle relation sincère.",
+    "relationshipGoal": "SERIOUS",
+    "plan": "FREE",
+    "partnersContacted": [],
+    "photos": [
+      {
+        "id": "p1",
+        "url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80",
+        "isMain": true
+      }
+    ],
+    "interests": [
+      "Mode & Design",
+      "Musique Live",
+      "Cuisine togolaise",
+      "Voyages"
+    ],
+    "availabilities": [
+      {
+        "dayOfWeek": 5,
+        "startTime": "18:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeek": 6,
+        "startTime": "15:00",
+        "endTime": "21:00"
+      }
+    ],
+    "isVerified": true,
+    "isVisible": true,
+    "createdAt": "2026-10-11T12:08:29.076Z",
+    "updatedAt": "2026-10-11T12:08:29.076Z"
+  },
+  {
+    "id": "prof_2",
+    "userId": "usr_2",
+    "firstName": "Koffi",
+    "lastName": "Mensah",
+    "pseudo": "Koffi_Pro",
+    "gender": "MALE",
+    "age": 28,
+    "city": "Lomé",
+    "neighborhood": "Tokoin",
+    "profession": "Ingénieur logiciel",
+    "bio": "Curieux et attentionné. J'aime partager des discussions enrichissantes autour d'un cocktail ou d'un café, échanger et faire de belles rencontres dans le respect.",
+    "relationshipGoal": "FRIENDSHIP",
+    "plan": "ESSENTIAL",
+    "partnersContacted": [],
+    "photos": [
+      {
+        "id": "p2",
+        "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
+        "isMain": true
+      }
+    ],
+    "interests": [
+      "Technologie",
+      "Cafés & Lounges",
+      "Randonnée",
+      "Entrepreneuriat"
+    ],
+    "availabilities": [
+      {
+        "dayOfWeek": 6,
+        "startTime": "14:00",
+        "endTime": "20:00"
+      }
+    ],
+    "isVerified": true,
+    "isVisible": true,
+    "createdAt": "2026-10-11T12:08:29.076Z",
+    "updatedAt": "2026-10-11T12:08:29.076Z"
+  },
+  {
+    "id": "prof_3",
+    "userId": "usr_3",
+    "firstName": "Farida",
+    "lastName": "Boukari",
+    "pseudo": "Farida_B",
+    "gender": "FEMALE",
+    "age": 26,
+    "city": "Lomé",
+    "neighborhood": "Bè-Kpota",
+    "profession": "Comptable & Danseuse",
+    "bio": "Souriante et dynamique ! J'adore l'art, les soirées détendues au bord de la plage à Lomé et rire. Discutons en toute franchise.",
+    "relationshipGoal": "EXCHANGE",
+    "plan": "FREE",
+    "partnersContacted": [],
+    "photos": [
+      {
+        "id": "p3",
+        "url": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80",
+        "isMain": true
+      }
+    ],
+    "interests": [
+      "Danse",
+      "Plage",
+      "Art & Peinture",
+      "Cinéma"
+    ],
+    "availabilities": [
+      {
+        "dayOfWeek": 0,
+        "startTime": "15:00",
+        "endTime": "19:00"
+      }
+    ],
+    "isVerified": true,
+    "isVisible": true,
+    "createdAt": "2026-10-11T12:08:29.076Z",
+    "updatedAt": "2026-10-11T12:08:29.076Z"
+  },
+  {
+    "id": "prof_4",
+    "userId": "usr_4",
+    "firstName": "Edem",
+    "lastName": "Tchalla",
+    "pseudo": "Edem_Togo",
+    "gender": "MALE",
+    "age": 31,
+    "city": "Lomé",
+    "neighborhood": "Agoè-Nyivé",
+    "profession": "Architecte d'intérieur",
+    "bio": "Épicurien et respectueux. Recherche des échanges authentiques, une complicité intellectuelle et de bons moments partagés.",
+    "relationshipGoal": "SERIOUS",
+    "plan": "COMPLICE",
+    "partnersContacted": [],
+    "photos": [
+      {
+        "id": "p4",
+        "url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80",
+        "isMain": true
+      }
+    ],
+    "interests": [
+      "Architecture",
+      "Gastronomie",
+      "Jazz & Soul",
+      "Fitness"
+    ],
+    "availabilities": [
+      {
+        "dayOfWeek": 5,
+        "startTime": "19:00",
+        "endTime": "23:00"
+      }
+    ],
+    "isVerified": true,
+    "isVisible": true,
+    "createdAt": "2026-10-11T12:08:29.076Z",
+    "updatedAt": "2026-10-11T12:08:29.076Z"
+  }
+]

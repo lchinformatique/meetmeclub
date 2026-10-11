@@ -1,0 +1,445 @@
+// prisma/schema.prisma
+// Meet Me Club — Phase 1 Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────────────────────────────────────────────────────
+// ENUMS
+// ──────────────────────────────────────────────────────────────
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum RelationshipType {
+  FRIENDSHIP
+  SERIOUS
+  MARRIAGE
+  CASUAL
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserRole {
+  MEMBER
+  PARTNER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION // OTP not confirmed
+  ONBOARDING           // OTP confirmed, profile incomplete
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum PhotoStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OtpType {
+  SMS
+  EMAIL
+  WHATSAPP
+}
+
+enum OtpPurpose {
+  REGISTRATION
+  LOGIN
+  RESET
+  PHONE_CHANGE
+}
+
+// ──────────────────────────────────────────────────────────────
+// CORE TABLES
+// ──────────────────────────────────────────────────────────────
+
+model User {
+  id              String     @id @default(cuid())
+  phone           String?    @unique // +228XXXXXXXX
+  phoneVerifiedAt DateTime?
+  email           String?    @unique
+  emailVerifiedAt DateTime?
+  passwordHash    String? // null for phone-only auth
+  googleId        String?    @unique
+  role            UserRole   @default(MEMBER)
+  status          UserStatus @default(PENDING_VERIFICATION)
+  dateOfBirth     DateTime // 18+ enforced at API level
+  isAdult         Boolean    @default(false) // set at registration
+  twoFaEnabled    Boolean    @default(false)
+  twoFaSecret     String?
+  lastLoginAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime? // soft delete for GDPR
+
+  profile       Profile?
+  sessions      Session[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([status])
+  @@index([role])
+  @@map("users")
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  token      String   @unique
+  deviceInfo String?
+  ipAddress  String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model OtpCode {
+  id        String     @id @default(cuid())
+  target    String // phone or email
+  codeHash  String // SHA-256 hash of the code
+  type      OtpType
+  purpose   OtpPurpose
+  attempts  Int        @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime   @default(now())
+
+  @@index([target])
+  @@index([expiresAt])
+  @@map("otp_codes")
+}
+
+// ──────────────────────────────────────────────────────────────
+// PROFILE
+// ──────────────────────────────────────────────────────────────
+
+model Profile {
+  id                 String           @id @default(cuid())
+  userId             String           @unique
+  firstName          String
+  pseudo             String?          @unique
+  gender             Gender
+  city               String           @default("Lomé")
+  neighborhood       String?
+  profession         String?
+  educationLevel     String?
+  height             Int? // cm
+  religion           String?
+  relationshipStatus String? // célibataire, divorcé, veuf...
+  hasChildren        Boolean?
+  languages          String[] // ["fr", "ewe", "en"]
+  bio                String?          @db.Text
+  relationshipGoal   RelationshipType @default(SERIOUS)
+  isVisible          Boolean          @default(true)
+  photoPrivacy       String           @default("ALL") // ALL | VERIFIED | MATCHES
+  profileCompleteness Int             @default(0) // 0–100 percent
+  lastActiveAt       DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos        ProfilePhoto[]
+  interests     ProfileInterest[]
+  availabilities Availability[]
+  verifications Verification[]
+
+  @@index([city])
+  @@index([gender])
+  @@index([isVisible])
+  @@index([profileCompleteness])
+  @@map("profiles")
+}
+
+model ProfilePhoto {
+  id           String      @id @default(cuid())
+  profileId    String
+  url          String // Cloudinary URL
+  publicId     String // Cloudinary public_id
+  thumbnailUrl String?
+  isMain       Boolean     @default(false)
+  order        Int         @default(0)
+  status       PhotoStatus @default(PENDING)
+  moderatedAt  DateTime?
+  moderatedBy  String?
+  createdAt    DateTime    @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([status])
+  @@map("profile_photos")
+}
+
+model Interest {
+  id       String @id @default(cuid())
+  name     String @unique
+  nameEn   String?
+  nameEwe  String?
+  icon     String?
+  category String? // sport, musique, voyage...
+  order    Int    @default(0)
+
+  profiles ProfileInterest[]
+
+  @@map("interests")
+}
+
+model ProfileInterest {
+  profileId  String
+  interestId String
+
+  profile  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  interest Interest @relation(fields: [interestId], references: [id])
+
+  @@id([profileId, interestId])
+  @@map("profile_interests")
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  profileId String
+  dayOfWeek Int // 0=Sun, 1=Mon, ..., 6=Sat
+  startTime String // "09:00"
+  endTime   String // "18:00"
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@map("availabilities")
+}
+
+model Verification {
+  id          String             @id @default(cuid())
+  profileId   String
+  type        String // PHONE | EMAIL | SELFIE | KYC
+  status      VerificationStatus @default(PENDING)
+  documentUrl String? // encrypted, KYC only
+  selfieUrl   String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([type, status])
+  @@map("verifications")
+}
+
+// ──────────────────────────────────────────────────────────────
+// AUDIT & NOTIFICATIONS
+// ──────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String // USER_CREATED, PHOTO_UPLOADED, etc.
+  entity    String? // table name
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // OTP, PROFILE_APPROVED, etc.
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+// ──────────────────────────────────────────────────────────────
+// MESSAGING — Phase 2
+// ──────────────────────────────────────────────────────────────
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  DELETED
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  participantA  String   // userId
+  participantB  String   // userId
+  lastMessageAt DateTime @default(now())
+  isBlockedBy   String?  // userId who blocked
+  createdAt     DateTime @default(now())
+
+  messages      Message[]
+
+  @@unique([participantA, participantB])
+  @@index([participantA])
+  @@index([participantB])
+  @@map("conversations")
+}
+
+model Message {
+  id             String         @id @default(cuid())
+  conversationId String
+  senderId       String         // userId
+  body           String         @db.Text
+  mediaUrl       String?
+  status         MessageStatus  @default(SENT)
+  deletedAt      DateTime?
+  createdAt      DateTime       @default(now())
+
+  conversation   Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+// ──────────────────────────────────────────────────────────────
+// LIKES & MATCHES — Phase 2
+// ──────────────────────────────────────────────────────────────
+
+model Like {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId])
+  @@map("likes")
+}
+
+model Match {
+  id        String   @id @default(cuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+
+  @@unique([userAId, userBId])
+  @@map("matches")
+}
+
+// ──────────────────────────────────────────────────────────────
+// RENDEZ-VOUS & BOOKING — Phase 2
+// ──────────────────────────────────────────────────────────────
+
+enum AppointmentStatus {
+  PENDING      // waiting for the other party
+  ACCEPTED     // both agreed
+  REJECTED     // declined
+  CANCELLED    // cancelled by either party
+  COMPLETED    // date happened
+  NO_SHOW      // one party did not show up
+}
+
+enum PackType {
+  DECOUVERTE   // 2 000 FCFA — public place
+  COMPLICE     // 5 000 FCFA — reserved table + 1 drink
+  DINER        // 12 000 FCFA — full menu
+  VIP_PREMIUM  // 30 000 FCFA — private space
+}
+
+model Partner {
+  id           String   @id @default(cuid())
+  name         String
+  address      String
+  city         String   @default("Lomé")
+  neighborhood String?
+  phone        String?
+  email        String?
+  logoUrl      String?
+  coverUrl     String?
+  description  String?  @db.Text
+  isActive     Boolean  @default(true)
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@index([city, isActive])
+  @@map("partners")
+}
+
+model Appointment {
+  id            String            @id @default(cuid())
+  proposerId    String            // userId who proposed
+  receiverId    String            // userId who received the proposal
+  partnerId     String?
+  pack          PackType          @default(DECOUVERTE)
+  scheduledAt   DateTime          // proposed date/time
+  status        AppointmentStatus @default(PENDING)
+  note          String?           @db.Text   // optional message to the other person
+  priceFcfa     Int               // price at time of booking
+  qrCode        String?           @unique    // generated on ACCEPTED
+  cancelReason  String?
+  completedAt   DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  partner       Partner?          @relation(fields: [partnerId], references: [id])
+
+  @@index([proposerId])
+  @@index([receiverId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("appointments")
+}
+
+// ──────────────────────────────────────────────────────────────
+// ADMIN SETTINGS (key-value store)
+// ──────────────────────────────────────────────────────────────
+
+model AdminSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("admin_settings")
+}
