@@ -18,7 +18,7 @@ const FAQ_KNOWLEDGE_BASE = [
   {
     keywords: ["gratuit", "free", "limite", "3 partenaire", "partenaire", "quota"],
     response:
-      "Le Plan Gratuit (0 FCFA) vous permet de créer votre profil complet, d'être visible de tous les membres à Lomé et d'échanger avec jusqu'à 3 partenaires au choix (discussions, photos, localisation et appels vidéo). Pour discuter avec un nombre illimité de membres sans restriction, vous pouvez activer le Pass Essentiel à 3 000 FCFA/mois.",
+      "Le Plan Gratuit (0 FCFA) vous donne un accès opérationnel de 7 jours pour créer votre profil complet, être visible à Lomé et échanger avec jusqu'à 3 partenaires, ainsi que commander des packs de rendez-vous réels. Pour un accès illimité, activez le Pass Essentiel à 3 000 FCFA/mois.",
     actionUrl: "/tarifs",
     actionText: "Voir les formules & tarifs",
   },
@@ -124,29 +124,29 @@ export default function CustomerSupportWidget() {
       {/* Floating Main Buttons Container */}
       {!isOpen && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "flex-end" }}>
-          {/* Direct WhatsApp Pill Button */}
+          {/* WhatsApp compact circle button */}
           <a
             href="https://wa.me/22890000000?text=Bonjour%20Meet%20Me%20Club%2C%20j%27aimerais%20avoir%20des%20renseignements."
             target="_blank"
             rel="noopener noreferrer"
-            title="Service Client WhatsApp Togo"
+            title="Service Client WhatsApp"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
               background: "#25D366",
               color: "white",
-              padding: "10px 18px",
-              borderRadius: "9999px",
-              fontWeight: 800,
-              fontSize: "13px",
-              boxShadow: "0 8px 24px rgba(37, 211, 102, 0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "20px",
+              boxShadow: "0 4px 14px rgba(37, 211, 102, 0.45)",
               textDecoration: "none",
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+              transition: "transform 0.2s ease",
+              flexShrink: 0,
             }}
           >
-            <span style={{ fontSize: "20px", lineHeight: 1 }}>💬</span>
-            <span className="hidden-mobile-xs">WhatsApp Support</span>
+            💬
           </a>
 
           {/* Interactive Chatbot Launcher Button */}
@@ -155,19 +155,20 @@ export default function CustomerSupportWidget() {
             onClick={() => setIsOpen(true)}
             title="Assistant Virtuel Meet Me Club (24h/24)"
             style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #0B2559 0%, #071530 100%)",
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              background: "linear-gradient(135deg, #0B2559 0%, #071530 100%)",
-              color: "white",
-              padding: "12px 20px",
-              borderRadius: "9999px",
-              fontWeight: 800,
-              fontSize: "14px",
-              boxShadow: "0 10px 30px rgba(11, 37, 89, 0.35)",
-              border: "1.5px solid rgba(255, 255, 255, 0.25)",
+              justifyContent: "center",
+              boxShadow: "0 4px 14px rgba(11, 37, 89, 0.4)",
+              border: "1.5px solid rgba(255, 255, 255, 0.2)",
               cursor: "pointer",
               transition: "transform 0.2s ease",
+              padding: 0,
+              flexShrink: 0,
+              position: "relative",
             }}
           >
             <div
@@ -181,19 +182,22 @@ export default function CustomerSupportWidget() {
                 justifyContent: "center",
                 overflow: "hidden",
                 border: "1.5px solid #E10600",
-                flexShrink: 0,
               }}
             >
-              <Image src="/logo.png" alt="Bot Meet Me Club" width={24} height={24} style={{ objectFit: "contain" }} />
+              <Image src="/logo.png" alt="Bot Meet Me Club" width={22} height={22} style={{ objectFit: "contain" }} />
             </div>
-            <span>Aide & Assistance 24/7</span>
+            {/* Online green indicator badge */}
             <span
               style={{
-                width: "8px",
-                height: "8px",
+                position: "absolute",
+                top: "2px",
+                right: "2px",
+                width: "10px",
+                height: "10px",
                 borderRadius: "50%",
                 background: "#10B981",
-                boxShadow: "0 0 8px #10B981",
+                border: "2px solid #0B2559",
+                boxShadow: "0 0 4px #10B981",
               }}
             />
           </button>

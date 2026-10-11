@@ -139,28 +139,8 @@ function NouveauRdvInner() {
   }, []);
 
   function handleSelectPack(pk: (typeof PACKS)[0]) {
-    // Vérification d’abonnement requis en premier
-    if (pk.id === "VIP_PREMIUM" && userPlan !== "VIP") {
-      setLockedModal({
-        open: true,
-        packName: "Pack VIP Premium",
-        price: "15 000 FCFA / mois",
-        link: "https://link.saspay.me/ksev91xlvik",
-        desc: "L'accès aux salons privés et prestations de conciergerie VIP nécessite le Pass VIP Club.",
-      });
-      return;
-    }
-    if ((pk.id === "COMPLICE" || pk.id === "DINER") && (userPlan === "FREE" || userPlan === "ESSENTIAL")) {
-      setLockedModal({
-        open: true,
-        packName: pk.name,
-        price: "6 000 FCFA / mois",
-        link: "https://link.saspay.me/xiigac37eyq",
-        desc: "Les réservations de tables avec consommations offertes nécessitent le Pass Complice ou supérieur.",
-      });
-      return;
-    }
-    // Paiement obligatoire du pack avant accès
+    // Tout client (abonnement dès 3 000 F ou Plan Gratuit 7 jours) a accès aux packs de rencontre et dîner.
+    // Le paiement du pack choisi s'effectue directement via le modal Saspay.
     setPaymentModal({ open: true, pack: pk, paid: false, confirmed: false });
   }
 
@@ -601,10 +581,6 @@ function NouveauRdvInner() {
                   !selectedPartner ||
                   selectedPartner.acceptedPacks.includes(pk.id)
               ).map((pk) => {
-                const isCompliceRequired = (pk.id === "COMPLICE" || pk.id === "DINER") && (userPlan === "FREE" || userPlan === "ESSENTIAL");
-                const isVipRequired = pk.id === "VIP_PREMIUM" && userPlan !== "VIP";
-                const isLocked = isCompliceRequired || isVipRequired;
-
                 return (
                   <button
                     key={pk.id}
@@ -682,11 +658,6 @@ function NouveauRdvInner() {
                         }}
                       >
                         {pk.name}
-                        {isLocked && (
-                          <span style={{ fontSize: "11px", fontWeight: 700, background: "#FEF2F2", color: "#B91C1C", border: "1px solid #FECACA", padding: "1px 6px", borderRadius: "6px" }}>
-                            🔒 Abonnement Requis
-                          </span>
-                        )}
                       </span>
                       <span
                         style={{

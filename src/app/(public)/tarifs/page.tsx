@@ -14,21 +14,21 @@ const PLANS = [
   {
     id: "FREE",
     name: "Plan Gratuit",
-    badge: "Pour démarrer",
+    badge: "Essai 7 jours",
     price: "0",
-    period: "gratuit à vie",
+    period: "valable 7 jours",
     subtitle: "Rejoignez le club et faites vos premiers pas",
-    description: "Permet de créer votre profil officiel, d'être visible et d'échanger avec vos 3 premiers partenaires.",
+    description: "Profil complet, visibilité officielle et 3 partenaires pendant 7 jours d'essai. Achat de packs de rencontre autorisé.",
     features: [
+      { text: "Accès opérationnel complet pendant 7 jours", ok: true, highlight: true },
       { text: "Création et enregistrement complet du profil", ok: true },
       { text: "Visibilité officielle dans l'espace Découverte", ok: true },
-      { text: "Échanger & discuter avec jusqu'à 3 partenaires", ok: true, highlight: true },
+      { text: "Échanger avec jusqu'à 3 partenaires", ok: true },
+      { text: "Achat de packs rendez-vous réels autorisé", ok: true, highlight: true },
       { text: "Messagerie privée sécurisée", ok: true },
-      { text: "Discussions illimitées avec plus de 3 personnes", ok: false },
-      { text: "Voir qui a visité ou aimé votre profil", ok: false },
-      { text: "Réservations de tables et boissons partenaires", ok: false },
+      { text: "Discussions illimitées après 7 jours", ok: false },
     ],
-    buttonText: "Commencer gratuitement",
+    buttonText: "Essai gratuit 7 jours",
     buttonHref: "/inscription",
     paymentUrl: null,
     highlight: false,
@@ -93,7 +93,7 @@ const PLANS = [
     price: "15 000",
     period: "FCFA / mois",
     subtitle: "L'expérience la plus prestigieuse de Lomé",
-    description: "Salons privés, dîners gastronomiques complets et accompagnement conciergerie personnalisé pour des rencontres d'exception.",
+    description: "Salons privés, dîners gastronomiques complets et conciergerie privée pour des rencontres d'exception à Lomé.",
     features: [
       { text: "Tout le Pass Complice en illimité", ok: true },
       { text: "Salons VIP et rooftops partenaires réservés", ok: true },
@@ -221,21 +221,21 @@ export default function TarifsPage() {
               </div>
 
               {/* Title (Fixed Height) */}
-              <div style={{ height: "32px", display: "flex", alignItems: "center", marginBottom: "6px" }}>
-                <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+              <div style={{ minHeight: "32px", display: "flex", alignItems: "center", marginBottom: "6px" }}>
+                <h2 style={{ fontSize: "21px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
                   {plan.name}
                 </h2>
               </div>
 
-              {/* Description (Fixed Height for perfect alignment) */}
-              <div style={{ height: "64px", display: "flex", alignItems: "flex-start", marginBottom: "16px" }}>
+              {/* Description (minHeight to avoid text overflow/hiding) */}
+              <div style={{ minHeight: "68px", display: "flex", alignItems: "flex-start", marginBottom: "16px" }}>
                 <p style={{ fontSize: "13px", color: "#475569", margin: 0, lineHeight: 1.5 }}>
                   {plan.description}
                 </p>
               </div>
 
               {/* Price (Fixed Height & Aligned Separator) */}
-              <div style={{ height: "66px", marginBottom: "22px", paddingBottom: "16px", borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "baseline", gap: "6px" }}>
+              <div style={{ height: "66px", marginBottom: "20px", paddingBottom: "16px", borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "baseline", gap: "6px" }}>
                 <span style={{ fontSize: "34px", fontWeight: 900, color: plan.highlight ? "#0B2559" : "#0F172A", lineHeight: 1 }}>
                   {plan.price}
                 </span>
@@ -300,17 +300,17 @@ export default function TarifsPage() {
                     }`}
                     style={{
                       width: "100%",
-                      height: "50px",
+                      minHeight: "48px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      padding: "0 20px",
-                      fontSize: "14px",
+                      padding: "8px 10px",
+                      fontSize: "13px",
                       fontWeight: 800,
                       borderRadius: "12px",
                       textDecoration: "none",
                       letterSpacing: "0.2px",
-                      whiteSpace: "nowrap",
+                      textAlign: "center",
                     }}
                   >
                     {plan.buttonText}
@@ -355,16 +355,16 @@ export default function TarifsPage() {
                     className="btn btn-outline-blue btn-pay-effect"
                     style={{
                       width: "100%",
-                      height: "50px",
+                      minHeight: "48px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      padding: "0 20px",
-                      fontSize: "14px",
+                      padding: "8px 10px",
+                      fontSize: "13px",
                       fontWeight: 700,
                       borderRadius: "12px",
                       textDecoration: "none",
-                      whiteSpace: "nowrap",
+                      textAlign: "center",
                     }}
                   >
                     {plan.buttonText}
@@ -382,7 +382,7 @@ export default function TarifsPage() {
                     borderRadius: "9999px",
                     boxSizing: "border-box",
                   }}>
-                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>⭐ Gratuit · Sans engagement</span>
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>⭐ Gratuit 7 jours · Sans engagement</span>
                   </div>
                 </div>
               )}
@@ -440,11 +440,11 @@ export default function TarifsPage() {
             }}
           >
             <h4 style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A", marginBottom: "12px" }}>
-              Règle du Plan Gratuit :
+              Règle du Plan Gratuit (7 jours) :
             </h4>
             <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "14px" }}>
-              Tout nouvel utilisateur peut enregistrer son profil complet, être visible de tous les membres et choisir
-              jusqu'à <strong style={{ color: "#0F172A" }}>3 partenaires</strong> pour débuter des discussions.
+              Tout nouvel utilisateur bénéficie de <strong>7 jours d&apos;accès opérationnel gratuit</strong> pour créer son profil complet, être visible de tous les membres et échanger avec
+              jusqu&apos;à <strong style={{ color: "#0F172A" }}>3 partenaires</strong>. L&apos;achat de packs de rendez-vous réels est également accessible dès cette période d&apos;essai.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#0B2E6B", fontWeight: 700, fontSize: "14px" }}>
               <span>🚀 Besoin de plus ?</span>

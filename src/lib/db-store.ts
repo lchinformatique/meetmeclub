@@ -228,15 +228,16 @@ export const SASPAY_LINKS = {
 export const PLAN_LIMITS = {
   FREE: {
     maxPartners: 3,
-    label: "Plan Gratuit",
+    label: "Plan Gratuit (Essai 7 jours)",
     price: 0,
     paymentUrl: null,
-    canBookVenues: false,
+    canBookVenues: true,
     canViewLikes: false,
     features: [
-      "Création complète du profil",
-      "Visibilité dans le club à Lomé",
-      "Échanger avec jusqu'à 3 partenaires (amitié, discussion)",
+      "Accès complet opérationnel pendant 7 jours d'essai",
+      "Création complète du profil & visibilité",
+      "Échanger avec jusqu'à 3 partenaires",
+      "Possibilité d'acheter des packs de rendez-vous réels",
       "Messagerie sécurisée",
     ],
   },
