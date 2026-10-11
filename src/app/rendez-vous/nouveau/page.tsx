@@ -119,6 +119,14 @@ function NouveauRdvInner() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [userPlan, setUserPlan] = useState<string>("FREE");
+  // Modal paiement obligatoire pour TOUS les packs
+  const [paymentModal, setPaymentModal] = useState<{
+    open: boolean;
+    pack: (typeof PACKS)[0] | null;
+    paid: boolean;        // l’utilisateur a cliqué le lien de paiement
+    confirmed: boolean;   // l’utilisateur a confirmé avoir payé
+  }>({ open: false, pack: null, paid: false, confirmed: false });
+  // Modal abonnement requis (plan insuffisant)
   const [lockedModal, setLockedModal] = useState<{ open: boolean; packName?: string; price?: string; link?: string; desc?: string } | null>(null);
 
   useEffect(() => {
@@ -131,6 +139,7 @@ function NouveauRdvInner() {
   }, []);
 
   function handleSelectPack(pk: (typeof PACKS)[0]) {
+    // Vérification d’abonnement requis en premier
     if (pk.id === "VIP_PREMIUM" && userPlan !== "VIP") {
       setLockedModal({
         open: true,
@@ -151,7 +160,8 @@ function NouveauRdvInner() {
       });
       return;
     }
-    setSelectedPackId(pk.id);
+    // Paiement obligatoire du pack avant accès
+    setPaymentModal({ open: true, pack: pk, paid: false, confirmed: false });
   }
 
   const selectedPartner = PARTNERS.find((p) => p.id === selectedPartnerId);
@@ -750,64 +760,25 @@ function NouveauRdvInner() {
               })}
             </div>
 
-            {/* Payment CTA below pack list when pack is selected */}
+            {/* Badge confirmation si pack payé et sélectionné */}
             {selectedPackId && (() => {
               const pk = PACKS.find((p) => p.id === selectedPackId);
               if (!pk) return null;
               return (
                 <div style={{
-                  marginTop: "16px",
-                  padding: "16px",
-                  background: "white",
-                  border: `2px solid ${pk.color}`,
-                  borderRadius: "16px",
-                  boxShadow: `0 4px 16px ${pk.color}25`,
+                  marginTop: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "12px 16px",
+                  background: "#F0FDF4",
+                  border: "1.5px solid #86EFAC",
+                  borderRadius: "12px",
                 }}>
-                  <div style={{ fontSize: "13px", color: "#475569", marginBottom: "10px", fontWeight: 600 }}>
-                    💳 Paiement du pack <strong style={{ color: pk.color }}>{pk.icon} {pk.name}</strong> — {pk.price.toLocaleString("fr-FR")} FCFA
-                  </div>
-                  <a
-                    href={pk.paymentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-pay-effect"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "100%",
-                      height: "46px",
-                      background: pk.id === "VIP_PREMIUM"
-                        ? "linear-gradient(135deg, #78350F 0%, #B45309 100%)"
-                        : pk.id === "DINER"
-                        ? "linear-gradient(135deg, #9B1C1C 0%, #E10600 100%)"
-                        : pk.id === "COMPLICE"
-                        ? "linear-gradient(135deg, #0B2559 0%, #17428E 100%)"
-                        : "linear-gradient(135deg, #334155 0%, #475569 100%)",
-                      color: "white",
-                      borderRadius: "10px",
-                      fontWeight: 800,
-                      fontSize: "14px",
-                      textDecoration: "none",
-                      gap: "8px",
-                      letterSpacing: "0.2px",
-                    }}
-                  >
-                    Payer {pk.price.toLocaleString("fr-FR")} FCFA · {pk.name}
-                  </a>
-                  {/* Tiny Mixx & Moov icons */}
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    marginTop: "8px",
-                  }}>
-                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Paiement via</span>
-                    <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={24} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
-                    <span style={{ fontSize: "10px", color: "#94A3B8" }}>·</span>
-                    <Image src="/moov-money.png" alt="Moov Money" width={16} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
-                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Mixx &amp; Moov</span>
+                  <span style={{ fontSize: "20px" }}>✅</span>
+                  <div>
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#15803D" }}>Paiement validé — Pack {pk.icon} {pk.name}</div>
+                    <div style={{ fontSize: "12px", color: "#166534" }}>{pk.price.toLocaleString("fr-FR")} FCFA payés via Mixx ou Moov</div>
                   </div>
                 </div>
               );
@@ -1178,6 +1149,179 @@ function NouveauRdvInner() {
               >
                 {loading ? "" : "✅ Envoyer la proposition"}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ Modal Paiement Obligatoire (TOUS les packs) ═══ */}
+        {paymentModal.open && paymentModal.pack && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(7, 20, 50, 0.85)",
+              backdropFilter: "blur(8px)",
+              zIndex: 1100,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+            }}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: "24px",
+                padding: "32px 28px",
+                maxWidth: "440px",
+                width: "100%",
+                textAlign: "center",
+                boxShadow: "0 24px 60px rgba(0,0,0,0.4)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {!paymentModal.paid ? (
+                /* ── Phase 1 : Payer ── */
+                <>
+                  <div style={{ fontSize: "52px", marginBottom: "10px" }}>
+                    {paymentModal.pack.icon}
+                  </div>
+                  <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "6px" }}>
+                    Pack {paymentModal.pack.name}
+                  </h3>
+                  <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.5, marginBottom: "18px" }}>
+                    {paymentModal.pack.description}
+                  </p>
+
+                  {/* Prix prominent */}
+                  <div style={{
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "14px",
+                    padding: "16px",
+                    marginBottom: "20px",
+                  }}>
+                    <div style={{ fontSize: "11px", color: "#64748B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>Montant à payer</div>
+                    <div style={{ fontSize: "32px", fontWeight: 900, color: "#0B2559", lineHeight: 1 }}>
+                      {paymentModal.pack.price.toLocaleString("fr-FR")}
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: "#64748B", marginLeft: "4px" }}>FCFA</span>
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#64748B", marginTop: "6px" }}>Réglé 1 seule fois pour ce rendez-vous</div>
+                  </div>
+
+                  {/* Bouton Payer Saspay */}
+                  <a
+                    href={paymentModal.pack.paymentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-pay-effect"
+                    onClick={() => setPaymentModal(prev => ({ ...prev, paid: true }))}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "100%",
+                      height: "54px",
+                      background: paymentModal.pack.id === "VIP_PREMIUM"
+                        ? "linear-gradient(135deg, #78350F 0%, #B45309 100%)"
+                        : paymentModal.pack.id === "DINER"
+                        ? "linear-gradient(135deg, #9B1C1C 0%, #E10600 100%)"
+                        : paymentModal.pack.id === "COMPLICE"
+                        ? "linear-gradient(135deg, #0B2559 0%, #17428E 100%)"
+                        : "linear-gradient(135deg, #334155 0%, #475569 100%)",
+                      color: "white",
+                      borderRadius: "14px",
+                      fontWeight: 900,
+                      fontSize: "16px",
+                      textDecoration: "none",
+                      gap: "8px",
+                      marginBottom: "10px",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    Payer {paymentModal.pack.price.toLocaleString("fr-FR")} FCFA maintenant
+                  </a>
+
+                  {/* Mixx & Moov icons */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginBottom: "16px" }}>
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Via</span>
+                    <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={26} height={17} style={{ objectFit: "contain", borderRadius: "3px" }} />
+                    <span style={{ fontSize: "10px", color: "#94A3B8" }}>·</span>
+                    <Image src="/moov-money.png" alt="Moov Money" width={17} height={17} style={{ objectFit: "contain", borderRadius: "3px" }} />
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Mixx by yas &amp; Moov Money</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentModal({ open: false, pack: null, paid: false, confirmed: false })}
+                    className="btn btn-ghost"
+                    style={{ width: "100%", justifyContent: "center", color: "#64748B", fontSize: "13px" }}
+                  >
+                    Annuler
+                  </button>
+                </>
+              ) : (
+                /* ── Phase 2 : Confirmer que le paiement est fait ── */
+                <>
+                  <div style={{ fontSize: "52px", marginBottom: "12px" }}>📲✅</div>
+                  <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#15803D", marginBottom: "8px" }}>
+                    Avez-vous effectué le paiement ?
+                  </h3>
+                  <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.5, marginBottom: "20px" }}>
+                    Vérifiez votre SMS de confirmation <strong>Mixx by yas</strong> ou <strong>Moov Money</strong> avant de continuer.
+                  </p>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {/* Confirmer */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPackId(paymentModal.pack!.id);
+                        setPaymentModal({ open: false, pack: null, paid: false, confirmed: true });
+                      }}
+                      className="btn btn-pay-effect"
+                      style={{
+                        width: "100%",
+                        height: "52px",
+                        background: "linear-gradient(135deg, #15803D 0%, #16A34A 100%)",
+                        color: "white",
+                        borderRadius: "14px",
+                        fontWeight: 900,
+                        fontSize: "15px",
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        boxShadow: "0 8px 20px rgba(21, 128, 61, 0.35)",
+                      }}
+                    >
+                      ✅ Oui, j&apos;ai payé — Continuer
+                    </button>
+
+                    {/* Retenter le paiement */}
+                    <a
+                      href={paymentModal.pack.paymentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline-blue"
+                      style={{ width: "100%", justifyContent: "center", padding: "12px", borderRadius: "12px", fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center" }}
+                    >
+                      💳 Réessayer le paiement
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentModal({ open: false, pack: null, paid: false, confirmed: false })}
+                      className="btn btn-ghost"
+                      style={{ width: "100%", justifyContent: "center", color: "#64748B", fontSize: "13px" }}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
