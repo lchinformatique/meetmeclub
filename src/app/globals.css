@@ -291,6 +291,120 @@ h1, h2, h3, h4, h5, h6 {
   animation: spin 0.7s linear infinite;
 }
 
+/* ── Plan & Payment Buttons & Badges ── */
+.btn-pay-effect {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.btn-pay-effect:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 14px 30px rgba(11, 46, 107, 0.25) !important;
+}
+
+.btn-pay-effect:active {
+  transform: translateY(0) scale(0.98) !important;
+}
+
+.btn-pay-effect::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: none;
+}
+
+.btn-pay-effect:hover::after {
+  left: 160%;
+  transition: left 0.8s ease-in-out;
+}
+
+.btn-pay-popular {
+  background: linear-gradient(135deg, #0B2559 0%, #17428E 100%) !important;
+  color: white !important;
+  box-shadow: 0 8px 25px rgba(11, 37, 89, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.btn-pay-popular:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 16px 36px rgba(11, 37, 89, 0.5) !important;
+}
+
+.btn-pay-vip {
+  background: linear-gradient(135deg, #78350F 0%, #B45309 50%, #D97706 100%) !important;
+  color: white !important;
+  box-shadow: 0 8px 25px rgba(180, 83, 9, 0.35) !important;
+}
+
+.btn-pay-vip:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 16px 36px rgba(180, 83, 9, 0.5) !important;
+}
+
+.btn-pay-complice {
+  background: linear-gradient(135deg, #065F46 0%, #059669 100%) !important;
+  color: white !important;
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.35) !important;
+}
+
+.btn-pay-complice:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 16px 36px rgba(5, 150, 105, 0.5) !important;
+}
+
+/* Centered Payment Badges */
+.payment-badge-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 9999px;
+  margin-top: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.payment-pill-tmoney {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #005DAA;
+  color: white;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.payment-pill-flooz {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #E36C09;
+  color: white;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
 /* ──────────────────────────────────────────────────────────────
    INPUTS
    ────────────────────────────────────────────────────────────── */

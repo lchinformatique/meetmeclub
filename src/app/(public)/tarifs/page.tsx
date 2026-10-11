@@ -53,7 +53,7 @@ const PLANS = [
       { text: "Badge membre vérifié", ok: true },
       { text: "Réservation de tables et boissons partenaires", ok: false },
     ],
-    buttonText: "Payer 3 000 F (T-Money / Flooz)",
+    buttonText: "Activer le Pass Essentiel (3 000 F)",
     buttonHref: "https://link.saspay.me/dtpycov9i-k",
     paymentUrl: "https://link.saspay.me/dtpycov9i-k",
     highlight: true,
@@ -78,7 +78,7 @@ const PLANS = [
       { text: "Assurance sécurité & médiation du club", ok: true },
       { text: "Accès salons VIP et dîners gastronomiques", ok: false },
     ],
-    buttonText: "Payer 6 000 F (T-Money / Flooz)",
+    buttonText: "Activer le Pass Complice (6 000 F)",
     buttonHref: "https://link.saspay.me/xiigac37eyq",
     paymentUrl: "https://link.saspay.me/xiigac37eyq",
     highlight: false,
@@ -103,7 +103,7 @@ const PLANS = [
       { text: "Conciergerie privée Meet Me Club dédiée", ok: true },
       { text: "Accès événements & soirées privées du club", ok: true },
     ],
-    buttonText: "Payer 15 000 F (T-Money / Flooz)",
+    buttonText: "Devenir Membre VIP (15 000 F)",
     buttonHref: "https://link.saspay.me/ksev91xlvik",
     paymentUrl: "https://link.saspay.me/ksev91xlvik",
     highlight: false,
@@ -293,48 +293,75 @@ export default function TarifsPage() {
 
               {/* Call to action */}
               {plan.paymentUrl ? (
-                <div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "auto" }}>
                   <a
                     href={plan.paymentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`btn ${plan.btnClass}`}
+                    className={`btn btn-pay-effect ${
+                      plan.id === "ESSENTIAL"
+                        ? "btn-pay-popular"
+                        : plan.id === "COMPLICE"
+                        ? "btn-pay-complice"
+                        : "btn-pay-vip"
+                    }`}
                     style={{
                       width: "100%",
                       justifyContent: "center",
-                      padding: "14px",
+                      padding: "15px 18px",
                       fontSize: "15px",
                       fontWeight: 800,
-                      borderRadius: "12px",
+                      borderRadius: "14px",
                       textDecoration: "none",
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
-                      boxShadow: plan.highlight ? "0 8px 24px rgba(11, 46, 107, 0.3)" : "none",
+                      textAlign: "center",
                     }}
                   >
                     <span>💳 {plan.buttonText}</span>
+                    <span style={{ fontSize: "16px" }}>➔</span>
                   </a>
-                  <p style={{ textAlign: "center", fontSize: "11px", color: "#64748B", marginTop: "8px", fontWeight: 600 }}>
-                    ⚡ Paiement T-Money & Flooz (Saspay)
-                  </p>
+
+                  {/* Centered T-Money & Flooz Badge */}
+                  <div className="payment-badge-center">
+                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 700 }}>Paiement :</span>
+                    <span className="payment-pill-tmoney">📲 T-Money</span>
+                    <span style={{ color: "#94A3B8", fontWeight: 800, fontSize: "11px" }}>&</span>
+                    <span className="payment-pill-flooz">📱 Flooz</span>
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "5px", fontWeight: 600 }}>
+                    ⚡ Activation sécurisée par Saspay
+                  </div>
                 </div>
               ) : (
-                <Link
-                  href={plan.buttonHref}
-                  className={`btn ${plan.btnClass}`}
-                  style={{
-                    width: "100%",
-                    justifyContent: "center",
-                    padding: "14px",
-                    fontSize: "15px",
-                    fontWeight: 700,
-                    borderRadius: "12px",
-                    textDecoration: "none",
-                  }}
-                >
-                  {plan.buttonText}
-                </Link>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "auto" }}>
+                  <Link
+                    href={plan.buttonHref}
+                    className="btn btn-outline-blue btn-pay-effect"
+                    style={{
+                      width: "100%",
+                      justifyContent: "center",
+                      padding: "15px 18px",
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      borderRadius: "14px",
+                      textDecoration: "none",
+                      textAlign: "center",
+                    }}
+                  >
+                    {plan.buttonText}
+                  </Link>
+
+                  <div className="payment-badge-center" style={{ background: "#F8FAFC", border: "1px dashed #CBD5E1" }}>
+                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 700 }}>
+                      ⭐ 100% Gratuit · Sans carte bancaire
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "5px", fontWeight: 600 }}>
+                    Idéal pour choisir vos 3 premiers partenaires
+                  </div>
+                </div>
               )}
             </div>
           ))}
@@ -420,58 +447,89 @@ export default function TarifsPage() {
             style={{
               display: "flex",
               justifyContent: "center",
-              gap: "24px",
+              gap: "20px",
               flexWrap: "wrap",
+              marginBottom: "30px",
             }}
           >
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                padding: "12px 20px",
-                borderRadius: "12px",
-                border: "1px solid #E2E8F0",
-                background: "#F8FAFC",
-                fontWeight: 700,
-                color: "#0F172A",
-                fontSize: "14px",
+                gap: "12px",
+                padding: "16px 24px",
+                borderRadius: "16px",
+                border: "2px solid #005DAA",
+                background: "white",
+                boxShadow: "0 4px 16px rgba(0, 93, 170, 0.1)",
+                textAlign: "left",
               }}
             >
-              <span style={{ fontSize: "20px" }}>📲</span> T-Money (Togocom)
+              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#005DAA", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>
+                📲
+              </div>
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: "#005DAA" }}>T-Money</div>
+                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Réseau Togocom Togo</div>
+              </div>
             </div>
+
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                padding: "12px 20px",
-                borderRadius: "12px",
-                border: "1px solid #E2E8F0",
-                background: "#F8FAFC",
-                fontWeight: 700,
-                color: "#0F172A",
-                fontSize: "14px",
+                gap: "12px",
+                padding: "16px 24px",
+                borderRadius: "16px",
+                border: "2px solid #E36C09",
+                background: "white",
+                boxShadow: "0 4px 16px rgba(227, 108, 9, 0.1)",
+                textAlign: "left",
               }}
             >
-              <span style={{ fontSize: "20px" }}>📲</span> Flooz (Moov Africa)
+              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#E36C09", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>
+                📱
+              </div>
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: "#E36C09" }}>Flooz</div>
+                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Moov Money Togo</div>
+              </div>
             </div>
+
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                padding: "12px 20px",
-                borderRadius: "12px",
-                border: "1px solid #E2E8F0",
-                background: "#F8FAFC",
-                fontWeight: 700,
-                color: "#0F172A",
-                fontSize: "14px",
+                gap: "12px",
+                padding: "16px 24px",
+                borderRadius: "16px",
+                border: "1px solid #CBD5E1",
+                background: "white",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+                textAlign: "left",
               }}
             >
-              <span style={{ fontSize: "20px" }}>💳</span> Carte Bancaire (Visa / Mastercard)
+              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#0B2559", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>
+                🛡️
+              </div>
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A" }}>Saspay Checkout</div>
+                <div style={{ fontSize: "12px", color: "#16A34A", fontWeight: 700 }}>Paiement Sécurisé 100%</div>
+              </div>
             </div>
+          </div>
+
+          <div style={{ display: "inline-block", background: "#F1F5F9", padding: "14px 24px", borderRadius: "16px", border: "1px solid #E2E8F0" }}>
+            <span style={{ fontSize: "14px", color: "#334155", marginRight: "12px" }}>
+              Vous avez déjà effectué votre paiement T-Money ou Flooz ?
+            </span>
+            <Link
+              href="/paiement/activation"
+              className="btn btn-primary btn-sm btn-pay-effect"
+              style={{ fontWeight: 800, padding: "8px 18px", borderRadius: "10px" }}
+            >
+              ⚡ Activer mon compte ici
+            </Link>
           </div>
 
           <p style={{ marginTop: "24px", fontSize: "13px", color: "#64748B" }}>

@@ -17,7 +17,8 @@
     "relationshipGoal": "SERIOUS",
     "plan": "FREE",
     "partnersContacted": [
-      "usr_1"
+      "usr_1",
+      "usr_4"
     ],
     "photos": [
       {
@@ -47,7 +48,7 @@
     "isVerified": true,
     "isVisible": true,
     "createdAt": "2026-10-11T12:08:29.080Z",
-    "updatedAt": "2026-10-11T17:21:51.603Z"
+    "updatedAt": "2026-10-11T19:01:30.223Z"
   },
   {
     "id": "prof_1",
