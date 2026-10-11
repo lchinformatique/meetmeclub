@@ -405,6 +405,46 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.2px;
 }
 
+/* ── Pricing Grid & Perfect Card Alignment ── */
+.pricing-grid-container {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .pricing-grid-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+}
+
+@media (max-width: 680px) {
+  .pricing-grid-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.pricing-card {
+  background: white;
+  border-radius: 22px;
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-sizing: border-box;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+}
+
 /* ──────────────────────────────────────────────────────────────
    INPUTS
    ────────────────────────────────────────────────────────────── */

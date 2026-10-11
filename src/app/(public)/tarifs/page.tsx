@@ -188,36 +188,23 @@ export default function TarifsPage() {
         </div>
       </section>
 
-      {/* Main Pricing Cards Grid */}
-      <section style={{ maxWidth: "1280px", margin: "-50px auto 60px", paddingInline: "20px", position: "relative", zIndex: 10 }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "24px",
-            alignItems: "stretch",
-          }}
-        >
+      {/* Main Pricing Cards Grid — 4 Columns perfectly aligned */}
+      <section style={{ maxWidth: "1340px", margin: "-50px auto 60px", paddingInline: "20px", position: "relative", zIndex: 10 }}>
+        <div className="pricing-grid-container">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
+              className="pricing-card"
               style={{
-                background: "white",
-                borderRadius: "20px",
-                border: plan.highlight ? "3px solid #0B2E6B" : `1px solid ${plan.borderColor}`,
-                padding: "32px 26px",
-                display: "flex",
-                flexDirection: "column",
-                position: "relative",
+                border: plan.highlight ? "2.5px solid #0B2559" : `1px solid ${plan.borderColor}`,
                 boxShadow: plan.highlight
-                  ? "0 20px 40px -10px rgba(11, 46, 107, 0.25)"
-                  : "0 4px 15px rgba(0, 0, 0, 0.05)",
-                transform: plan.highlight ? "scale(1.02)" : "none",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  ? "0 14px 36px -4px rgba(11, 46, 107, 0.22)"
+                  : "0 4px 16px rgba(0, 0, 0, 0.04)",
+                padding: "28px 22px",
               }}
             >
-              {/* Badge */}
-              <div style={{ marginBottom: "14px" }}>
+              {/* Badge Row (Fixed Height) */}
+              <div style={{ height: "30px", display: "flex", alignItems: "center", marginBottom: "12px" }}>
                 <span
                   style={{
                     display: "inline-block",
@@ -233,28 +220,32 @@ export default function TarifsPage() {
                 </span>
               </div>
 
-              {/* Title & Subtitle */}
-              <h2 style={{ fontSize: "24px", fontWeight: 800, color: "#0F172A", marginBottom: "6px" }}>
-                {plan.name}
-              </h2>
-              <p style={{ fontSize: "14px", color: "#475569", marginBottom: "20px", minHeight: "42px", lineHeight: 1.4 }}>
-                {plan.description}
-              </p>
-
-              {/* Price */}
-              <div style={{ marginBottom: "24px", paddingBottom: "20px", borderBottom: "1px solid #E2E8F0" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-                  <span style={{ fontSize: "36px", fontWeight: 900, color: plan.highlight ? "#0B2E6B" : "#0F172A" }}>
-                    {plan.price}
-                  </span>
-                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#64748B" }}>
-                    {plan.period}
-                  </span>
-                </div>
+              {/* Title (Fixed Height) */}
+              <div style={{ height: "32px", display: "flex", alignItems: "center", marginBottom: "6px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+                  {plan.name}
+                </h2>
               </div>
 
-              {/* Features List */}
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px 0", flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* Description (Fixed Height for perfect alignment) */}
+              <div style={{ height: "64px", display: "flex", alignItems: "flex-start", marginBottom: "16px" }}>
+                <p style={{ fontSize: "13px", color: "#475569", margin: 0, lineHeight: 1.5 }}>
+                  {plan.description}
+                </p>
+              </div>
+
+              {/* Price (Fixed Height & Aligned Separator) */}
+              <div style={{ height: "66px", marginBottom: "22px", paddingBottom: "16px", borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "baseline", gap: "6px" }}>
+                <span style={{ fontSize: "34px", fontWeight: 900, color: plan.highlight ? "#0B2559" : "#0F172A", lineHeight: 1 }}>
+                  {plan.price}
+                </span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#64748B" }}>
+                  {plan.period}
+                </span>
+              </div>
+
+              {/* Features List (Equalized 7 features, flex: 1) */}
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px 0", flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
                 {plan.features.map((feat, idx) => (
                   <li
                     key={idx}
@@ -262,10 +253,11 @@ export default function TarifsPage() {
                       display: "flex",
                       alignItems: "flex-start",
                       gap: "10px",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       lineHeight: 1.4,
                       color: feat.ok ? (feat.highlight ? "#0F172A" : "#334155") : "#94A3B8",
                       fontWeight: feat.highlight ? 700 : 500,
+                      minHeight: "36px",
                     }}
                   >
                     <span
@@ -291,7 +283,7 @@ export default function TarifsPage() {
                 ))}
               </ul>
 
-              {/* Call to action */}
+              {/* Call to action & Payment Badges (Pinned to bottom) */}
               {plan.paymentUrl ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "auto" }}>
                   <a
@@ -307,11 +299,12 @@ export default function TarifsPage() {
                     }`}
                     style={{
                       width: "100%",
+                      height: "48px",
                       justifyContent: "center",
-                      padding: "15px 18px",
-                      fontSize: "15px",
+                      padding: "0 16px",
+                      fontSize: "14px",
                       fontWeight: 800,
-                      borderRadius: "14px",
+                      borderRadius: "12px",
                       textDecoration: "none",
                       display: "flex",
                       alignItems: "center",
@@ -320,18 +313,18 @@ export default function TarifsPage() {
                     }}
                   >
                     <span>💳 {plan.buttonText}</span>
-                    <span style={{ fontSize: "16px" }}>➔</span>
+                    <span style={{ fontSize: "15px" }}>➔</span>
                   </a>
 
                   {/* Centered T-Money & Flooz Badge */}
-                  <div className="payment-badge-center">
-                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 700 }}>Paiement :</span>
+                  <div className="payment-badge-center" style={{ height: "36px" }}>
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 700 }}>Paiement :</span>
                     <span className="payment-pill-tmoney">📲 T-Money</span>
                     <span style={{ color: "#94A3B8", fontWeight: 800, fontSize: "11px" }}>&</span>
                     <span className="payment-pill-flooz">📱 Flooz</span>
                   </div>
-                  <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "5px", fontWeight: 600 }}>
-                    ⚡ Activation sécurisée par Saspay
+                  <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "4px", fontWeight: 600, height: "16px" }}>
+                    ⚡ Activation automatique Saspay
                   </div>
                 </div>
               ) : (
@@ -341,25 +334,28 @@ export default function TarifsPage() {
                     className="btn btn-outline-blue btn-pay-effect"
                     style={{
                       width: "100%",
+                      height: "48px",
                       justifyContent: "center",
-                      padding: "15px 18px",
-                      fontSize: "15px",
+                      padding: "0 16px",
+                      fontSize: "14px",
                       fontWeight: 700,
-                      borderRadius: "14px",
+                      borderRadius: "12px",
                       textDecoration: "none",
                       textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
                     }}
                   >
                     {plan.buttonText}
                   </Link>
 
-                  <div className="payment-badge-center" style={{ background: "#F8FAFC", border: "1px dashed #CBD5E1" }}>
-                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 700 }}>
+                  <div className="payment-badge-center" style={{ background: "#F8FAFC", border: "1px dashed #CBD5E1", height: "36px" }}>
+                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 700 }}>
                       ⭐ 100% Gratuit · Sans carte bancaire
                     </span>
                   </div>
-                  <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "5px", fontWeight: 600 }}>
-                    Idéal pour choisir vos 3 premiers partenaires
+                  <div style={{ fontSize: "11px", color: "#94A3B8", textAlign: "center", marginTop: "4px", fontWeight: 600, height: "16px" }}>
+                    Idéal pour vos 3 premiers partenaires
                   </div>
                 </div>
               )}
