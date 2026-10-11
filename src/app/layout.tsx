@@ -50,6 +50,7 @@ export const viewport: Viewport = {
 
 import CustomerSupportWidget from "@/components/CustomerSupportWidget";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import SecurityProtectionProvider from "@/components/SecurityProtectionProvider";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -63,9 +64,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {children}
-        <CustomerSupportWidget />
-        <MobileBottomNav />
+        <SecurityProtectionProvider>
+          {children}
+          <CustomerSupportWidget />
+          <MobileBottomNav />
+        </SecurityProtectionProvider>
       </body>
     </html>
   );

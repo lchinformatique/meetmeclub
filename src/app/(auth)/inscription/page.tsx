@@ -19,6 +19,8 @@ export default function InscriptionPage() {
   const [error, setError] = useState("");
   const [devCode, setDevCode] = useState("");
 
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
   // ── 18+ check client-side ─────────────────────────────────────
   function isAdultFront(dob: string): boolean {
     if (!dob) return false;
@@ -35,9 +37,14 @@ export default function InscriptionPage() {
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!target.trim()) { setError(`Veuillez entrer votre ${targetType === "phone" ? "numéro de téléphone" : "adresse email"}.`); return; }
     if (!dateOfBirth) { setError("Veuillez entrer votre date de naissance."); return; }
     if (!isAdultFront(dateOfBirth)) {
       setError("Désolé, Meet Me Club est réservé aux personnes de 18 ans et plus. 🔞");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("Vous devez obligatoirement cocher la case pour accepter les conditions d'utilisation et la politique de confidentialité.");
       return;
     }
     setLoading(true);
@@ -156,6 +163,21 @@ export default function InscriptionPage() {
             </label>
             <input id="dob" type="date" className="input" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={maxDob} required />
             <p style={{ fontSize: "12px", color: "var(--color-gray-400)" }}>🔒 Votre âge est vérifié pour garantir la sécurité de tous.</p>
+          </div>
+
+          <div style={{ marginBottom: "22px" }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "13px", color: "#334155", cursor: "pointer", lineHeight: 1.4 }}>
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                style={{ width: "18px", height: "18px", marginTop: "2px", accentColor: "#0B2E6B", cursor: "pointer" }}
+                required
+              />
+              <span>
+                J&apos;ai au moins 18 ans et j&apos;accepte expressément les <strong>Conditions Générales d&apos;Utilisation</strong> et la Politique de Confidentialité de Meet Me Club Togo. *
+              </span>
+            </label>
           </div>
 
           <button type="submit" id="btn-send-otp" className={`btn btn-primary${loading ? " btn-loading" : ""}`} style={{ width: "100%" }} disabled={loading}>

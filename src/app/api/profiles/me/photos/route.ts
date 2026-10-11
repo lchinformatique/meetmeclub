@@ -58,12 +58,16 @@ export async function POST(request: NextRequest) {
       const file = formData.get("file") as File | null;
       if (!file) return Response.json({ error: "Aucun fichier fourni." }, { status: 400 });
 
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+      const allowedTypes = ["image/jpeg", "image/png"];
       if (!allowedTypes.includes(file.type)) {
-        return Response.json({ error: "Format non accepté. Utilisez JPG, PNG ou WebP." }, { status: 400 });
+        return Response.json({
+          error: "Format non accepté. Seuls les formats JPEG (.jpg, .jpeg) et PNG (.png) sont autorisés.",
+        }, { status: 400 });
       }
-      if (file.size > 10 * 1024 * 1024) {
-        return Response.json({ error: "Image trop lourde. Maximum 10 Mo." }, { status: 400 });
+      if (file.size > 5 * 1024 * 1024) {
+        return Response.json({
+          error: "Taille d'image excessive. Chaque image doit peser moins de 5 Mo.",
+        }, { status: 400 });
       }
 
       buffer = Buffer.from(await file.arrayBuffer());

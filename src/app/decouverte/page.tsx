@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import CommunityStatsWidget from "@/components/CommunityStatsWidget";
 
 interface ProfileItem {
   id: string;
@@ -147,6 +148,17 @@ export default function DecouvertePage() {
   const [myProfile, setMyProfile] = useState<any>(null);
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; targetName?: string }>({ open: false });
   const [upgrading, setUpgrading] = useState(false);
+
+  // Read category from query params (e.g. from onboarding redirection)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get("category") || params.get("goal");
+      if (cat && ["EXCHANGE", "FRIENDSHIP", "SERIOUS", "MARRIAGE", "CASUAL"].includes(cat)) {
+        setGoalFilter(cat);
+      }
+    }
+  }, []);
 
   // Load user profile & plan info
   const loadMyProfile = useCallback(async () => {
@@ -448,6 +460,11 @@ export default function DecouvertePage() {
           </div>
         </div>
 
+        {/* Live Community Statistics Banner */}
+        <div style={{ marginBottom: "20px" }}>
+          <CommunityStatsWidget compact />
+        </div>
+
         {/* Hero Section */}
         <div
           style={{
@@ -604,20 +621,30 @@ export default function DecouvertePage() {
                   }}
                 >
                   {/* Photo Container */}
-                  <div style={{ position: "relative", width: "100%", height: "280px", background: "#0F172A" }}>
+                  <div
+                    style={{ position: "relative", width: "100%", height: "280px", background: "#0F172A", userSelect: "none" }}
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
                     {mainPhoto ? (
                       <Image
                         src={mainPhoto.url}
                         alt={profile.firstName}
                         fill
-                        style={{ objectFit: "cover" }}
+                        style={{ objectFit: "cover", pointerEvents: "none", userSelect: "none" }}
                         sizes="(max-width: 768px) 100vw, 320px"
+                        draggable={false}
                       />
                     ) : (
                       <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", fontSize: "48px" }}>
                         👤
                       </div>
                     )}
+
+                    {/* Anti-download transparent protective layer */}
+                    <div style={{ position: "absolute", inset: 0, zIndex: 1 }} onContextMenu={(e) => e.preventDefault()} />
+
+                    {/* Watermark de confidentialité */}
+                    <span className="secure-watermark">Meet Me Club • Confidentiel</span>
 
                     {/* Partner Contacted Status Badge */}
                     {isAlreadyContacted && (

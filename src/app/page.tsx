@@ -4,6 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import CommunityStatsWidget from "@/components/CommunityStatsWidget";
 
 export const metadata: Metadata = {
   title: "Meet Me Club — Votre histoire commence ici",
@@ -558,8 +559,13 @@ export default function HomePage() {
         />
       </section>
 
+      {/* ── Espace Statistiques Dynamiques en Direct (Membres, Inscriptions, VIP) ── */}
+      <section style={{ maxWidth: "1060px", margin: "-45px auto 32px", paddingInline: "20px", position: "relative", zIndex: 10 }}>
+        <CommunityStatsWidget />
+      </section>
+
       {/* ── Three Pillars ─────────────────────────────────────── */}
-      <section className="section" style={{ background: "var(--color-gray-50)" }}>
+      <section className="section" style={{ background: "var(--color-gray-50)", paddingTop: "40px" }}>
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: "56px" }}>
             <h2 style={{ fontSize: "clamp(1.5rem, 4vw, 2.5rem)", marginBottom: "12px" }}>

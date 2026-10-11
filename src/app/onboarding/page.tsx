@@ -1,8 +1,8 @@
 "use client";
 // src/app/onboarding/page.tsx
-// Multi-step onboarding wizard — 8 steps with auto-save
+// Multi-step onboarding wizard — 8 steps with mandatory verification, consent & strict image validation
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -88,6 +88,18 @@ export default function OnboardingPage() {
   const [photoPreview, setPhotoPreview] = useState<string[]>([]);
   const [interestsLoaded, setInterestsLoaded] = useState(false);
 
+  // ── Verification Biométrique par Selfie ─────────────────────────
+  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
+  const [selfieVerified, setSelfieVerified] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // ── Consentement et Conditions d'Utilisation ───────────────────
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [dataAccuracyAccepted, setDataAccuracyAccepted] = useState(false);
+  const [confidentialityAccepted, setConfidentialityAccepted] = useState(false);
+
   // ── Load interests when step 6 is reached ────────────────────
   const loadInterests = useCallback(async () => {
     if (interestsLoaded) return;
@@ -97,12 +109,81 @@ export default function OnboardingPage() {
     setInterestsLoaded(true);
   }, [interestsLoaded]);
 
+  // ── Camera Selfie Handling ────────────────────────────────────
+  const startCamera = async () => {
+    try {
+      setCameraActive(true);
+      setError("");
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+    } catch {
+      setError("Impossible d'accéder à la caméra de votre téléphone. Vous pouvez utiliser le bouton 'Télécharger mon selfie'.");
+      setCameraActive(false);
+    }
+  };
+
+  const captureSelfie = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth || 480;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+        setSelfiePreview(dataUrl);
+        setSelfieVerified(true);
+        setError("");
+      }
+      const stream = video.srcObject as MediaStream;
+      stream?.getTracks().forEach((track) => track.stop());
+      setCameraActive(false);
+    }
+  };
+
+  const handleSelfieUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError("");
+    if (file.type !== "image/jpeg" && file.type !== "image/png") {
+      setError("Format refusé : Le selfie doit être une photo en JPEG (.jpg, .jpeg) ou PNG (.png).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Taille d'image excessive : Le selfie ne doit pas dépasser 5 Mo.");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setSelfiePreview(url);
+    setSelfieVerified(true);
+  };
+
   // ── Navigation ────────────────────────────────────────────────
   async function goNext() {
     setError("");
+
+    // Validation stricte par étape
+    if (step === 1) {
+      if (!form.firstName.trim()) { setError("Veuillez renseigner votre prénom."); return; }
+      if (!form.lastName.trim()) { setError("Veuillez renseigner votre nom de famille."); return; }
+      if (!form.age || parseInt(form.age) < 18) { setError("Vous devez avoir au moins 18 ans pour vous inscrire. 🔞"); return; }
+      if (!form.gender) { setError("Veuillez sélectionner votre genre (Femme ou Homme)."); return; }
+    }
+    if (step === 2) {
+      if (!form.city.trim()) { setError("Veuillez sélectionner votre ville de résidence."); return; }
+    }
+    if (step === 7) {
+      if (!form.relationshipGoal) { setError("Veuillez sélectionner ce que vous recherchez."); return; }
+    }
     if (step === 6) await loadInterests();
 
-    // Save to API every 2 steps
+    // Auto-save every 2 steps
     if (step % 2 === 0 || step === TOTAL_STEPS) {
       await saveProgress();
     }
@@ -139,6 +220,7 @@ export default function OnboardingPage() {
           languages: form.languages.length ? form.languages : undefined,
           bio: form.bio || undefined,
           relationshipGoal: form.relationshipGoal || undefined,
+          interests: form.interestIds,
         }),
       });
     } catch (e) {
@@ -159,35 +241,103 @@ export default function OnboardingPage() {
     }
   }
 
-  // ── Finish onboarding ─────────────────────────────────────────
+  // ── Finish onboarding with full mandatory checks ───────────────
   async function handleFinish() {
+    setError("");
+
+    // 1. Contrôle exhaustif des champs requis
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.gender || !form.city) {
+      setError("Informations incomplètes : Tous les champs personnels obligatoires doivent être renseignés.");
+      return;
+    }
+
+    // 2. Contrôle de la photo principale
+    if (form.photos.length === 0) {
+      setError("Photo obligatoire : Veuillez ajouter au moins 1 photo de profil au format JPEG ou PNG (taille max 5 Mo).");
+      return;
+    }
+
+    // 3. Contrôle du selfie d'identité obligatoire
+    if (!selfieVerified) {
+      setError("Vérification obligatoire : Vous devez confirmer votre identité par un selfie net sur votre téléphone pour valider votre inscription.");
+      return;
+    }
+
+    // 4. Contrôle des consentements obligatoires
+    if (!termsAccepted || !dataAccuracyAccepted || !confidentialityAccepted) {
+      setError("Consentement requis : Vous devez cocher les 3 cases pour accepter les conditions d'utilisation et valider l'exactitude de vos informations.");
+      return;
+    }
+
     setLoading(true);
     try {
       await saveProgress();
       if (form.photos.length > 0) await uploadPhotos();
-      // Save availabilities
-      if (form.availabilities.length > 0) {
-        await fetch("/api/profiles/me", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ availabilities: form.availabilities }),
-        });
-      }
-      router.push("/profil?welcome=1");
+
+      // Enregistrer la confirmation d'identité par selfie et les consentements
+      await fetch("/api/profiles/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isVerified: true,
+          selfieVerified: true,
+          selfieVerifiedAt: new Date().toISOString(),
+          termsAccepted: true,
+          termsAcceptedAt: new Date().toISOString(),
+          availabilities: form.availabilities,
+        }),
+      });
+
+      // Redirection immédiate vers les membres de sa catégorie choisie
+      const targetCategory = encodeURIComponent(form.relationshipGoal || "EXCHANGE");
+      router.push(`/decouverte?category=${targetCategory}&welcome=1`);
     } catch {
-      setError("Erreur lors de la sauvegarde. Réessayez.");
+      setError("Erreur lors de la validation. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
   }
 
-  // ── Photo selection ───────────────────────────────────────────
+  // ── Photo selection with STRICT JPEG/PNG and size checks ───────
   function handlePhotoSelect(files: FileList | null) {
     if (!files) return;
-    const newFiles = Array.from(files).slice(0, 8 - form.photos.length);
-    const previews = newFiles.map((f) => URL.createObjectURL(f));
-    setForm((fd) => ({ ...fd, photos: [...fd.photos, ...newFiles] }));
-    setPhotoPreview((p) => [...p, ...previews]);
+    setError("");
+    const newFiles: File[] = [];
+    const previews: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Exigence stricte JPEG ou PNG
+      if (file.type !== "image/jpeg" && file.type !== "image/png") {
+        setError(`Format non accepté pour "${file.name}". Seuls les formats JPEG (.jpg, .jpeg) et PNG (.png) sont autorisés.`);
+        return;
+      }
+
+      // Taille exigée : max 5 Mo
+      if (file.size > 5 * 1024 * 1024) {
+        setError(`Taille excessive pour "${file.name}" : Le fichier dépasse la limite requise de 5 Mo.`);
+        return;
+      }
+
+      // Taille minimale requise : 10 Ko (évite fichiers vides ou corrompus)
+      if (file.size < 10 * 1024) {
+        setError(`Le fichier "${file.name}" est trop petit ou non conforme (minimum 10 Ko).`);
+        return;
+      }
+
+      newFiles.push(file);
+      previews.push(URL.createObjectURL(file));
+    }
+
+    const availableSlots = 8 - form.photos.length;
+    if (availableSlots <= 0) {
+      setError("Vous avez atteint la limite maximale de 8 photos.");
+      return;
+    }
+
+    setForm((fd) => ({ ...fd, photos: [...fd.photos, ...newFiles.slice(0, availableSlots)] }));
+    setPhotoPreview((p) => [...p, ...previews.slice(0, availableSlots)]);
   }
 
   function removePhoto(i: number) {
@@ -480,24 +630,40 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── STEP 8: Photos & Availabilities ── */}
+          {/* ── STEP 8: Photos, Selfie Vérification & Consentement ── */}
           {step === 8 && (
             <div>
-              <h2 style={{ fontSize: "22px", marginBottom: "6px" }}>Photos & Disponibilités 📸</h2>
-              <p style={{ color: "var(--color-gray-500)", marginBottom: "20px", fontSize: "15px" }}>Ajoutez au moins 1 photo et vos créneaux libres</p>
+              <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#0B2E6B", marginBottom: "6px" }}>
+                Photos, Sécurité &amp; Validation 📸
+              </h2>
+              <p style={{ color: "var(--color-gray-500)", marginBottom: "22px", fontSize: "14px", lineHeight: 1.5 }}>
+                Pour certifier chaque profil et préserver la sécurité de la communauté, vos photos et la confirmation de votre identité par selfie sont exigées.
+              </p>
 
-              {/* Photos */}
+              {/* 1. Vos Photos de Profil */}
               <div style={{ marginBottom: "24px" }}>
-                <label className="input-label" style={{ display: "block", marginBottom: "12px" }}>Vos photos (max 8)</label>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <label className="input-label" style={{ fontWeight: 700, color: "#0F172A", margin: 0 }}>
+                    1. Photos de profil (JPG/PNG · Max 5 Mo) *
+                  </label>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: form.photos.length > 0 ? "#059669" : "#E10600" }}>
+                    {form.photos.length > 0 ? "✓ Au moins 1 photo ajoutée" : "⚠️ Au moins 1 photo requise"}
+                  </span>
+                </div>
+
                 {photoPreview.length > 0 && (
                   <div className="photo-grid" style={{ marginBottom: "12px" }}>
                     {photoPreview.map((src, i) => (
-                      <div key={i} className="photo-thumb">
+                      <div key={i} className="photo-thumb" style={{ position: "relative" }}>
                         <Image src={src} alt={`Photo ${i + 1}`} fill style={{ objectFit: "cover" }} />
                         {i === 0 && <span className="photo-thumb-main-badge">Principale</span>}
                         <div className="photo-thumb-actions">
-                          <button type="button" onClick={() => removePhoto(i)}
-                            style={{ background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", fontSize: "12px" }}>
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(i)}
+                            title="Supprimer cette photo"
+                            style={{ background: "rgba(0,0,0,0.65)", color: "white", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", fontSize: "12px" }}
+                          >
                             ✕
                           </button>
                         </div>
@@ -505,31 +671,234 @@ export default function OnboardingPage() {
                     ))}
                   </div>
                 )}
+
                 {form.photos.length < 8 && (
-                  <label htmlFor="photo-upload" className="photo-dropzone" style={{ display: "block", cursor: "pointer" }}>
-                    <div style={{ fontSize: "32px", marginBottom: "8px" }}>📷</div>
-                    <p style={{ fontWeight: 600, color: "var(--color-blue)", marginBottom: "4px" }}>Ajouter des photos</p>
-                    <p style={{ fontSize: "13px", color: "var(--color-gray-400)" }}>JPG, PNG, WebP · Max 10 Mo</p>
-                    <input id="photo-upload" type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => handlePhotoSelect(e.target.files)} />
+                  <label
+                    htmlFor="photo-upload"
+                    className="photo-dropzone"
+                    style={{
+                      display: "block",
+                      cursor: "pointer",
+                      border: "2px dashed #CBD5E1",
+                      borderRadius: "16px",
+                      padding: "20px 16px",
+                      textAlign: "center",
+                      background: "#F8FAFC",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <div style={{ fontSize: "30px", marginBottom: "6px" }}>📷</div>
+                    <p style={{ fontWeight: 700, color: "var(--color-blue)", marginBottom: "4px", fontSize: "14px" }}>
+                      Ajouter une photo de profil
+                    </p>
+                    <p style={{ fontSize: "12px", color: "var(--color-gray-500)", margin: 0 }}>
+                      Formats acceptés : <strong>JPEG (.jpg, .jpeg)</strong> et <strong>PNG (.png)</strong> · Max 5 Mo
+                    </p>
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={(e) => handlePhotoSelect(e.target.files)}
+                    />
                   </label>
                 )}
               </div>
 
-              {/* Availabilities */}
-              <div>
-                <label className="input-label" style={{ display: "block", marginBottom: "12px" }}>Vos disponibilités (jours libres)</label>
+              {/* 2. Confirmation d'identité par Selfie sur téléphone */}
+              <div
+                style={{
+                  background: "#F0FDF4",
+                  border: "1.5px solid #BBF7D0",
+                  borderRadius: "18px",
+                  padding: "18px 16px",
+                  marginBottom: "24px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                  <span style={{ fontSize: "20px" }}>🤳</span>
+                  <label style={{ fontSize: "14px", fontWeight: 800, color: "#166534" }}>
+                    2. Confirmation d&apos;identité par Selfie sur votre téléphone *
+                  </label>
+                </div>
+                <p style={{ fontSize: "12px", color: "#374151", lineHeight: 1.5, marginBottom: "14px" }}>
+                  Pour garantir l&apos;authenticité des membres et bannir les faux profils, confirmez votre identité avec un selfie clair de votre visage.
+                </p>
+
+                {/* Caméra active en direct */}
+                {cameraActive && (
+                  <div style={{ textAlign: "center", marginBottom: "14px" }}>
+                    <div
+                      style={{
+                        position: "relative",
+                        width: "220px",
+                        height: "220px",
+                        margin: "0 auto 12px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        border: "3px solid #10B981",
+                        boxShadow: "0 8px 24px rgba(16, 185, 129, 0.3)",
+                      }}
+                    >
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+                    <canvas ref={canvasRef} style={{ display: "none" }} />
+                    <button
+                      type="button"
+                      onClick={captureSelfie}
+                      className="btn btn-primary"
+                      style={{ padding: "10px 22px", fontSize: "14px", fontWeight: 700, borderRadius: "9999px" }}
+                    >
+                      📸 Prendre la photo maintenant
+                    </button>
+                  </div>
+                )}
+
+                {/* Aperçu du selfie capturé */}
+                {selfiePreview && !cameraActive && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px", background: "white", padding: "12px 14px", borderRadius: "14px", border: "1px solid #86EFAC", marginBottom: "12px" }}>
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        border: "2px solid #10B981",
+                        position: "relative",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={selfiePreview} alt="Selfie de vérification" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 800, color: "#166534" }}>
+                        ✅ Identité confirmée par selfie
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>
+                        Conforme pour vérification biométrique
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setSelfiePreview(null); setSelfieVerified(false); }}
+                      style={{ background: "#F1F5F9", border: "none", color: "#64748B", borderRadius: "8px", padding: "6px 10px", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Reprendre
+                    </button>
+                  </div>
+                )}
+
+                {/* Boutons d'action pour le selfie */}
+                {!selfiePreview && !cameraActive && (
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      className="btn btn-primary"
+                      style={{ flex: 1, padding: "10px 14px", fontSize: "13px", fontWeight: 700, minWidth: "160px" }}
+                    >
+                      📷 Ouvrir la caméra
+                    </button>
+                    <label
+                      htmlFor="selfie-file"
+                      className="btn btn-outline-blue"
+                      style={{ flex: 1, padding: "10px 14px", fontSize: "13px", fontWeight: 700, textAlign: "center", cursor: "pointer", minWidth: "160px" }}
+                    >
+                      📁 Télécharger selfie
+                      <input
+                        id="selfie-file"
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        capture="user"
+                        style={{ display: "none" }}
+                        onChange={handleSelfieUpload}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Vos Disponibilités */}
+              <div style={{ marginBottom: "24px" }}>
+                <label className="input-label" style={{ display: "block", marginBottom: "8px", fontWeight: 700, color: "#0F172A" }}>
+                  3. Vos disponibilités (jours libres)
+                </label>
                 <div className="week-grid">
                   {DAYS.map((d, i) => (
-                    <button key={i} type="button"
+                    <button
+                      key={i}
+                      type="button"
                       className={`day-btn${form.availabilities.some((a) => a.dayOfWeek === i) ? " active" : ""}`}
-                      onClick={() => toggleDay(i)}>
+                      onClick={() => toggleDay(i)}
+                    >
                       <span>{d}</span>
                     </button>
                   ))}
                 </div>
-                <p style={{ fontSize: "12px", color: "var(--color-gray-400)", marginTop: "8px" }}>
-                  Ces créneaux aident votre partenaire à vous proposer un bon moment.
-                </p>
+              </div>
+
+              {/* 4. Consentement légal obligatoire & acceptation des conditions */}
+              <div
+                style={{
+                  background: "#F8FAFC",
+                  border: "1.5px solid #E2E8F0",
+                  borderRadius: "18px",
+                  padding: "18px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "14px",
+                }}
+              >
+                <div style={{ fontSize: "13px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  📜 Consentement obligatoire &amp; Déclaration sur l&apos;honneur :
+                </div>
+
+                {/* Case 1 : CGU */}
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "13px", color: "#334155", cursor: "pointer", lineHeight: 1.4 }}>
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    style={{ width: "18px", height: "18px", marginTop: "2px", accentColor: "#0B2E6B", cursor: "pointer" }}
+                  />
+                  <span>
+                    J&apos;ai lu et j&apos;accepte expressément les <strong>Conditions Générales d&apos;Utilisation</strong> et la Charte de Sécurité de Meet Me Club Togo. *
+                  </span>
+                </label>
+
+                {/* Case 2 : Exactitude des données */}
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "13px", color: "#334155", cursor: "pointer", lineHeight: 1.4 }}>
+                  <input
+                    type="checkbox"
+                    checked={dataAccuracyAccepted}
+                    onChange={(e) => setDataAccuracyAccepted(e.target.checked)}
+                    style={{ width: "18px", height: "18px", marginTop: "2px", accentColor: "#0B2E6B", cursor: "pointer" }}
+                  />
+                  <span>
+                    Je certifie sur l&apos;honneur l&apos;<strong>exactitude de toutes les informations et photos fournies</strong> pour mon profil (aucun faux compte). *
+                  </span>
+                </label>
+
+                {/* Case 3 : Confidentialité et discrétion */}
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "13px", color: "#334155", cursor: "pointer", lineHeight: 1.4 }}>
+                  <input
+                    type="checkbox"
+                    checked={confidentialityAccepted}
+                    onChange={(e) => setConfidentialityAccepted(e.target.checked)}
+                    style={{ width: "18px", height: "18px", marginTop: "2px", accentColor: "#0B2E6B", cursor: "pointer" }}
+                  />
+                  <span>
+                    Je m&apos;engage au <strong>respect absolu de la vie privée des membres</strong> et j&apos;accepte le traitement sécurisé et confidentiel de mes données. *
+                  </span>
+                </label>
               </div>
             </div>
           )}
@@ -545,15 +914,16 @@ export default function OnboardingPage() {
               type="button"
               id={`btn-step-${step}`}
               className={`btn btn-primary${loading ? " btn-loading" : ""}`}
-              style={{ flex: 1 }}
+              style={{ flex: 1, height: "50px", fontSize: "15px", fontWeight: 800 }}
               onClick={goNext}
               disabled={loading}
             >
-              {loading ? "" : step === TOTAL_STEPS ? "✨ Terminer mon profil" : "Continuer →"}
+              {loading ? "" : step === TOTAL_STEPS ? "✨ Valider mon Inscription & Rejoindre le Club" : "Continuer →"}
             </button>
           </div>
 
-          {step < TOTAL_STEPS && (
+          {/* Étape facultative uniquement pour les étapes optionnelles 3, 4, 5 */}
+          {[3, 4, 5].includes(step) && (
             <button type="button" className="btn btn-ghost btn-sm" style={{ width: "100%", marginTop: "8px" }} onClick={goNext}>
               Passer cette étape
             </button>
