@@ -138,29 +138,6 @@ export default function CustomerSupportWidget() {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-end" }}>
           {/* 1. Bouton Assistant WhatsApp avec Icône Chat */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {hoveredButton === "whatsapp" && (
-              <div
-                style={{
-                  background: "white",
-                  padding: "5px 12px",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
-                  border: "1px solid #E2E8F0",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#166534",
-                  whiteSpace: "nowrap",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                <span>Assistant WhatsApp</span>
-                <span style={{ fontSize: "10px", background: "#DCFCE7", color: "#15803D", padding: "1px 6px", borderRadius: "9999px" }}>
-                  Opérationnel
-                </span>
-              </div>
-            )}
             <a
               href={WHATSAPP_URL}
               target="_blank"
@@ -224,23 +201,6 @@ export default function CustomerSupportWidget() {
 
           {/* 2. Bouton Assistant Robot Virtuel Interactif */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {hoveredButton === "robot" && (
-              <div
-                style={{
-                  background: "white",
-                  padding: "5px 12px",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
-                  border: "1px solid #E2E8F0",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#0B2559",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Assistant Robot 24h/24
-              </div>
-            )}
             <button
               type="button"
               onClick={() => setIsOpen(true)}
