@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 
 interface UserSession {
@@ -111,6 +112,14 @@ export default function Header() {
     }
   }, [loggingOut, router]);
 
+  const handleBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  }, [router]);
+
   function isActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
   }
@@ -142,35 +151,63 @@ export default function Header() {
             gap: "16px",
           }}
         >
-          {/* ── Brand Logo ──────────────────────── */}
-          <Link
-            href="/"
-            aria-label="Meet Me Club — Accueil"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              textDecoration: "none",
-              flexShrink: 0,
-            }}
-          >
-            <div
+          {/* ── Brand Logo & Mobile Back Button ── */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            {pathname !== "/" && (
+              <button
+                type="button"
+                onClick={handleBack}
+                aria-label="Retour à la page précédente"
+                className="header-mobile-back-btn"
+                style={{
+                  display: "none",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "7px 11px",
+                  borderRadius: "10px",
+                  background: "#F1F5F9",
+                  border: "1.5px solid #CBD5E1",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "all 0.18s ease",
+                  flexShrink: 0,
+                }}
+              >
+                <ChevronLeft size={18} strokeWidth={2.5} />
+                <span className="mobile-back-btn-text">Retour</span>
+              </button>
+            )}
+
+            <Link
+              href="/"
+              aria-label="Meet Me Club — Accueil"
               style={{
-                width: "44px",
-                height: "44px",
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: "2px solid rgba(11,37,89,0.10)",
-                background: "white",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                padding: "3px",
-                boxShadow: "0 2px 8px rgba(11,37,89,0.10)",
-                transition: "transform 0.2s ease",
+                gap: "12px",
+                textDecoration: "none",
+                flexShrink: 0,
               }}
-              className="header-logo-wrap"
             >
+              <div
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  border: "2px solid rgba(11,37,89,0.10)",
+                  background: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "3px",
+                  boxShadow: "0 2px 8px rgba(11,37,89,0.10)",
+                  transition: "transform 0.2s ease",
+                }}
+                className="header-logo-wrap"
+              >
               <Image
                 src="/logo.png"
                 alt="Logo Meet Me Club"
@@ -205,6 +242,7 @@ export default function Header() {
               </span>
             </div>
           </Link>
+        </div>
 
           {/* ── Desktop Navigation ───────────────── */}
           <nav
@@ -786,12 +824,13 @@ export default function Header() {
           .header-hamburger   { display: none !important; }
         }
         @media (max-width: 767px) {
-          .header-desktop-nav { display: none !important; }
-          .header-hamburger   { display: flex !important; }
-          .header-login-btn   { display: none !important; }
-          .header-join-btn    { display: none !important; }
-          .profile-btn        { display: none !important; }
-          .logout-btn         { display: none !important; }
+          .header-desktop-nav      { display: none !important; }
+          .header-hamburger        { display: flex !important; }
+          .header-login-btn        { display: none !important; }
+          .header-join-btn         { display: none !important; }
+          .profile-btn             { display: none !important; }
+          .logout-btn              { display: none !important; }
+          .header-mobile-back-btn  { display: flex !important; }
         }
 
         /* ── Logo hover ── */

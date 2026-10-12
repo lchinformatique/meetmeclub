@@ -1,55 +1,13 @@
 // src/app/(public)/layout.tsx
 // Public pages layout — shared header/footer
 
-import Link from "next/link";
-import Image from "next/image";
+import Header from "@/components/Header";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* Age Banner */}
-      <div style={{ background: "var(--color-blue)", color: "white", textAlign: "center", padding: "8px 16px", fontSize: "13px", fontWeight: 500 }}>
-        🔞 Site réservé aux adultes de 18 ans et plus
-      </div>
-
-      {/* Header */}
-      <header style={{ height: "var(--header-height)", background: "white", boxShadow: "var(--shadow-sm)", position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center" }}>
-        <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none" }}>
-            <div
-              style={{
-                width: "44px",
-                height: "44px",
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: "2px solid rgba(11, 46, 107, 0.12)",
-                background: "white",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                padding: "3px",
-              }}
-            >
-              <Image src="/logo.png" alt="Meet Me Club" width={38} height={38} style={{ objectFit: "contain" }} priority />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-              <span style={{ fontWeight: 800, fontSize: "18px", color: "var(--color-blue)", letterSpacing: "-0.3px" }}>
-                meet <span style={{ color: "var(--color-red)" }}>me</span> club
-              </span>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--color-gray-400)", letterSpacing: "1px", textTransform: "uppercase" }}>
-                Lomé · Togo
-              </span>
-            </div>
-          </Link>
-          <nav style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Link href="/tarifs" className="btn btn-ghost btn-sm">Tarifs</Link>
-            <Link href="/connexion" className="btn btn-outline-blue btn-sm">Connexion</Link>
-            <Link href="/inscription" className="btn btn-primary btn-sm">Rejoindre ❤️</Link>
-          </nav>
-        </div>
-      </header>
+      {/* Header unifié avec bouton retour mobile et navigation complète */}
+      <Header />
 
       {/* Content */}
       <main style={{ minHeight: "calc(100vh - var(--header-height) - 36px)" }}>

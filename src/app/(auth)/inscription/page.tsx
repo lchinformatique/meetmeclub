@@ -19,6 +19,7 @@ import {
   AlertCircle,
   LogIn,
   CheckCircle2,
+  ChevronLeft,
 } from "lucide-react";
 
 export default function InscriptionPage() {
@@ -154,6 +155,39 @@ export default function InscriptionPage() {
         padding: "32px 16px",
       }}
     >
+      {/* ── Bouton Retour Mobile & Desktop ── */}
+      <div style={{ width: "100%", maxWidth: "520px", marginBottom: "14px", display: "flex", justifyContent: "flex-start" }}>
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined" && window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/");
+            }
+          }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 14px",
+            borderRadius: "12px",
+            background: "white",
+            border: "1.5px solid #D8E1EF",
+            color: "#0B2559",
+            fontWeight: 700,
+            fontSize: "13px",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(11,37,89,0.06)",
+            transition: "all 0.18s ease",
+          }}
+          aria-label="Retour à la page précédente"
+        >
+          <ChevronLeft size={18} strokeWidth={2.5} />
+          <span>Retour</span>
+        </button>
+      </div>
+
       {/* ══════════════════════════════════════
           CARD CONTAINER
       ══════════════════════════════════════ */}

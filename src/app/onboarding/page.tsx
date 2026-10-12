@@ -362,6 +362,35 @@ export default function OnboardingPage() {
       {/* Header */}
       <header style={{ background: "white", boxShadow: "var(--shadow-sm)", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button
+            type="button"
+            onClick={() => {
+              if (step > 1) {
+                setStep((s) => s - 1);
+              } else if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/");
+              }
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "6px 11px",
+              borderRadius: "10px",
+              background: "#F1F5F9",
+              border: "1.5px solid #CBD5E1",
+              color: "#0B2559",
+              fontWeight: 700,
+              fontSize: "12px",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+            aria-label="Retour"
+          >
+            ← Retour
+          </button>
           <div
             style={{
               width: "36px",

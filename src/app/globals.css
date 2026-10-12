@@ -1328,6 +1328,25 @@ select,
   }
 }
 
+/* ── Bouton Retour Mobile natif dans le Header ────────────────── */
+@media (max-width: 1023px) {
+  .header-mobile-back-btn {
+    display: inline-flex !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header-mobile-back-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .header-logo-sub {
+    display: none !important;
+  }
+}
+
 @keyframes pulse-ring {
   0% {
     transform: scale(0.95);
