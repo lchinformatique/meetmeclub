@@ -1278,6 +1278,44 @@ select,
   }
 }
 
+/* ── Centrage mobile garanti pour le message des packs ────────── */
+.packs-header-center {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin-inline: auto !important;
+}
+
+.packs-header-center h2,
+.packs-header-center p {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+  }
+}
+
+.whatsapp-chat-btn-pulse {
+  animation: pulse-ring 2.5s infinite;
+}
+
 /* ── Adaptabilité des Grilles sur Tablettes & iPads ──────────── */
 @media (min-width: 640px) and (max-width: 1024px) {
   .tablet-2-cols {

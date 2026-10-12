@@ -151,12 +151,12 @@ export default function FAQPage() {
               Page de contact
             </Link>
             <a
-              href="https://wa.me/22890000000?text=Bonjour%20Meet%20Me%20Club%2C%20j%27ai%20une%20question"
+              href="https://wa.me/22890283580?text=Bonjour%20Meet%20Me%20Club%2C%20je%20souhaite%20continuer%20la%20discussion."
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"
             >
-              Écrire sur WhatsApp (+228 90 00 00 00)
+              Écrire sur WhatsApp (+228 90 28 35 80)
             </a>
           </div>
         </div>

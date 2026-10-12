@@ -52,13 +52,17 @@ export default function ContactPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* WhatsApp Card */}
             <div style={{ background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)", color: "white", padding: "30px", borderRadius: "20px", boxShadow: "0 8px 24px rgba(37, 211, 102, 0.25)" }}>
-              <div style={{ fontSize: "36px", marginBottom: "12px" }}>💬</div>
+              <div style={{ marginBottom: "12px" }}>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                </svg>
+              </div>
               <h3 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "8px" }}>Assistance Directe WhatsApp</h3>
               <p style={{ fontSize: "14px", opacity: 0.95, lineHeight: 1.6, marginBottom: "20px" }}>
                 Réponse instantanée par notre service client togolais pour toute assistance sur votre compte ou vos réservations.
               </p>
               <a
-                href="https://wa.me/22890000000?text=Bonjour%20Meet%20Me%20Club%2C%20j%27ai%20besoin%20d%27assistance"
+                href="https://wa.me/22890283580?text=Bonjour%20Meet%20Me%20Club%2C%20je%20souhaite%20continuer%20la%20discussion."
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -74,7 +78,7 @@ export default function ContactPage() {
                   textDecoration: "none",
                 }}
               >
-                <span>Ouvrir WhatsApp (+228 90 00 00 00)</span>
+                <span>Ouvrir WhatsApp (+228 90 28 35 80)</span>
                 <span>➔</span>
               </a>
             </div>

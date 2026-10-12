@@ -561,7 +561,7 @@ function NouveauRdvInner() {
                 marginBottom: "8px",
               }}
             >
-              🎁 Choisissez votre pack
+              Choisissez votre pack
             </h2>
             {selectedPartner && (
               <p

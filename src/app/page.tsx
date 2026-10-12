@@ -736,16 +736,59 @@ export default function HomePage() {
           }}
         />
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ textAlign: "center", marginBottom: "56px" }}>
-            <h2 style={{ fontSize: "clamp(1.5rem, 4vw, 2.5rem)", color: "white", marginBottom: "12px" }}>
+          <div
+            className="packs-header-center"
+            style={{
+              textAlign: "center",
+              marginBottom: "48px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              maxWidth: "760px",
+              marginInline: "auto",
+              paddingInline: "12px",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "clamp(1.65rem, 5vw, 2.5rem)",
+                fontWeight: 800,
+                color: "white",
+                marginBottom: "12px",
+                textAlign: "center",
+                width: "100%",
+                lineHeight: 1.25,
+              }}
+            >
               Choisissez votre pack
             </h2>
-            <p style={{ fontSize: "18px", color: "rgba(255,255,255,0.7)" }}>
+            <p
+              style={{
+                fontSize: "clamp(15px, 3.8vw, 18px)",
+                color: "rgba(255,255,255,0.85)",
+                textAlign: "center",
+                width: "100%",
+                maxWidth: "600px",
+                marginInline: "auto",
+                lineHeight: 1.5,
+              }}
+            >
               De la rencontre simple au dîner privatif — en FCFA
             </p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: "20px",
+              maxWidth: "980px",
+              margin: "0 auto",
+              width: "100%",
+            }}
+          >
             {PACKS.map((pack) => (
               <div
                 key={pack.name}

@@ -174,7 +174,7 @@ function ActivationContent() {
                   Besoin d'aide immédiate pour votre transaction ?
                 </p>
                 <a
-                  href="https://wa.me/22890000000?text=Bonjour%20Meet%20Me%20Club%2C%20j%27ai%20effectu%C3%A9%20un%20paiement%20Saspay%20et%20je%20souhaite%20activer%20mon%20abonnement"
+                  href="https://wa.me/22890283580?text=Bonjour%20Meet%20Me%20Club%2C%20je%20souhaite%20continuer%20la%20discussion."
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -191,7 +191,10 @@ function ActivationContent() {
                     textDecoration: "none",
                   }}
                 >
-                  <span>💬 Assistance WhatsApp directe (+228 90 00 00 00)</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                  </svg>
+                  <span>Assistance WhatsApp directe (+228 90 28 35 80)</span>
                 </a>
               </div>
             </form>
