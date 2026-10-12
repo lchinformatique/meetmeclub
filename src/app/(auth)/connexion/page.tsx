@@ -1,6 +1,6 @@
 "use client";
 // src/app/(auth)/connexion/page.tsx
-// Connexion membre par E-mail & Mot de passe — Design luxe épuré, centré, sans test toy banners
+// Login page — matches inscription white card design for brand consistency
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,6 +16,8 @@ import {
   Loader2,
   AlertCircle,
   ShieldCheck,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 
 function ConnexionForm() {
@@ -28,8 +30,8 @@ function ConnexionForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [focusField, setFocusField] = useState("");
 
-  // Connexion classique par E-mail
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -55,7 +57,7 @@ function ConnexionForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Identifiants incorrects. Veuillez vérifier votre e-mail et mot de passe.");
+        setError(data.error || "Identifiants incorrects. Vérifiez votre e-mail et mot de passe.");
         return;
       }
 
@@ -68,160 +70,373 @@ function ConnexionForm() {
     }
   }
 
+  const fieldBase: React.CSSProperties = {
+    width: "100%",
+    padding: "12px 16px 12px 44px",
+    borderRadius: "12px",
+    border: "1.5px solid #D8E1EF",
+    background: "white",
+    fontSize: "15px",
+    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+    fontWeight: 500,
+    color: "#1E2E4A",
+    outline: "none",
+    transition: "border-color 0.18s ease, box-shadow 0.18s ease",
+    WebkitAppearance: "none",
+    appearance: "none",
+  };
+
   return (
-    <div className="w-full max-w-[460px] mx-auto">
-      {/* Brand Header */}
-      <div className="text-center mb-6">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2.5 transition-transform hover:scale-105 mb-2"
-        >
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 bg-white flex items-center justify-center p-0.5 shadow-md">
-            <Image
-              src="/logo.png"
-              alt="Meet Me Club"
-              width={36}
-              height={36}
-              className="object-contain"
-              priority
-            />
-          </div>
-          <span className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            <span className="text-[#E10600]">Meet</span>
-            <span className="text-white">Me</span>
-            <span className="text-[#FF2A25]">Club</span>
-          </span>
-        </Link>
+    <div style={{ width: "100%", maxWidth: "460px" }}>
+      {/* ══════════════════════════════════════
+          CARD
+      ══════════════════════════════════════ */}
+      <div
+        style={{
+          background: "white",
+          borderRadius: "24px",
+          boxShadow: "0 4px 6px rgba(11,37,89,0.04), 0 20px 60px rgba(11,37,89,0.10)",
+          border: "1px solid #E8EDF5",
+          overflow: "hidden",
+        }}
+      >
+        {/* Top accent bar */}
+        <div
+          style={{
+            height: "4px",
+            background: "linear-gradient(90deg, #0B2559 0%, #E10600 50%, #0B2559 100%)",
+          }}
+        />
 
-        <div className="flex justify-center mt-1">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-200 text-xs font-medium">
-            <ShieldCheck size={14} className="text-emerald-400" />
-            <span>Espace Membre Certifié</span>
-          </span>
-        </div>
-
-        <h1 className="text-xl sm:text-2xl font-bold mt-3 text-white tracking-tight">
-          Bon retour parmi nous
-        </h1>
-        <p className="text-sm text-slate-300 mt-1">
-          Connectez-vous pour retrouver vos rencontres et messages
-        </p>
-      </div>
-
-      {/* Card Connexion */}
-      <div className="bg-[#0e2a63]/85 backdrop-blur-xl border border-white/15 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl">
-        {error && (
-          <div className="mb-5 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-200 text-sm flex items-start gap-2.5">
-            <AlertCircle size={18} className="text-rose-400 shrink-0 mt-0.5" />
-            <p className="leading-snug font-medium">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleEmailLogin} className="space-y-4">
-          {/* Email */}
-          <div>
-            <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">
-              Adresse E-mail
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Mail size={18} />
+        <div style={{ padding: "36px 36px 32px" }} className="connexion-inner-pad">
+          {/* Brand */}
+          <div style={{ textAlign: "center", marginBottom: "28px" }}>
+            <Link
+              href="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                textDecoration: "none",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "50%",
+                  border: "2px solid rgba(11,37,89,0.10)",
+                  overflow: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "4px",
+                  background: "white",
+                  boxShadow: "0 2px 12px rgba(11,37,89,0.12)",
+                }}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="Meet Me Club"
+                  width={40}
+                  height={40}
+                  style={{ objectFit: "contain" }}
+                  priority
+                />
               </div>
-              <input
-                type="email"
-                required
-                inputMode="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre-email@exemple.com"
-                autoComplete="email"
-                className="w-full pl-11 pr-4 py-3 sm:py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E10600] focus:border-transparent text-sm sm:text-base font-medium transition"
-              />
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2, textAlign: "left" }}>
+                <span style={{ fontWeight: 800, fontSize: "20px", color: "#0B2559", letterSpacing: "-0.3px" }}>
+                  meet <span style={{ color: "#E10600" }}>me</span> club
+                </span>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "#8B99B5", letterSpacing: "0.9px", textTransform: "uppercase" }}>
+                  Lomé · Togo
+                </span>
+              </div>
+            </Link>
+
+            <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#0B2559", margin: "0 0 6px", letterSpacing: "-0.4px" }}>
+              Bon retour parmi nous
+            </h1>
+            <p style={{ fontSize: "14px", color: "#6B7A99", margin: 0, fontWeight: 500 }}>
+              Connectez-vous pour retrouver vos rencontres et messages
+            </p>
+
+            <div style={{ marginTop: "12px", display: "flex", justifyContent: "center" }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "5px 12px",
+                  borderRadius: "100px",
+                  background: "#EFF6FF",
+                  border: "1px solid #BFDBFE",
+                  color: "#1D4ED8",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                }}
+              >
+                <ShieldCheck size={13} style={{ color: "#2563EB" }} />
+                Espace Membre Sécurisé
+              </span>
             </div>
           </div>
 
-          {/* Mot de passe */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
+          {/* Error */}
+          {error && (
+            <div
+              role="alert"
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "10px",
+                padding: "12px 14px",
+                borderRadius: "12px",
+                background: "#FFF5F5",
+                border: "1.5px solid #FECACA",
+                marginBottom: "20px",
+              }}
+            >
+              <AlertCircle size={18} style={{ color: "#E10600", flexShrink: 0, marginTop: "1px" }} />
+              <p style={{ fontSize: "13px", color: "#B91C1C", fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
+                {error}
+              </p>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleEmailLogin} noValidate>
+            {/* Email */}
+            <div style={{ marginBottom: "16px" }}>
+              <label
+                htmlFor="email"
+                style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#4B5C7A", marginBottom: "6px", letterSpacing: "0.4px", textTransform: "uppercase" }}
+              >
+                Adresse e-mail
+              </label>
+              <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)",
+                    pointerEvents: "none", color: focusField === "email" ? "#0B2559" : "#A0AABF",
+                    transition: "color 0.18s ease",
+                  }}
+                >
+                  <Mail size={17} />
+                </div>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  inputMode="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setFocusField("email")}
+                  onBlur={() => setFocusField("")}
+                  placeholder="votre-email@exemple.com"
+                  autoComplete="email"
+                  style={{
+                    ...fieldBase,
+                    ...(focusField === "email" ? { borderColor: "#0B2559", boxShadow: "0 0 0 3px rgba(11,37,89,0.09)" } : {}),
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div style={{ marginBottom: "24px" }}>
+              <label
+                htmlFor="password"
+                style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#4B5C7A", marginBottom: "6px", letterSpacing: "0.4px", textTransform: "uppercase" }}
+              >
                 Mot de passe
               </label>
-            </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Lock size={18} />
+              <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)",
+                    pointerEvents: "none", color: focusField === "pwd" ? "#0B2559" : "#A0AABF",
+                    transition: "color 0.18s ease",
+                  }}
+                >
+                  <Lock size={17} />
+                </div>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setFocusField("pwd")}
+                  onBlur={() => setFocusField("")}
+                  placeholder="Votre mot de passe"
+                  autoComplete="current-password"
+                  style={{
+                    ...fieldBase,
+                    paddingRight: "48px",
+                    ...(focusField === "pwd" ? { borderColor: "#0B2559", boxShadow: "0 0 0 3px rgba(11,37,89,0.09)" } : {}),
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Masquer" : "Afficher"}
+                  style={{
+                    position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer", color: "#A0AABF",
+                    display: "flex", alignItems: "center", padding: "4px", borderRadius: "6px",
+                  }}
+                >
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
               </div>
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Votre mot de passe"
-                autoComplete="current-password"
-                className="w-full pl-11 pr-11 py-3 sm:py-3.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E10600] focus:border-transparent text-sm sm:text-base font-medium transition"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white p-1.5 transition cursor-pointer"
-                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
             </div>
-          </div>
 
-          {/* Bouton Connexion */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 sm:py-4 px-6 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#E10600] to-[#B30500] hover:from-[#FF2A25] hover:to-[#E10600] text-white font-bold text-sm sm:text-base shadow-lg shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-200 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 mt-4"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                <span>Connexion en cours...</span>
-              </>
-            ) : (
-              <>
-                <span>Se connecter</span>
-                <LogIn size={18} />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Lien Inscription */}
-        <div className="mt-6 pt-5 border-t border-white/10 text-center">
-          <p className="text-xs sm:text-sm text-slate-300 flex items-center justify-center gap-1.5">
-            <span>Pas encore membre ?</span>
-            <Link
-              href="/inscription"
-              className="font-bold text-red-400 hover:text-red-300 underline transition inline-flex items-center gap-1"
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "15px 24px",
+                borderRadius: "14px",
+                border: "none",
+                background: loading
+                  ? "#9BA8BF"
+                  : "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+                color: "white",
+                fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: "15px",
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+                boxShadow: loading ? "none" : "0 6px 20px rgba(11,37,89,0.30)",
+                transition: "all 0.22s ease",
+              }}
+              className="connexion-submit-btn"
             >
-              <UserPlus size={14} />
-              <span>Créer un compte</span>
-            </Link>
-          </p>
+              {loading ? (
+                <>
+                  <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                  <span>Connexion en cours...</span>
+                </>
+              ) : (
+                <>
+                  <span>Se connecter</span>
+                  <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Link to inscription */}
+          <div style={{ marginTop: "22px", paddingTop: "18px", borderTop: "1px solid #EEF2FB", textAlign: "center" }}>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#6B7A99",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                flexWrap: "wrap",
+                margin: 0,
+              }}
+            >
+              <span>Pas encore membre ?</span>
+              <Link
+                href="/inscription"
+                style={{
+                  fontWeight: 700,
+                  color: "#E10600",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  borderBottom: "1.5px solid rgba(225,6,0,0.25)",
+                  paddingBottom: "1px",
+                }}
+              >
+                <UserPlus size={14} />
+                Créer un compte
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Card bottom bar */}
+        <div
+          style={{
+            background: "#F7F9FD",
+            borderTop: "1px solid #EEF2FB",
+            padding: "14px 36px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "18px",
+            flexWrap: "wrap",
+          }}
+          className="connexion-footer-pad"
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "#8B99B5", fontWeight: 600 }}>
+            <CheckCircle2 size={12} style={{ color: "#059669" }} />
+            Connexion sécurisée et chiffrée
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "#8B99B5", fontWeight: 600 }}>
+            <LogIn size={12} style={{ color: "#0B2559" }} />
+            Meet Me Club · Lomé
+          </span>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="text-center mt-6 text-xs text-slate-400 space-y-1">
-        <p className="flex items-center justify-center gap-1.5">
-          <ShieldCheck size={13} className="text-emerald-400" />
-          <span>Connexion sécurisée et confidentielle • Meet Me Club Togo</span>
-        </p>
-        <p>© 2026 Meet Me Club — Tous droits réservés</p>
-      </div>
+      <p style={{ marginTop: "20px", fontSize: "12px", color: "#A0AABF", textAlign: "center", fontWeight: 500 }}>
+        © 2026 Meet Me Club — Tous droits réservés
+      </p>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .connexion-submit-btn:hover:not(:disabled) {
+          background: linear-gradient(135deg, #163B8A 0%, #0B2559 100%) !important;
+          box-shadow: 0 8px 28px rgba(11,37,89,0.38) !important;
+          transform: translateY(-1px);
+        }
+        .connexion-submit-btn:active:not(:disabled) {
+          transform: scale(0.98) !important;
+        }
+        input:focus {
+          border-color: #0B2559 !important;
+          box-shadow: 0 0 0 3px rgba(11,37,89,0.09) !important;
+        }
+        @media (max-width: 480px) {
+          .connexion-inner-pad { padding: 24px 20px 22px !important; }
+          .connexion-footer-pad { padding: 12px 20px !important; }
+        }
+      `}</style>
     </div>
   );
 }
 
 export default function ConnexionPage() {
   return (
-    <div className="min-h-[100dvh] flex flex-col justify-center items-center px-4 py-8 sm:px-6 lg:px-8 bg-gradient-to-b from-[#071530] via-[#0B2559] to-[#071530] text-white">
-      <Suspense fallback={<div className="text-center text-white p-8">Chargement de la page...</div>}>
+    <div
+      style={{
+        minHeight: "100dvh",
+        background: "linear-gradient(160deg, #F5F7FF 0%, #EEF4FF 40%, #F9F3FF 100%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "32px 16px",
+      }}
+    >
+      <Suspense fallback={<div style={{ color: "#0B2559", padding: "40px", fontWeight: 600 }}>Chargement...</div>}>
         <ConnexionForm />
       </Suspense>
     </div>

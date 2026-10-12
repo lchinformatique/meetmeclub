@@ -1,8 +1,8 @@
 "use client";
 // src/components/Header.tsx
-// Executive, high-end application navigation header with real Lucide SVG icons and live session state
+// Professional, executive navigation — desktop horizontal nav + animated mobile hamburger drawer
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,12 +10,15 @@ import {
   Home,
   Compass,
   MessageSquare,
-  Calendar,
+  CalendarDays,
   Gem,
   User,
   LogOut,
   LogIn,
   UserPlus,
+  Menu,
+  X,
+  ChevronRight,
 } from "lucide-react";
 
 interface UserSession {
@@ -26,13 +29,25 @@ interface UserSession {
   subscriptionTier: string;
 }
 
+const navLinks = [
+  { href: "/", label: "Accueil", Icon: Home },
+  { href: "/decouverte", label: "Découvrir", Icon: Compass },
+  { href: "/messages", label: "Messages", Icon: MessageSquare, badge: 1 },
+  { href: "/rendez-vous", label: "Sorties", Icon: CalendarDays },
+  { href: "/tarifs", label: "Tarifs", Icon: Gem },
+];
+
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [sessionUser, setSessionUser] = useState<UserSession | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
+  // Fetch session on route change
   useEffect(() => {
     let isMounted = true;
     async function checkAuth() {
@@ -42,23 +57,48 @@ export default function Header() {
           const data = await res.json();
           if (isMounted && data.authenticated && data.user) {
             setSessionUser(data.user);
+          } else if (isMounted) {
+            setSessionUser(null);
           }
         }
       } catch {
-        // Silently handle error, treat as unauthenticated
+        // treat as unauthenticated
       } finally {
         if (isMounted) setLoadingUser(false);
       }
     }
     checkAuth();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [pathname]);
 
-  async function handleLogout() {
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Close on Escape key
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && mobileOpen) setMobileOpen(false);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
+
+  // Prevent body scroll when mobile menu open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  const handleLogout = useCallback(async () => {
     if (loggingOut) return;
     setLoggingOut(true);
+    setMobileOpen(false);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setSessionUser(null);
@@ -69,151 +109,721 @@ export default function Header() {
     } finally {
       setLoggingOut(false);
     }
+  }, [loggingOut, router]);
+
+  function isActive(href: string) {
+    return href === "/" ? pathname === "/" : pathname.startsWith(href);
   }
 
-  const navLinks = [
-    { href: "/", label: "Accueil", Icon: Home },
-    { href: "/decouverte", label: "Découvrir", Icon: Compass },
-    { href: "/messages", label: "Messages", Icon: MessageSquare, badge: 1 },
-    { href: "/rendez-vous", label: "Sorties", Icon: Calendar },
-    { href: "/tarifs", label: "Tarifs", Icon: Gem },
-  ];
-
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand Logo */}
-        <Link
-          href="/"
-          className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-lg"
-          aria-label="Meet Me Club Accueil"
+    <>
+      {/* ══════════════════════════════════════════
+          MAIN HEADER BAR
+      ══════════════════════════════════════════ */}
+      <header
+        className="sticky top-0 z-50 w-full"
+        style={{
+          background: "rgba(255,255,255,0.97)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderBottom: "1px solid #E8EDF5",
+          boxShadow: "0 1px 8px rgba(11,37,89,0.07)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1280px",
+            margin: "0 auto",
+            padding: "0 20px",
+            height: "68px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "16px",
+          }}
         >
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center p-0.5 bg-white transition group-hover:scale-105">
-            <Image
-              src="/logo.png"
-              alt="Logo Meet Me Club"
-              width={36}
-              height={36}
-              className="object-contain"
-              priority
-            />
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="font-extrabold text-lg tracking-tight text-[#0B2559]">
-              meet <span className="text-[#E10600]">me</span> club
-            </span>
-            <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase">
-              Lomé · Togo
-            </span>
-          </div>
-        </Link>
+          {/* ── Brand Logo ──────────────────────── */}
+          <Link
+            href="/"
+            aria-label="Meet Me Club — Accueil"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              textDecoration: "none",
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "2px solid rgba(11,37,89,0.10)",
+                background: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "3px",
+                boxShadow: "0 2px 8px rgba(11,37,89,0.10)",
+                transition: "transform 0.2s ease",
+              }}
+              className="header-logo-wrap"
+            >
+              <Image
+                src="/logo.png"
+                alt="Logo Meet Me Club"
+                width={38}
+                height={38}
+                style={{ objectFit: "contain" }}
+                priority
+              />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+              <span
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                  fontWeight: 800,
+                  fontSize: "18px",
+                  letterSpacing: "-0.3px",
+                  color: "#0B2559",
+                }}
+              >
+                meet <span style={{ color: "#E10600" }}>me</span> club
+              </span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#8B99B5",
+                  letterSpacing: "0.9px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Lomé · Togo
+              </span>
+            </div>
+          </Link>
 
-        {/* Desktop & Tablet Navigation (Hidden on narrow mobile screens where bottom nav is active) */}
+          {/* ── Desktop Navigation ───────────────── */}
+          <nav
+            aria-label="Navigation principale"
+            style={{
+              display: "none",
+              alignItems: "center",
+              gap: "4px",
+            }}
+            className="header-desktop-nav"
+          >
+            {navLinks.map((item) => {
+              const active = isActive(item.href);
+              const Icon = item.Icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "7px",
+                    padding: "8px 14px",
+                    borderRadius: "12px",
+                    textDecoration: "none",
+                    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                    fontWeight: active ? 700 : 600,
+                    fontSize: "14px",
+                    letterSpacing: "-0.1px",
+                    color: active ? "white" : "#3D4F6E",
+                    background: active ? "#0B2559" : "transparent",
+                    position: "relative",
+                    transition: "all 0.18s ease",
+                    whiteSpace: "nowrap",
+                  }}
+                  className={active ? "nav-link-active" : "nav-link"}
+                >
+                  <Icon
+                    size={16}
+                    strokeWidth={active ? 2.5 : 2}
+                    style={{ color: active ? "white" : "#7B8FAD", flexShrink: 0 }}
+                  />
+                  <span>{item.label}</span>
+                  {Boolean(item.badge) && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "6px",
+                        right: "8px",
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "50%",
+                        background: "#E10600",
+                        color: "white",
+                        fontSize: "9px",
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 0 0 2px white",
+                      }}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* ── Auth Zone ───────────────────────── */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            {!loadingUser && sessionUser ? (
+              /* Logged-in */
+              <>
+                <Link
+                  href="/profil"
+                  title="Mon profil"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "7px 12px 7px 8px",
+                    borderRadius: "100px",
+                    border: pathname.startsWith("/profil")
+                      ? "2px solid #0B2559"
+                      : "1.5px solid #D8E1EF",
+                    background: pathname.startsWith("/profil") ? "#0B2559" : "white",
+                    textDecoration: "none",
+                    transition: "all 0.18s ease",
+                  }}
+                  className="profile-btn"
+                >
+                  <div
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      background: "#EEF2FB",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {sessionUser.avatarUrl ? (
+                      <Image
+                        src={sessionUser.avatarUrl}
+                        alt={sessionUser.firstName}
+                        width={28}
+                        height={28}
+                        style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                      />
+                    ) : (
+                      <User size={14} style={{ color: "#0B2559" }} />
+                    )}
+                  </div>
+                  <span
+                    className="header-profile-name"
+                    style={{
+                      fontWeight: 700,
+                      fontSize: "13px",
+                      color: pathname.startsWith("/profil") ? "white" : "#0B2559",
+                      maxWidth: "90px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {sessionUser.firstName}
+                  </span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  title="Se déconnecter"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #FECACA",
+                    background: "transparent",
+                    color: "#DC2626",
+                    fontWeight: 600,
+                    fontSize: "13px",
+                    cursor: loggingOut ? "not-allowed" : "pointer",
+                    opacity: loggingOut ? 0.6 : 1,
+                    transition: "all 0.18s ease",
+                  }}
+                  className="logout-btn"
+                >
+                  <LogOut size={14} />
+                  <span className="header-logout-text">
+                    {loggingOut ? "..." : "Sortir"}
+                  </span>
+                </button>
+              </>
+            ) : (
+              /* Unauthenticated */
+              <>
+                <Link
+                  href="/connexion"
+                  className="header-login-btn"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 16px",
+                    borderRadius: "10px",
+                    border: "1.5px solid #D8E1EF",
+                    background: "white",
+                    color: "#0B2559",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    transition: "all 0.18s ease",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <LogIn size={14} style={{ color: "#7B8FAD" }} />
+                  <span>Connexion</span>
+                </Link>
+
+                <Link
+                  href="/inscription"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "9px 18px",
+                    borderRadius: "10px",
+                    background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 4px 14px rgba(225,6,0,0.30)",
+                    transition: "all 0.18s ease",
+                  }}
+                  className="header-join-btn"
+                >
+                  <UserPlus size={14} />
+                  <span>Rejoindre</span>
+                </Link>
+              </>
+            )}
+
+            {/* ── Hamburger (mobile only) ─────── */}
+            <button
+              ref={hamburgerRef}
+              type="button"
+              aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((v) => !v)}
+              className="header-hamburger"
+              style={{
+                display: "none",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "40px",
+                height: "40px",
+                borderRadius: "10px",
+                border: "1.5px solid #D8E1EF",
+                background: mobileOpen ? "#0B2559" : "white",
+                color: mobileOpen ? "white" : "#0B2559",
+                cursor: "pointer",
+                flexShrink: 0,
+                transition: "all 0.2s ease",
+              }}
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ══════════════════════════════════════════
+          MOBILE OVERLAY BACKDROP
+      ══════════════════════════════════════════ */}
+      <div
+        aria-hidden="true"
+        onClick={() => setMobileOpen(false)}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 40,
+          background: "rgba(7,21,48,0.55)",
+          backdropFilter: "blur(4px)",
+          opacity: mobileOpen ? 1 : 0,
+          pointerEvents: mobileOpen ? "auto" : "none",
+          transition: "opacity 0.28s ease",
+        }}
+      />
+
+      {/* ══════════════════════════════════════════
+          MOBILE SLIDE-IN DRAWER
+      ══════════════════════════════════════════ */}
+      <div
+        ref={mobileMenuRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu de navigation"
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 50,
+          width: "min(320px, 85vw)",
+          background: "white",
+          boxShadow: "-8px 0 40px rgba(11,37,89,0.18)",
+          transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.30s cubic-bezier(0.16,1,0.3,1)",
+          display: "flex",
+          flexDirection: "column",
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {/* Drawer Header */}
+        <div
+          style={{
+            padding: "20px 20px 16px",
+            borderBottom: "1px solid #EEF2FB",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Link
+            href="/"
+            onClick={() => setMobileOpen(false)}
+            style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}
+          >
+            <div
+              style={{
+                width: "38px",
+                height: "38px",
+                borderRadius: "50%",
+                border: "2px solid rgba(11,37,89,0.10)",
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "3px",
+                background: "white",
+              }}
+            >
+              <Image src="/logo.png" alt="Logo" width={32} height={32} style={{ objectFit: "contain" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+              <span style={{ fontWeight: 800, fontSize: "16px", color: "#0B2559" }}>
+                meet <span style={{ color: "#E10600" }}>me</span> club
+              </span>
+              <span style={{ fontSize: "9px", color: "#8B99B5", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+                Lomé · Togo
+              </span>
+            </div>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Fermer le menu"
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "8px",
+              border: "1.5px solid #E8EDF5",
+              background: "#F7F9FD",
+              color: "#3D4F6E",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Drawer Nav Links */}
         <nav
-          className="hidden md:flex items-center gap-1 lg:gap-2"
-          aria-label="Navigation principale"
+          aria-label="Navigation mobile"
+          style={{ flex: 1, padding: "12px 12px 0" }}
         >
           {navLinks.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+            const active = isActive(item.href);
             const Icon = item.Icon;
-
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs lg:text-sm font-semibold transition-all ${
-                  isActive
-                    ? "bg-[#0B2559] text-white shadow-sm"
-                    : "text-slate-700 hover:text-[#0B2559] hover:bg-slate-100"
-                }`}
-                aria-current={isActive ? "page" : undefined}
+                onClick={() => setMobileOpen(false)}
+                aria-current={active ? "page" : undefined}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  padding: "14px 16px",
+                  borderRadius: "14px",
+                  textDecoration: "none",
+                  marginBottom: "4px",
+                  color: active ? "white" : "#1E2E4A",
+                  background: active ? "#0B2559" : "transparent",
+                  fontWeight: active ? 700 : 600,
+                  fontSize: "15px",
+                  transition: "all 0.18s ease",
+                  position: "relative",
+                }}
+                className={active ? "" : "mobile-nav-link-hover"}
               >
-                <Icon
-                  size={16}
-                  strokeWidth={isActive ? 2.5 : 2}
-                  className={isActive ? "text-white" : "text-slate-500"}
-                />
-                <span>{item.label}</span>
+                <div
+                  style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "10px",
+                    background: active ? "rgba(255,255,255,0.15)" : "#F0F4FB",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon
+                    size={18}
+                    strokeWidth={active ? 2.5 : 2}
+                    style={{ color: active ? "white" : "#0B2559" }}
+                  />
+                </div>
+                <span style={{ flex: 1 }}>{item.label}</span>
                 {Boolean(item.badge) && (
-                  <span className="ml-0.5 px-1.5 py-0.2 text-[10px] font-black rounded-full bg-[#E10600] text-white shadow-xs">
+                  <span
+                    style={{
+                      background: "#E10600",
+                      color: "white",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      padding: "2px 7px",
+                      borderRadius: "100px",
+                    }}
+                  >
                     {item.badge}
                   </span>
+                )}
+                {!active && (
+                  <ChevronRight size={14} style={{ color: "#B0BCD4", flexShrink: 0 }} />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        {/* Auth / Account Space */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Drawer Auth Zone */}
+        <div style={{ padding: "16px 12px", borderTop: "1px solid #EEF2FB", marginTop: "8px" }}>
           {!loadingUser && sessionUser ? (
-            // Logged-in State
-            <div className="flex items-center gap-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <Link
                 href="/profil"
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs sm:text-sm font-semibold transition ${
-                  pathname.startsWith("/profil")
-                    ? "bg-[#0B2559] text-white border-[#0B2559]"
-                    : "bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100"
-                }`}
-                title="Accéder à mon profil"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "1.5px solid #D8E1EF",
+                  background: "#F7F9FD",
+                  textDecoration: "none",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                }}
               >
-                <div className="w-6 h-6 rounded-full bg-[#0B2559]/10 text-[#0B2559] flex items-center justify-center overflow-hidden">
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: "#EEF2FB",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                  }}
+                >
                   {sessionUser.avatarUrl ? (
-                    <Image
-                      src={sessionUser.avatarUrl}
-                      alt={sessionUser.firstName}
-                      width={24}
-                      height={24}
-                      className="w-full h-full object-cover"
-                    />
+                    <Image src={sessionUser.avatarUrl} alt={sessionUser.firstName} width={36} height={36} style={{ objectFit: "cover" }} />
                   ) : (
-                    <User size={14} />
+                    <User size={16} style={{ color: "#0B2559" }} />
                   )}
                 </div>
-                <span className="hidden sm:inline max-w-[100px] truncate">
-                  {sessionUser.firstName}
-                </span>
-                <span className="sm:hidden text-xs">Profil</span>
+                <div style={{ flex: 1, overflow: "hidden" }}>
+                  <div style={{ fontWeight: 700, fontSize: "14px", color: "#0B2559", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {sessionUser.firstName}
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#8B99B5", fontWeight: 500 }}>Mon profil</div>
+                </div>
               </Link>
 
               <button
                 type="button"
                 onClick={handleLogout}
                 disabled={loggingOut}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200/80 transition cursor-pointer"
-                title="Se déconnecter"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "1.5px solid #FECACA",
+                  background: "#FFF5F5",
+                  color: "#DC2626",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  cursor: loggingOut ? "not-allowed" : "pointer",
+                  opacity: loggingOut ? 0.6 : 1,
+                }}
               >
-                <LogOut size={15} />
-                <span className="hidden sm:inline">
-                  {loggingOut ? "Déconnexion..." : "Déconnexion"}
-                </span>
+                <LogOut size={16} />
+                <span>{loggingOut ? "Déconnexion..." : "Se déconnecter"}</span>
               </button>
             </div>
           ) : (
-            // Unauthenticated State
-            <div className="flex items-center gap-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <Link
                 href="/connexion"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:text-[#0B2559] hover:bg-slate-100 border border-slate-200 transition"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  padding: "13px",
+                  borderRadius: "12px",
+                  border: "1.5px solid #D8E1EF",
+                  background: "white",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "15px",
+                  textDecoration: "none",
+                }}
               >
-                <LogIn size={15} className="text-slate-500" />
+                <LogIn size={16} style={{ color: "#7B8FAD" }} />
                 <span>Connexion</span>
               </Link>
+
               <Link
                 href="/inscription"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-[#E10600] to-[#B30500] hover:from-[#FF2A25] hover:to-[#E10600] shadow-sm hover:shadow-md transition active:scale-[0.98]"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  padding: "14px",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "15px",
+                  textDecoration: "none",
+                  boxShadow: "0 4px 14px rgba(225,6,0,0.28)",
+                }}
               >
-                <UserPlus size={15} />
-                <span>Rejoindre</span>
+                <UserPlus size={16} />
+                <span>Créer un compte</span>
               </Link>
             </div>
           )}
         </div>
+
+        {/* Drawer Footer */}
+        <div
+          style={{
+            padding: "12px 20px",
+            textAlign: "center",
+            fontSize: "11px",
+            color: "#A0AABF",
+            borderTop: "1px solid #F0F4FB",
+            paddingBottom: "max(12px, env(safe-area-inset-bottom))",
+          }}
+        >
+          © 2026 Meet Me Club · Lomé, Togo
+        </div>
       </div>
-    </header>
+
+      {/* ══════════════════════════════════════════
+          RESPONSIVE STYLES (injected via style tag)
+      ══════════════════════════════════════════ */}
+      <style>{`
+        /* Desktop — show nav, hide hamburger */
+        @media (min-width: 768px) {
+          .header-desktop-nav { display: flex !important; }
+          .header-hamburger { display: none !important; }
+          .header-profile-name { display: inline !important; }
+          .header-logout-text { display: inline !important; }
+        }
+
+        /* Mobile — hide desktop nav, show hamburger */
+        @media (max-width: 767px) {
+          .header-desktop-nav { display: none !important; }
+          .header-hamburger { display: flex !important; }
+          .header-login-btn { display: none !important; }
+          .header-join-btn { display: none !important; }
+          .profile-btn { display: none !important; }
+          .logout-btn { display: none !important; }
+        }
+
+        /* Hover states */
+        .nav-link:hover {
+          background: #F0F4FB !important;
+          color: #0B2559 !important;
+        }
+        .nav-link:hover svg {
+          color: #0B2559 !important;
+        }
+        .header-login-btn:hover {
+          background: #F0F4FB !important;
+          border-color: #B0BCD4 !important;
+        }
+        .header-join-btn:hover {
+          background: linear-gradient(135deg, #FF2A25 0%, #E10600 100%) !important;
+          box-shadow: 0 6px 20px rgba(225,6,0,0.40) !important;
+          transform: translateY(-1px);
+        }
+        .header-logo-wrap:hover {
+          transform: scale(1.05);
+        }
+        .mobile-nav-link-hover:hover {
+          background: #F0F4FB !important;
+          color: #0B2559 !important;
+        }
+        .logout-btn:hover:not(:disabled) {
+          background: #FFF5F5 !important;
+        }
+        .profile-btn:hover {
+          border-color: #0B2559 !important;
+        }
+
+        /* Active scale on click */
+        .nav-link:active, .header-join-btn:active {
+          transform: scale(0.97) !important;
+        }
+
+        /* Smooth transitions */
+        * { box-sizing: border-box; }
+      `}</style>
+    </>
   );
 }
