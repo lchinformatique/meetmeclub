@@ -1,5 +1,5 @@
 // src/app/layout.tsx
-// Root layout — metadata, fonts, global providers
+// Root layout — metadata, fonts, PWA support, global providers
 
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   },
   description:
     "Meet Me Club est la plateforme de rencontres pour adultes au Togo. Rencontrez, échangez et partagez des moments inoubliables dans des lieux soigneusement sélectionnés à Lomé.",
+  applicationName: "Meet Me Club",
   keywords: ["rencontres Togo", "rencontres Lomé", "dating Afrique", "rendez-vous Lomé", "meet me club"],
   authors: [{ name: "Meet Me Club" }],
   creator: "Meet Me Club",
@@ -32,9 +33,23 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/logo.png" },
+    ],
+    shortcut: "/icons/icon-192x192.png",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/icons/icon-180x180.png", sizes: "180x180", type: "image/png" },
+      { url: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png" },
+      { url: "/icons/icon-128x128.png", sizes: "128x128", type: "image/png" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Meet Me Club",
   },
 };
 
@@ -44,13 +59,14 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#E10600" },
-    { media: "(prefers-color-scheme: dark)", color: "#0B2E6B" },
+    { media: "(prefers-color-scheme: light)", color: "#0B2559" },
+    { media: "(prefers-color-scheme: dark)", color: "#071530" },
   ],
 };
 
 import CustomerSupportWidget from "@/components/CustomerSupportWidget";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SecurityProtectionProvider from "@/components/SecurityProtectionProvider";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -63,12 +79,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap"
           rel="stylesheet"
         />
+        {/* iOS Apple Touch Icon & Standalone Web App Meta */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Meet Me Club" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="Meet Me Club" />
       </head>
       <body>
         <SecurityProtectionProvider>
           {children}
           <CustomerSupportWidget />
           <MobileBottomNav />
+          <PwaInstallPrompt />
         </SecurityProtectionProvider>
       </body>
     </html>
