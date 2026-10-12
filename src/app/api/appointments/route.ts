@@ -102,8 +102,34 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Check for existing pending/accepted appointment between same pair
+  // Check for identity and selfie verification
   try {
+    const userProfile = await (prisma as any).profile.findUnique({
+      where: { userId: session.userId },
+      select: {
+        idDocumentSubmitted: true,
+        idDocumentVerified: true,
+        selfieSubmitted: true,
+        selfieVerified: true,
+      },
+    });
+
+    const isVerified = Boolean(
+      (userProfile?.idDocumentSubmitted || userProfile?.idDocumentVerified) &&
+      (userProfile?.selfieSubmitted || userProfile?.selfieVerified)
+    );
+
+    if (!isVerified) {
+      return NextResponse.json(
+        {
+          error: "Vérification requise",
+          needsVerification: true,
+          message: "Vous devez d'abord soumettre votre pièce d'identité et votre selfie de contrôle facial avant de planifier un rendez-vous avec un partenaire.",
+        },
+        { status: 403 }
+      );
+    }
+
     const existing = await (prisma as any).appointment.findFirst({
       where: {
         OR: [

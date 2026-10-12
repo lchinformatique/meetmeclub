@@ -63,8 +63,8 @@ export async function GET(req: NextRequest) {
             photos: p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain })),
             interests: p.interests.map((pi) => ({ interest: { name: pi.interest.name, icon: pi.interest.icon || "✨" } })),
             verifications: p.verifications.map((v) => ({ type: v.type })),
-            user: p.user,
             age: calculatedAge,
+            isVerified: true,
           };
         });
 
@@ -103,10 +103,8 @@ export async function GET(req: NextRequest) {
       photos: p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain })),
       interests: p.interests.map((name) => ({ interest: { name, icon: "✨" } })),
       verifications: p.isVerified ? [{ type: "PHONE" }, { type: "SELFIE" }] : [],
-      user: {
-        dateOfBirth: new Date(Date.now() - p.age * 365.25 * 24 * 3600 * 1000).toISOString(),
-        phoneVerifiedAt: new Date().toISOString(),
-      },
+      age: p.age,
+      isVerified: p.isVerified,
     }));
 
     return NextResponse.json({ profiles: formatted });

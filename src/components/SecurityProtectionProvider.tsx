@@ -77,6 +77,16 @@ export default function SecurityProtectionProvider({
           e.preventDefault();
         }
       }
+      // Windows + Shift + S or Mac Cmd + Shift + 4 / 3 (Snipping tool / Screenshot)
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        (e.key === "s" || e.key === "S" || e.key === "3" || e.key === "4")
+      ) {
+        setScreenShieldActive(true);
+        showNotice("🔒 Capture d'écran désactivée pour protéger l'image des membres.");
+        setTimeout(() => setScreenShieldActive(false), 900);
+      }
     };
 
     // 4. Intercept window blur during potential snipping tool activation
@@ -87,16 +97,32 @@ export default function SecurityProtectionProvider({
       }
     };
 
+    // 5. Intercept clipboard copy on protected elements
+    const handleCopy = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target?.tagName === "IMG" ||
+        target?.closest?.(".profile-card") ||
+        target?.closest?.(".protected-content") ||
+        target?.closest?.(".profile-photo")
+      ) {
+        e.preventDefault();
+        showNotice("🔒 Copie d'informations ou de photos désactivée par mesure de discrétion.");
+      }
+    };
+
     document.addEventListener("contextmenu", handleContextMenu);
     document.addEventListener("dragstart", handleDragStart);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
+    document.addEventListener("copy", handleCopy);
 
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("dragstart", handleDragStart);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
+      document.removeEventListener("copy", handleCopy);
     };
   }, []);
 

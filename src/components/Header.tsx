@@ -383,26 +383,27 @@ export default function Header() {
                   onClick={handleLogout}
                   disabled={loggingOut}
                   title="Se déconnecter"
+                  aria-label="Se déconnecter de votre compte"
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
-                    padding: "8px 12px",
+                    padding: "8px 14px",
                     borderRadius: "10px",
-                    border: "1.5px solid #FECACA",
-                    background: "transparent",
+                    border: "1.5px solid #FCA5A5",
+                    background: "#FEF2F2",
                     color: "#DC2626",
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: "13px",
                     cursor: loggingOut ? "not-allowed" : "pointer",
                     opacity: loggingOut ? 0.6 : 1,
                     transition: "all 0.18s ease",
                   }}
-                  className="logout-btn"
+                  className="header-logout-btn"
                 >
-                  <LogOut size={14} />
-                  <span className="header-logout-text">
-                    {loggingOut ? "..." : "Sortir"}
+                  <LogOut size={15} style={{ color: "#DC2626" }} />
+                  <span>
+                    {loggingOut ? "Déconnexion..." : "Déconnexion"}
                   </span>
                 </button>
               </>

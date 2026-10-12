@@ -122,7 +122,63 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         </div>
       )}
 
-      <div className="container" style={{ paddingBlock: "36px" }}>
+      <div className="container" style={{ paddingBlock: "28px" }}>
+        {/* ── Top Bar: Title, Security Status & Unmissable Logout Button ── */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "14px",
+            marginBottom: "24px",
+            padding: "16px 20px",
+            background: "white",
+            borderRadius: "var(--radius-lg)",
+            border: "1px solid #E2E8F0",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+              <span style={{ fontSize: "18px" }}>👋</span>
+              <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
+                Espace Membre · {profile.firstName}
+              </h1>
+              {profile.pseudo && (
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#2563EB", background: "#EFF6FF", padding: "2px 8px", borderRadius: "var(--radius-full)" }}>
+                  @{profile.pseudo}
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
+              Connecté en toute sécurité · Plan {isFree ? "Gratuit" : profile.plan}
+            </p>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <Link
+              href="/profil/securite"
+              className="btn btn-outline-blue btn-sm"
+              style={{ fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              <ShieldCheck size={15} />
+              <span>Sécurité & Pièce d&apos;identité</span>
+            </Link>
+
+            <LogoutButton
+              variant="danger"
+              label="Se déconnecter"
+              style={{
+                padding: "8px 18px",
+                fontWeight: 800,
+                fontSize: "13px",
+                boxShadow: "0 2px 8px rgba(220, 38, 38, 0.20)",
+              }}
+            />
+          </div>
+        </div>
+
         <div className="profil-layout-grid">
 
           {/* ── Left Sidebar ── */}

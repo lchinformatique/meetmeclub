@@ -48,6 +48,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
+  const { getProfileByUserId } = await import("@/lib/db-store");
+  const senderProfile = getProfileByUserId(session.userId);
+  const isIdVerified = Boolean(senderProfile?.idDocumentSubmitted || senderProfile?.idDocumentVerified);
+  const isSelfieVerified = Boolean(senderProfile?.selfieSubmitted || senderProfile?.selfieVerified);
+
+  if (!isIdVerified || !isSelfieVerified) {
+    return NextResponse.json(
+      {
+        error: "Vérification requise",
+        message: "Veuillez faire vérifier votre pièce d'identité et votre selfie de contrôle facial sur votre profil avant d'envoyer des messages.",
+        redirectUrl: "/profil/securite",
+      },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const { conversationId, body: messageBody } = body;
 

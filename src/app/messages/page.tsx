@@ -183,6 +183,7 @@ function MessagesContent() {
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const [quotaModalOpen, setQuotaModalOpen] = useState(false);
+  const [securityModalOpen, setSecurityModalOpen] = useState(false);
 
   // Video call state
   const [videoCallOpen, setVideoCallOpen] = useState(false);
@@ -295,6 +296,10 @@ function MessagesContent() {
 
   // Start Video Call
   const startVideoCall = async () => {
+    if (!isVerifiedForChat) {
+      setSecurityModalOpen(true);
+      return;
+    }
     setVideoCallOpen(true);
     try {
       if (navigator.mediaDevices?.getUserMedia) {
@@ -347,7 +352,7 @@ function MessagesContent() {
   // ── Voice Message Recording ──────────────────────────────────
   const startVoiceRecording = async () => {
     if (!isVerifiedForChat) {
-      alert("Pour envoyer des notes vocales, vous devez d'abord soumettre votre pièce d'identité et votre selfie dans votre espace profil.");
+      setSecurityModalOpen(true);
       return;
     }
     const convIndex = conversations.findIndex((c) => c.id === activeConvId);
@@ -526,7 +531,7 @@ function MessagesContent() {
     if (!draft.trim()) return;
 
     if (!isVerifiedForChat) {
-      alert("Pour commencer à envoyer des messages, vous devez d'abord soumettre votre pièce d'identité et votre selfie dans votre espace sécurité.");
+      setSecurityModalOpen(true);
       return;
     }
 
@@ -566,7 +571,7 @@ function MessagesContent() {
     if (!file) return;
 
     if (!isVerifiedForChat) {
-      alert("Pour partager des photos, veuillez d'abord soumettre votre pièce d'identité et votre selfie.");
+      setSecurityModalOpen(true);
       return;
     }
 
@@ -1819,6 +1824,158 @@ function MessagesContent() {
             >
               📞
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Security & Verification Modal (CNI + Selfie Facial) ── */}
+      {securityModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10, 20, 45, 0.82)",
+            backdropFilter: "blur(8px)",
+            zIndex: 1400,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setSecurityModalOpen(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "24px",
+              padding: "32px",
+              maxWidth: "520px",
+              width: "100%",
+              boxShadow: "0 25px 60px rgba(0,0,0,0.3)",
+              border: "1px solid #E2E8F0",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: "center", marginBottom: "22px" }}>
+              <div
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  borderRadius: "50%",
+                  background: "#FEF2F2",
+                  color: "#DC2626",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "30px",
+                  margin: "0 auto 12px",
+                  boxShadow: "0 4px 14px rgba(220, 38, 38, 0.2)",
+                }}
+              >
+                🛡️
+              </div>
+              <h2 style={{ fontSize: "21px", fontWeight: 900, color: "#0B2559", marginBottom: "8px" }}>
+                Vérification d&apos;identité obligatoire
+              </h2>
+              <p style={{ fontSize: "14px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
+                Pour garantir un espace 100% réel, sécurisé et protéger l&apos;image des membres à Lomé, vous devez certifier votre identité avant d&apos;entrer en contact avec des partenaires.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "12px",
+                  padding: "14px",
+                  borderRadius: "14px",
+                  background: "#F8FAFC",
+                  border: "1.5px solid #E2E8F0",
+                }}
+              >
+                <span style={{ fontSize: "22px" }}>🪪</span>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: "14px", color: "#0B2559" }}>
+                    Étape 1 : Pièce d&apos;identité officielle
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                    CNI, Passeport, Permis de conduire, Carte d&apos;électeur, Carte consulaire ou Carte de séjour avec photo.
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "12px",
+                  padding: "14px",
+                  borderRadius: "14px",
+                  background: "#F8FAFC",
+                  border: "1.5px solid #E2E8F0",
+                }}
+              >
+                <span style={{ fontSize: "22px" }}>📸</span>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: "14px", color: "#0B2559" }}>
+                    Étape 2 : Contrôle facial instantané (Selfie)
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                    Prenez un selfie net avec votre appareil photo montrant clairement votre visage pour confirmer votre profil.
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "12px",
+                  background: "#ECFDF5",
+                  border: "1px solid #A7F3D0",
+                  fontSize: "12px",
+                  color: "#065F46",
+                  lineHeight: 1.4,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span>🔒</span>
+                <span>Protection totale : vos documents et votre selfie restent strictement confidentiels et ne sont jamais visibles ni téléchargeables par les autres membres.</span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <Link
+                href="/profil/securite"
+                className="btn btn-primary"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  padding: "14px",
+                  fontSize: "15px",
+                  background: "#E10600",
+                  color: "white",
+                  textDecoration: "none",
+                  borderRadius: "14px",
+                  boxShadow: "0 4px 14px rgba(225, 6, 0, 0.35)",
+                }}
+              >
+                Valider mes pièces & selfie maintenant 🛡️
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSecurityModalOpen(false)}
+                className="btn btn-ghost"
+                style={{ color: "#64748B", fontSize: "13px", padding: "10px" }}
+              >
+                Plus tard
+              </button>
+            </div>
           </div>
         </div>
       )}
