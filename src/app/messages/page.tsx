@@ -181,6 +181,8 @@ function MessagesContent() {
   // Modals
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [rulesModalOpen, setRulesModalOpen] = useState(false);
+  const [quotaModalOpen, setQuotaModalOpen] = useState(false);
 
   // Video call state
   const [videoCallOpen, setVideoCallOpen] = useState(false);
@@ -268,6 +270,11 @@ function MessagesContent() {
 
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const currentMessages = messages[activeConvId] ?? [];
+  const isFreePlan = !myProfile?.plan || myProfile?.plan === "FREE";
+  const isVerifiedForChat = Boolean(
+    (myProfile?.idDocumentSubmitted || myProfile?.idDocumentVerified) &&
+    (myProfile?.selfieSubmitted || myProfile?.selfieVerified)
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -339,6 +346,16 @@ function MessagesContent() {
 
   // ── Voice Message Recording ──────────────────────────────────
   const startVoiceRecording = async () => {
+    if (!isVerifiedForChat) {
+      alert("Pour envoyer des notes vocales, vous devez d'abord soumettre votre pièce d'identité et votre selfie dans votre espace profil.");
+      return;
+    }
+    const convIndex = conversations.findIndex((c) => c.id === activeConvId);
+    if (isFreePlan && convIndex >= 3) {
+      setQuotaModalOpen(true);
+      return;
+    }
+
     setIsRecordingVoice(true);
     setVoiceRecordingSeconds(0);
     audioChunksRef.current = [];
@@ -507,6 +524,18 @@ function MessagesContent() {
   // Send Text Message
   const handleSend = useCallback(() => {
     if (!draft.trim()) return;
+
+    if (!isVerifiedForChat) {
+      alert("Pour commencer à envoyer des messages, vous devez d'abord soumettre votre pièce d'identité et votre selfie dans votre espace sécurité.");
+      return;
+    }
+
+    const convIndex = conversations.findIndex((c) => c.id === activeConvId);
+    if (isFreePlan && convIndex >= 3) {
+      setQuotaModalOpen(true);
+      return;
+    }
+
     const msg: ChatMessage = {
       id: `m-${Date.now()}`,
       senderId: ME_ID,
@@ -529,12 +558,23 @@ function MessagesContent() {
 
     setDraft("");
     inputRef.current?.focus();
-  }, [draft, activeConvId]);
+  }, [draft, activeConvId, isVerifiedForChat, isFreePlan, conversations]);
 
   // Send Photo from Device
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!isVerifiedForChat) {
+      alert("Pour partager des photos, veuillez d'abord soumettre votre pièce d'identité et votre selfie.");
+      return;
+    }
+
+    const convIndex = conversations.findIndex((c) => c.id === activeConvId);
+    if (isFreePlan && convIndex >= 3) {
+      setQuotaModalOpen(true);
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -629,7 +669,6 @@ function MessagesContent() {
 
   const currentPlan = myProfile?.plan || "FREE";
   const contactedCount = myProfile?.partnersContacted?.length || conversations.length;
-  const isFreePlan = currentPlan === "FREE";
 
   const formatTimer = (sec: number) => {
     const mins = Math.floor(sec / 60);
@@ -701,9 +740,30 @@ function MessagesContent() {
 
           {/* Sidebar Header */}
           <div style={{ padding: "16px 20px 12px", borderBottom: "1px solid #F1F5F9" }}>
-            <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", margin: "0 0 10px 0" }}>
-              Discussions
-            </h1>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+              <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+                Discussions
+              </h1>
+              {isFreePlan && (
+                <button
+                  type="button"
+                  onClick={() => setQuotaModalOpen(true)}
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    color: "#B45309",
+                    background: "#FEF3C7",
+                    border: "1px solid #FDE68A",
+                    padding: "3px 8px",
+                    borderRadius: "100px",
+                    cursor: "pointer",
+                  }}
+                  title="Plan Gratuit : 3 partenaires maximum"
+                >
+                  Plan Gratuit (3 max) ⚡
+                </button>
+              )}
+            </div>
             <input
               type="search"
               placeholder="🔍 Filtrer les conversations..."
@@ -714,12 +774,17 @@ function MessagesContent() {
 
           {/* Conversation List */}
           <div style={{ flex: 1, overflowY: "auto" }}>
-            {conversations.map((conv) => {
+            {conversations.map((conv, index) => {
               const isSelected = activeConvId === conv.id;
+              const isQuotaExceeded = isFreePlan && index >= 3;
               return (
                 <button
                   key={conv.id}
                   onClick={() => {
+                    if (isQuotaExceeded) {
+                      setQuotaModalOpen(true);
+                      return;
+                    }
                     setActiveConvId(conv.id);
                     setMobileView("chat");
                   }}
@@ -860,8 +925,31 @@ function MessagesContent() {
                 </div>
               </div>
 
-              {/* Action Buttons: Video Call & Rendez-vous */}
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              {/* Action Buttons: Video Call & Rendez-vous & Règles */}
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                {/* 📜 Règles du Chat Button */}
+                <button
+                  type="button"
+                  onClick={() => setRulesModalOpen(true)}
+                  className="btn btn-sm"
+                  style={{
+                    background: "#F1F5F9",
+                    color: "#0B2559",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid #CBD5E1",
+                    cursor: "pointer",
+                  }}
+                  title="Consulter les règles de respect et sécurité du chat"
+                >
+                  📜 Règles du Chat
+                </button>
+
                 {/* 📹 Video Call Button */}
                 <button
                   type="button"
@@ -1137,6 +1225,43 @@ function MessagesContent() {
                 </button>
               ))}
             </div>
+
+            {/* Security Verification Notice for Chat */}
+            {!isVerifiedForChat && (
+              <div
+                style={{
+                  margin: "10px 24px 0",
+                  padding: "12px 16px",
+                  background: "#FFFBEB",
+                  border: "1.5px solid #FDE68A",
+                  borderRadius: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "22px" }}>🔒</span>
+                  <div>
+                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#92400E" }}>
+                      Pièce d&apos;identité & Selfie obligatoires pour chatter
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#78350F" }}>
+                      Pour la sécurité des membres 18+ à Lomé, soumettez votre pièce et un selfie pour débloquer vos envois.
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  href="/profil/securite"
+                  className="btn btn-sm btn-outline-blue"
+                  style={{ fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap" }}
+                >
+                  Soumettre mes pièces 🪪
+                </Link>
+              </div>
+            )}
 
             {/* Chat Input Bar: Photo, GPS, Audio Voice Notes & Text */}
             <div style={{ padding: "14px 24px", background: "white", borderTop: "1px solid #E2E8F0" }}>
@@ -1694,6 +1819,266 @@ function MessagesContent() {
             >
               📞
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Règles du Chat Modal ─────────────────────────────── */}
+      {rulesModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10, 20, 45, 0.75)",
+            backdropFilter: "blur(6px)",
+            zIndex: 1300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setRulesModalOpen(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "24px",
+              padding: "32px",
+              maxWidth: "520px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 25px 60px rgba(0,0,0,0.25)",
+              border: "1px solid #E2E8F0",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+              <span style={{ fontSize: "28px" }}>📜</span>
+              <div>
+                <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
+                  Règles d&apos;or du Chat
+                </h2>
+                <p style={{ fontSize: "12px", color: "#64748B", margin: 0 }}>
+                  Meet Me Club Lomé · Rencontres réelles & sécurisées
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "24px" }}>
+              {[
+                {
+                  icon: "🤝",
+                  title: "1. Respect & Courtoisie absolue",
+                  desc: "Zéro tolérance pour les insultes, harcèlement ou propos déplacés. Chaque membre mérite bienveillance et considération.",
+                },
+                {
+                  icon: "🔞",
+                  title: "2. Membres Majeurs & Profils Réels",
+                  desc: "La plateforme est strictement réservée aux 18+. La soumission de votre pièce d'identité et selfie garantit un club 100% authentique.",
+                },
+                {
+                  icon: "🛡️",
+                  title: "3. Sécurité des Sorties à Lomé",
+                  desc: "Organisez vos premiers rendez-vous uniquement dans des lieux publics, cafés ou chez nos établissements partenaires certifiés MMC.",
+                },
+                {
+                  icon: "🚫",
+                  title: "4. Zéro Demande d'Argent",
+                  desc: "N'envoyez et ne demandez jamais d'argent par T-Money, Flooz ou virement. Tout membre demandant de l'argent doit être signalé immédiatement.",
+                },
+                {
+                  icon: "🔒",
+                  title: "5. Confidentialité & Discrétion",
+                  desc: "Ne partagez jamais vos mots de passe ou informations sensibles. Vos échanges restent privés.",
+                },
+              ].map((r, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "12px",
+                    padding: "12px 14px",
+                    borderRadius: "12px",
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                  }}
+                >
+                  <span style={{ fontSize: "20px" }}>{r.icon}</span>
+                  <div>
+                    <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#0B2559", margin: "0 0 2px" }}>
+                      {r.title}
+                    </h4>
+                    <p style={{ fontSize: "12px", color: "#475569", margin: 0, lineHeight: 1.4 }}>
+                      {r.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setRulesModalOpen(false)}
+              className="btn btn-primary"
+              style={{ width: "100%", justifyContent: "center", fontWeight: 800, padding: "12px" }}
+            >
+              J&apos;ai compris et j&apos;accepte les règles ✓
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Quota Plan Gratuit Modal ─────────────────────────── */}
+      {quotaModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10, 20, 45, 0.75)",
+            backdropFilter: "blur(6px)",
+            zIndex: 1300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setQuotaModalOpen(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "24px",
+              padding: "32px",
+              maxWidth: "520px",
+              width: "100%",
+              boxShadow: "0 25px 60px rgba(0,0,0,0.25)",
+              border: "1px solid #E2E8F0",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <div
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "50%",
+                  background: "#FEF3C7",
+                  color: "#D97706",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "26px",
+                  margin: "0 auto 12px",
+                }}
+              >
+                ⚡
+              </div>
+              <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "6px" }}>
+                Quota Plan Gratuit atteint (3 partenaires)
+              </h2>
+              <p style={{ fontSize: "13px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
+                Le Plan Gratuit vous permet d&apos;échanger avec 3 membres de votre catégorie. Pour contacter d&apos;autres membres sans limite, passez à un pass supérieur :
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
+              <a
+                href="https://link.saspay.me/dtpycov9i-k"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 16px",
+                  borderRadius: "14px",
+                  border: "2px solid #0B2559",
+                  background: "#F8FAFC",
+                  textDecoration: "none",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 800 }}>Pass Essentiel — 3 000 FCFA/mois</div>
+                  <div style={{ fontSize: "11px", color: "#64748B" }}>Partenaires & discussions illimités</div>
+                </div>
+                <span style={{ color: "#E10600", fontWeight: 800 }}>Activer ➤</span>
+              </a>
+
+              <a
+                href="https://link.saspay.me/xiigac37eyq"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 16px",
+                  borderRadius: "14px",
+                  border: "1.5px solid #CBD5E1",
+                  background: "white",
+                  textDecoration: "none",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 800 }}>Pass Complice — 6 000 FCFA</div>
+                  <div style={{ fontSize: "11px", color: "#64748B" }}>Accès prioritaire + 1 sortie offerte</div>
+                </div>
+                <span style={{ color: "#E10600", fontWeight: 800 }}>Activer ➤</span>
+              </a>
+
+              <a
+                href="https://link.saspay.me/ksev91xlvik"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 16px",
+                  borderRadius: "14px",
+                  border: "1.5px solid #CBD5E1",
+                  background: "white",
+                  textDecoration: "none",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 800 }}>Pass VIP — 15 000 FCFA</div>
+                  <div style={{ fontSize: "11px", color: "#64748B" }}>Conciergerie privée & sorties VIP</div>
+                </div>
+                <span style={{ color: "#E10600", fontWeight: 800 }}>Activer ➤</span>
+              </a>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+              <Link
+                href="/tarifs"
+                className="btn btn-outline-blue"
+                style={{ flex: 1, justifyContent: "center", fontWeight: 700, fontSize: "13px" }}
+              >
+                Voir tous les tarifs
+              </Link>
+              <button
+                type="button"
+                onClick={() => setQuotaModalOpen(false)}
+                className="btn btn-ghost"
+                style={{ color: "#64748B" }}
+              >
+                Fermer
+              </button>
+            </div>
           </div>
         </div>
       )}

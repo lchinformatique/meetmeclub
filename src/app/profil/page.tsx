@@ -8,7 +8,8 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { getProfileByUserId, saveProfile, PLAN_LIMITS } from "@/lib/db-store";
 import Header from "@/components/Header";
-import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight } from "lucide-react";
+import LogoutButton from "@/components/LogoutButton";
+import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Mon Profil",
@@ -23,26 +24,40 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
 
   let profile = getProfileByUserId(session.userId);
   if (!profile) {
+    let dbUser: any = null;
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      dbUser = await prisma.user.findUnique({
+        where: { id: session.userId },
+        include: { profile: true },
+      });
+    } catch (e) {
+      console.warn("Prisma user lookup warning:", e);
+    }
+
+    const fallbackFirstName = dbUser?.profile?.firstName || session.email?.split("@")[0] || "Membre";
+    const fallbackPseudo = dbUser?.profile?.pseudo || `${fallbackFirstName.toLowerCase()}_${Math.floor(100 + Math.random() * 900)}`;
+
     profile = saveProfile({
       userId: session.userId,
-      firstName: session.phone ? "Membre" : "Armand",
-      lastName: "Adzra",
-      pseudo: "Armand_MMC",
-      gender: "MALE",
-      age: 30,
-      phone: session.phone || "+22890123456",
+      firstName: fallbackFirstName,
+      lastName: "",
+      pseudo: fallbackPseudo,
+      gender: (dbUser?.profile?.gender as any) || "OTHER",
+      age: 26,
+      phone: session.phone || undefined,
       city: "Lomé",
-      neighborhood: "Bè Plage",
-      profession: "Informaticien",
-      bio: "Membre vérifié de Meet Me Club à Lomé. Ouvert aux discussions enrichissantes, à l'amitié sincère et aux belles rencontres.",
+      neighborhood: "Centre-ville",
+      profession: "Membre actif",
+      bio: "Nouveau membre sur Meet Me Club à Lomé.",
       relationshipGoal: "SERIOUS",
       plan: "FREE",
       partnersContacted: [],
       photos: [
-        { id: "p1", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80", isMain: true }
+        { id: "p1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }
       ],
-      interests: ["Technologie", "Sorties Plage", "Cafés & Lounges", "Musique"],
-      availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }, { dayOfWeek: 6, startTime: "14:00", endTime: "20:00" }],
+      interests: ["Discussions", "Sorties Lomé", "Cafés"],
+      availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
       isVerified: true,
       isVisible: true,
     });
@@ -111,9 +126,12 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                       </div>
                     )}
                   </div>
-                  <Link href="/profil/edit" className="btn btn-outline-blue btn-sm" style={{ fontWeight: 700 }}>
-                    Modifier
-                  </Link>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Link href="/profil/edit" className="btn btn-outline-blue btn-sm" style={{ fontWeight: 700 }}>
+                      Modifier
+                    </Link>
+                    <LogoutButton variant="danger" label="Déconnexion" />
+                  </div>
                 </div>
 
                 <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", marginBottom: "4px" }}>
@@ -236,6 +254,36 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   </Link>
                 ))}
               </div>
+              <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #E2E8F0" }}>
+                <LogoutButton variant="danger" label="Se déconnecter de mon compte" style={{ width: "100%", justifyContent: "center" }} />
+              </div>
+            </div>
+
+            {/* Verification Card for Chat Access */}
+            <div className="card card-padded" style={{ background: "white", borderRadius: "var(--radius-xl)", border: "1.5px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: (profile.idDocumentSubmitted && profile.selfieSubmitted) ? "#DCFCE7" : "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {(profile.idDocumentVerified && profile.selfieVerified) ? <CheckCircle2 size={20} color="#16A34A" /> : <ShieldCheck size={20} color="#D97706" />}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: "14px", fontWeight: 800, color: "#0F172A", margin: 0 }}>Accès au Chat (18+)</h3>
+                  <p style={{ fontSize: "11px", color: "#64748B", margin: 0 }}>Pièce d&apos;identité & Selfie obligatoires</p>
+                </div>
+              </div>
+              <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.5, margin: "0 0 12px" }}>
+                {(profile.idDocumentVerified && profile.selfieVerified)
+                  ? "Votre identité est validée ! Vous pouvez chatter librement avec les membres selon votre plan."
+                  : (profile.idDocumentSubmitted || profile.selfieSubmitted)
+                  ? "Documents soumis ⏳. Validation en cours par notre équipe sous 24h pour activer le chat."
+                  : "Obligatoire avant de pouvoir chatter : soumettez votre pièce d'identité et un selfie de conformité."}
+              </p>
+              <Link
+                href="/profil/securite"
+                className="btn btn-sm btn-outline-blue"
+                style={{ width: "100%", textAlign: "center", justifyContent: "center", fontWeight: 700 }}
+              >
+                {(profile.idDocumentSubmitted && profile.selfieSubmitted) ? "Voir mon statut de sécurité" : "Soumettre ma pièce & mon selfie 🤳"}
+              </Link>
             </div>
           </div>
 

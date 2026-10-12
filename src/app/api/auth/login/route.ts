@@ -10,25 +10,71 @@ import { getProfileByUserId, saveProfile } from "@/lib/db-store";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password } = body;
+    const { email, login, identifier, password } = body;
+    const loginInput = (login || identifier || email || "").toString().trim();
 
-    if (!email || typeof email !== "string" || !email.includes("@")) {
+    if (!loginInput) {
       return NextResponse.json(
-        { error: "Veuillez entrer une adresse e-mail valide." },
+        { error: "Veuillez entrer votre adresse e-mail ou votre pseudo." },
         { status: 400 }
       );
     }
 
-    const cleanEmail = email.toLowerCase().trim();
+    if (!password || typeof password !== "string") {
+      return NextResponse.json(
+        { error: "Veuillez entrer votre mot de passe." },
+        { status: 400 }
+      );
+    }
 
-    // 1. Recherche dans Supabase
+    const isEmail = loginInput.includes("@");
+    const cleanEmail = isEmail ? loginInput.toLowerCase() : "";
+    const cleanPseudo = loginInput.toLowerCase();
+
+    // 1. Recherche dans Supabase / Prisma (par Email ou par Pseudo)
     let user: any = null;
     try {
-      user = await prisma.user.findFirst({
-        where: { email: cleanEmail },
-      });
+      if (isEmail) {
+        user = await prisma.user.findFirst({
+          where: { email: cleanEmail },
+          include: { profile: true },
+        });
+      } else {
+        // Recherche par Pseudo
+        user = await prisma.user.findFirst({
+          where: {
+            profile: {
+              pseudo: {
+                equals: cleanPseudo,
+                mode: "insensitive",
+              },
+            },
+          },
+          include: { profile: true },
+        });
+      }
     } catch (e) {
       console.warn("[login] Supabase find error:", e);
+    }
+
+    // Fallback: recherche dans le store local par pseudo ou email
+    if (!user) {
+      const allProfiles = (await import("@/lib/db-store")).getAllProfiles();
+      const match = allProfiles.find(
+        (p) =>
+          (p.pseudo && p.pseudo.toLowerCase() === cleanPseudo) ||
+          (p.userId && p.userId === loginInput)
+      );
+      if (match) {
+        user = {
+          id: match.userId,
+          email: `${(match.pseudo || "membre").toLowerCase()}@meetmeclub.tg`,
+          role: "MEMBER",
+          status: "ACTIVE",
+          passwordHash: null,
+          profile: match,
+        };
+      }
     }
 
     if (user) {
@@ -44,20 +90,20 @@ export async function POST(req: NextRequest) {
 
       await setSessionCookie({
         userId: user.id,
-        role: user.role,
-        status: user.status,
-        email: cleanEmail,
+        role: user.role || "MEMBER",
+        status: user.status || "ACTIVE",
+        email: user.email || cleanEmail || `${cleanPseudo}@meetmeclub.tg`,
       });
 
       return NextResponse.json({
         success: true,
-        redirect: "/decouverte",
+        redirect: "/profil",
       });
     }
 
-    // 2. Si le mot de passe est fourni mais utilisateur introuvable
+    // 2. Si l'utilisateur est introuvable
     return NextResponse.json(
-      { error: "Aucun compte trouvé avec cet email. Veuillez d'abord vous inscrire." },
+      { error: "Aucun compte trouvé avec cet identifiant (e-mail ou pseudo). Veuillez vérifier ou vous inscrire." },
       { status: 404 }
     );
   } catch (error) {

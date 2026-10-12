@@ -70,9 +70,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Mettre à jour dans le store local
+    const { saveProfile } = await import("@/lib/db-store");
+    saveProfile({
+      userId: session.userId,
+      selfieSubmitted: true,
+      selfieVerified: true,
+      updatedAt: new Date().toISOString(),
+    });
+
     return NextResponse.json({
       success: true,
-      message: "Selfie envoyé ! Notre équipe validera votre badge dans les 24h.",
+      message: "Selfie validé ! Votre badge photo certifiée est actif.",
       verification,
     });
   } catch (error) {

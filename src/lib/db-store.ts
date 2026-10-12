@@ -29,6 +29,10 @@ export interface StoredProfile {
   interests: string[];
   availabilities: { dayOfWeek: number; startTime: string; endTime: string }[];
   isVerified: boolean;
+  idDocumentSubmitted?: boolean;
+  idDocumentVerified?: boolean;
+  idDocumentUrl?: string;
+  selfieSubmitted?: boolean;
   selfieVerified?: boolean;
   selfieVerifiedAt?: string;
   termsAccepted?: boolean;

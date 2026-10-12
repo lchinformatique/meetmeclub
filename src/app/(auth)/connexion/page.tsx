@@ -38,8 +38,8 @@ function ConnexionForm() {
     e.preventDefault();
     setError("");
 
-    if (!email.trim() || !email.includes("@")) {
-      setError("Veuillez saisir une adresse e-mail valide.");
+    if (!email.trim()) {
+      setError("Veuillez saisir votre adresse e-mail ou votre pseudo.");
       return;
     }
     if (!password) {
@@ -274,13 +274,13 @@ function ConnexionForm() {
 
           {/* Form */}
           <form onSubmit={handleEmailLogin} noValidate>
-            {/* Email */}
+            {/* Email ou Pseudo */}
             <div style={{ marginBottom: "16px" }}>
               <label
                 htmlFor="email"
                 style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#4B5C7A", marginBottom: "6px", letterSpacing: "0.4px", textTransform: "uppercase" }}
               >
-                Adresse e-mail
+                Adresse e-mail ou Pseudo
               </label>
               <div style={{ position: "relative" }}>
                 <div
@@ -294,15 +294,14 @@ function ConnexionForm() {
                 </div>
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   required
-                  inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setFocusField("email")}
                   onBlur={() => setFocusField("")}
-                  placeholder="votre-email@exemple.com"
-                  autoComplete="email"
+                  placeholder="votre-email@exemple.com ou votre_pseudo"
+                  autoComplete="username"
                   style={{
                     ...fieldBase,
                     ...(focusField === "email" ? { borderColor: "#0B2559", boxShadow: "0 0 0 3px rgba(11,37,89,0.09)" } : {}),

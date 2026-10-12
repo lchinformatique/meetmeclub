@@ -166,8 +166,7 @@ export async function POST(req: NextRequest) {
     });
 
     // ── 5. Déterminer la redirection ────────────────────────────────────────
-    const redirect =
-      user.status === "ONBOARDING" ? "/onboarding" : "/decouverte";
+    const redirect = "/profil?welcome=1";
 
     return NextResponse.json({
       success: true,
