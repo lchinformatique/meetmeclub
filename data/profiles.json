@@ -1,5 +1,47 @@
 [
   {
+    "id": "prof_1791771799802",
+    "userId": "cmv4mo0ii0000utuc5mi1bj9c",
+    "firstName": "Nouveau",
+    "lastName": "",
+    "pseudo": "Nouveau",
+    "gender": "MALE",
+    "age": 28,
+    "dateOfBirth": "1998-05-15T00:00:00.000Z",
+    "city": "Lomé",
+    "neighborhood": "Centre-ville",
+    "profession": "Professionnel(le)",
+    "educationLevel": "Supérieur",
+    "relationshipStatus": "Célibataire",
+    "bio": "Nouveau membre sur Meet Me Club à Lomé.",
+    "relationshipGoal": "SERIOUS",
+    "plan": "FREE",
+    "partnersContacted": [],
+    "photos": [
+      {
+        "id": "p_cmv4mo0ii0000utuc5mi1bj9c",
+        "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
+        "isMain": true
+      }
+    ],
+    "interests": [
+      "Discussions",
+      "Sorties Lomé",
+      "Cafés"
+    ],
+    "availabilities": [
+      {
+        "dayOfWeek": 5,
+        "startTime": "18:00",
+        "endTime": "22:00"
+      }
+    ],
+    "isVerified": true,
+    "isVisible": true,
+    "createdAt": "2026-10-12T02:23:19.803Z",
+    "updatedAt": "2026-10-12T02:23:19.803Z"
+  },
+  {
     "id": "prof_1791720509080",
     "userId": "demo_user_lome",
     "firstName": "Armand",

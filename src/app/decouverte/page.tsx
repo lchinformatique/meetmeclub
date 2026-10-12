@@ -6,7 +6,9 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import Header from "@/components/Header";
 import CommunityStatsWidget from "@/components/CommunityStatsWidget";
+import { Sparkles, Crown } from "lucide-react";
 
 interface ProfileItem {
   id: string;
@@ -126,11 +128,11 @@ const SAMPLE_PROFILES: ProfileItem[] = [
 ];
 
 const GOAL_LABELS: Record<string, string> = {
-  EXCHANGE: "🤝 Échanger & Discuter",
-  FRIENDSHIP: "💛 Amitié & Partage",
-  SERIOUS: "❤️ Relation sérieuse",
-  MARRIAGE: "💍 Mariage",
-  CASUAL: "😊 Sortie conviviale",
+  EXCHANGE: "Échanger & Discuter",
+  FRIENDSHIP: "Amitié & Partage",
+  SERIOUS: "Relation sérieuse",
+  MARRIAGE: "Mariage",
+  CASUAL: "Sortie conviviale",
 };
 
 export default function DecouvertePage() {
@@ -306,68 +308,8 @@ export default function DecouvertePage() {
 
   return (
     <div style={{ minHeight: "100dvh", background: "#F8FAFC" }}>
-      {/* Member Header */}
-      <header
-        style={{
-          background: "white",
-          borderBottom: "1px solid #E2E8F0",
-          position: "sticky",
-          top: 0,
-          zIndex: 40,
-          height: "var(--header-height)",
-          display: "flex",
-          alignItems: "center",
-          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
-        }}
-      >
-        <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: "2px solid #0B2E6B",
-                background: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                padding: "2px",
-              }}
-            >
-              <Image src="/logo.png" alt="Meet Me Club" width={36} height={36} style={{ objectFit: "contain" }} priority />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-              <span style={{ fontWeight: 800, fontSize: "17px", color: "#0B2E6B" }}>
-                meet <span style={{ color: "#E10600" }}>me</span> club
-              </span>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", letterSpacing: "1px", textTransform: "uppercase" }}>
-                Lomé · Découverte
-              </span>
-            </div>
-          </Link>
-
-          <nav style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <Link href="/decouverte" className="btn btn-sm btn-primary" style={{ paddingInline: "16px" }}>
-              🔍 Découvrir
-            </Link>
-            <Link href="/messages" className="btn btn-sm btn-ghost" style={{ color: "#0F172A", fontWeight: 600 }}>
-              💬 Messages
-            </Link>
-            <Link href="/rendez-vous" className="btn btn-sm btn-ghost" style={{ color: "#0F172A", fontWeight: 600 }}>
-              📅 Rendez-vous
-            </Link>
-            <Link href="/tarifs" className="btn btn-sm btn-ghost" style={{ color: "#0B2E6B", fontWeight: 700 }}>
-              💎 Tarifs
-            </Link>
-            <Link href="/profil" className="btn btn-sm btn-outline-blue" style={{ fontWeight: 700 }}>
-              Mon Profil
-            </Link>
-          </nav>
-        </div>
-      </header>
+      {/* Standardized Member Header */}
+      <Header />
 
       {/* Main Container */}
       <main className="container" style={{ paddingBlock: "28px" }}>
@@ -399,11 +341,11 @@ export default function DecouvertePage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "22px",
+                color: "white",
                 flexShrink: 0,
               }}
             >
-              {isFreePlan ? "⭐" : "👑"}
+              {isFreePlan ? <Sparkles size={22} className="text-amber-300" /> : <Crown size={22} className="text-amber-300" />}
             </div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -438,9 +380,13 @@ export default function DecouvertePage() {
                   fontSize: "13px",
                   padding: "10px 18px",
                   borderRadius: "10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                🚀 Débloquer l'Illimité (3 000 F)
+                <Sparkles size={16} />
+                <span>Débloquer l&apos;Illimité (3 000 F CFA)</span>
               </button>
             ) : (
               <button
@@ -534,11 +480,11 @@ export default function DecouvertePage() {
               style={{ color: "#0F172A", fontWeight: 600 }}
             >
               <option value="ALL">Tous les objectifs</option>
-              <option value="EXCHANGE">🤝 Échanger & Discuter</option>
-              <option value="FRIENDSHIP">💛 Amitié & Partage</option>
-              <option value="SERIOUS">❤️ Relation sérieuse</option>
-              <option value="MARRIAGE">💍 Mariage</option>
-              <option value="CASUAL">😊 Sortie conviviale</option>
+              <option value="EXCHANGE">Échanger & Discuter</option>
+              <option value="FRIENDSHIP">Amitié & Partage</option>
+              <option value="SERIOUS">Relation sérieuse</option>
+              <option value="MARRIAGE">Mariage</option>
+              <option value="CASUAL">Sortie conviviale</option>
             </select>
 
             {/* City filter */}
@@ -584,7 +530,6 @@ export default function DecouvertePage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ background: "white", borderRadius: "16px", padding: "48px 24px", textAlign: "center", border: "1px solid #E2E8F0" }}>
-            <span style={{ fontSize: "40px" }}>🔍</span>
             <h3 style={{ fontSize: "18px", color: "#0F172A", marginBlock: "10px 4px", fontWeight: 700 }}>
               Aucun profil trouvé
             </h3>
@@ -635,8 +580,8 @@ export default function DecouvertePage() {
                         draggable={false}
                       />
                     ) : (
-                      <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", fontSize: "48px" }}>
-                        👤
+                      <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center", color: "#4B5563", fontSize: "14px", fontWeight: 600 }}>
+                        Photo non disponible
                       </div>
                     )}
 
@@ -683,7 +628,7 @@ export default function DecouvertePage() {
                         </h3>
                       </div>
                       <p style={{ fontSize: "13px", color: "#E2E8F0", marginTop: "3px", margin: 0, fontWeight: 500 }}>
-                        📍 {profile.city} {profile.neighborhood ? `· ${profile.neighborhood}` : ""}
+                        {profile.city} {profile.neighborhood ? `· ${profile.neighborhood}` : ""}
                       </p>
                     </div>
                   </div>
@@ -707,7 +652,7 @@ export default function DecouvertePage() {
                       </span>
                       {profile.profession && (
                         <span style={{ fontSize: "12px", color: "#334155", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          💼 {profile.profession}
+                          {profile.profession}
                         </span>
                       )}
                     </div>
@@ -751,7 +696,7 @@ export default function DecouvertePage() {
                           flexShrink: 0,
                         }}
                       >
-                        {likedIds.has(profile.id) ? "❤️" : "🤍"}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={likedIds.has(profile.id) ? "#E10600" : "none"} stroke={likedIds.has(profile.id) ? "#E10600" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                       </button>
 
                       {/* Échanger / Discuter button */}
@@ -907,16 +852,23 @@ export default function DecouvertePage() {
                 Voir toutes les formules (Complice 6 000 F, VIP 15 000 F)
               </Link>
 
-              {/* Instant 1-click test button */}
-              <button
-                type="button"
-                onClick={() => handleTestUpgrade("ESSENTIAL")}
-                disabled={upgrading}
-                className="btn btn-ghost"
-                style={{ width: "100%", justifyContent: "center", padding: "10px", borderRadius: "12px", fontWeight: 600, fontSize: "12px", color: "#0B2E6B" }}
+              <Link
+                href="/paiement/activation"
+                className="btn btn-primary"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  padding: "11px",
+                  borderRadius: "12px",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  background: "#E10600",
+                  borderColor: "#E10600",
+                  color: "white",
+                }}
               >
-                {upgrading ? "Activation..." : "⚡ Tester en 1-clic (Mode Test / Démo)"}
-              </button>
+                Activer via T-Money / Moov Money
+              </Link>
 
               <button
                 type="button"

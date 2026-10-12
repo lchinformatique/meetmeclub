@@ -4,7 +4,22 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import Header from "@/components/Header";
 import CommunityStatsWidget from "@/components/CommunityStatsWidget";
+import {
+  ShieldCheck,
+  CheckCircle2,
+  Heart,
+  MessageSquare,
+  Users,
+  UserCheck,
+  Search,
+  Calendar,
+  Sparkles,
+  MapPin,
+  Mail,
+  Headphones,
+} from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Meet Me Club — Votre histoire commence ici",
@@ -16,7 +31,7 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     number: "01",
-    icon: "👤",
+    Icon: UserCheck,
     title: "Créez votre profil",
     description:
       "Inscrivez-vous en quelques minutes, ajoutez vos photos et décrivez ce que vous recherchez.",
@@ -24,7 +39,7 @@ const STEPS = [
   },
   {
     number: "02",
-    icon: "🔍",
+    Icon: Search,
     title: "Découvrez des profils",
     description:
       "Parcourez des profils vérifiés et discutez librement avant de décider.",
@@ -32,7 +47,7 @@ const STEPS = [
   },
   {
     number: "03",
-    icon: "📅",
+    Icon: Calendar,
     title: "Proposez un rendez-vous",
     description:
       "Choisissez le lieu, la date et le pack. L'autre personne accepte ou contre-propose.",
@@ -40,7 +55,7 @@ const STEPS = [
   },
   {
     number: "04",
-    icon: "✨",
+    Icon: Sparkles,
     title: "Vivez le moment",
     description:
       "Retrouvez-vous dans un cadre soigné, avec table réservée et repas commandés à l'avance.",
@@ -155,10 +170,15 @@ export default function HomePage() {
           textAlign: "center",
           padding: "8px 16px",
           fontSize: "13px",
-          fontWeight: 500,
+          fontWeight: 600,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
         }}
       >
-        🔞 Site réservé aux adultes de 18 ans et plus — Accès interdit aux mineurs
+        <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+        <span>Plateforme réservée aux adultes de 18 ans et plus — Accès strictement réservé aux personnes majeures</span>
       </div>
 
       {/* ── Header ───────────────────────────────────────────── */}
@@ -386,16 +406,28 @@ export default function HomePage() {
                   marginTop: "24px",
                   display: "flex",
                   flexWrap: "wrap",
-                  gap: "14px",
+                  gap: "16px",
                   fontSize: "13px",
-                  color: "rgba(255,255,255,0.85)",
-                  fontWeight: 500,
+                  color: "rgba(255,255,255,0.9)",
+                  fontWeight: 600,
                 }}
               >
-                <span>✅ Gratuit</span>
-                <span>✅ Profils vérifiés</span>
-                <span>✅ Lieux sécurisés à Lomé</span>
-                <span>🔞 18+ uniquement</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <CheckCircle2 size={16} className="text-emerald-400" />
+                  <span>Gratuit</span>
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <CheckCircle2 size={16} className="text-emerald-400" />
+                  <span>Profils vérifiés</span>
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <MapPin size={16} className="text-red-400" />
+                  <span>Lieux certifiés à Lomé</span>
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <ShieldCheck size={16} className="text-amber-400" />
+                  <span>Membres majeurs (+18)</span>
+                </span>
               </div>
             </div>
 
@@ -579,52 +611,55 @@ export default function HomePage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "24px" }}>
             {[
               {
-                icon: "❤️",
+                Icon: Heart,
                 title: "Rencontrez",
                 description: "Des profils vérifiés, filtrés par ville, centres d'intérêt et disponibilités. Trouvez votre match avec sérieux.",
                 gradient: "var(--gradient-red)",
               },
               {
-                icon: "💬",
+                Icon: MessageSquare,
                 title: "Échangez",
                 description: "Discutez librement avant de décider. Notre chat sécurisé protège votre vie privée à chaque étape.",
                 gradient: "var(--gradient-blue)",
               },
               {
-                icon: "👥",
+                Icon: Users,
                 title: "Partagez",
                 description: "Partagez un vrai moment dans un lieu choisi, avec table réservée et commande faite à l'avance.",
                 gradient: "var(--gradient-red)",
               },
-            ].map((p) => (
-              <div
-                key={p.title}
-                className="card card-hover"
-                style={{
-                  padding: "32px 24px",
-                  textAlign: "center",
-                }}
-              >
+            ].map((p) => {
+              const IconComp = p.Icon;
+              return (
                 <div
+                  key={p.title}
+                  className="card card-hover"
                   style={{
-                    width: "72px",
-                    height: "72px",
-                    borderRadius: "var(--radius-full)",
-                    background: p.gradient,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "32px",
-                    margin: "0 auto 20px",
-                    boxShadow: "var(--shadow-red)",
+                    padding: "32px 24px",
+                    textAlign: "center",
                   }}
                 >
-                  {p.icon}
+                  <div
+                    style={{
+                      width: "72px",
+                      height: "72px",
+                      borderRadius: "var(--radius-full)",
+                      background: p.gradient,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      margin: "0 auto 20px",
+                      boxShadow: "var(--shadow-red)",
+                    }}
+                  >
+                    <IconComp size={32} strokeWidth={2.2} />
+                  </div>
+                  <h3 style={{ fontSize: "22px", marginBottom: "12px" }}>{p.title}</h3>
+                  <p style={{ color: "var(--color-gray-500)", lineHeight: 1.6 }}>{p.description}</p>
                 </div>
-                <h3 style={{ fontSize: "22px", marginBottom: "12px" }}>{p.title}</h3>
-                <p style={{ color: "var(--color-gray-500)", lineHeight: 1.6 }}>{p.description}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -645,33 +680,36 @@ export default function HomePage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "32px" }}>
-            {STEPS.map((step, i) => (
-              <div key={i} style={{ textAlign: "center" }}>
-                <div
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "var(--radius-full)",
-                    background: step.color === "var(--color-red)" ? "var(--gradient-red)" : "var(--gradient-blue)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 20px",
-                    fontSize: "28px",
-                    boxShadow: step.color === "var(--color-red)" ? "var(--shadow-red)" : "var(--shadow-blue)",
-                    position: "relative",
-                  }}
-                >
-                  <span style={{ position: "absolute", top: "-8px", right: "-8px", background: "white", color: step.color, width: "28px", height: "28px", borderRadius: "var(--radius-full)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 800, boxShadow: "var(--shadow-sm)" }}>{step.number}</span>
-                  {step.icon}
+            {STEPS.map((step, i) => {
+              const StepIcon = step.Icon;
+              return (
+                <div key={i} style={{ textAlign: "center" }}>
+                  <div
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "var(--radius-full)",
+                      background: step.color === "var(--color-red)" ? "var(--gradient-red)" : "var(--gradient-blue)",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 20px",
+                      color: "white",
+                      boxShadow: step.color === "var(--color-red)" ? "var(--shadow-red)" : "var(--shadow-blue)",
+                      position: "relative",
+                    }}
+                  >
+                    <span style={{ position: "absolute", top: "-8px", right: "-8px", background: "white", color: step.color, width: "28px", height: "28px", borderRadius: "var(--radius-full)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 800, boxShadow: "var(--shadow-sm)" }}>{step.number}</span>
+                    <StepIcon size={32} strokeWidth={2} />
+                  </div>
+                  <h3 style={{ fontSize: "18px", marginBottom: "10px" }}>{step.title}</h3>
+                  <p style={{ color: "var(--color-gray-500)", fontSize: "15px", lineHeight: 1.6 }}>
+                    {step.description}
+                  </p>
                 </div>
-                <h3 style={{ fontSize: "18px", marginBottom: "10px" }}>{step.title}</h3>
-                <p style={{ color: "var(--color-gray-500)", fontSize: "15px", lineHeight: 1.6 }}>
-                  {step.description}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div style={{ textAlign: "center", marginTop: "48px" }}>
@@ -937,171 +975,6 @@ export default function HomePage() {
   );
 }
 
-// ── Header Component ───────────────────────────────────────────
-
-function Header() {
-  return (
-    <header
-      style={{
-        height: "var(--header-height)",
-        background: "white",
-        boxShadow: "var(--shadow-sm)",
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        display: "flex",
-        alignItems: "center",
-      }}
-    >
-      <div
-        className="container"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none" }}>
-          <div
-            style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "50%",
-              overflow: "hidden",
-              border: "2px solid rgba(11, 46, 107, 0.12)",
-              background: "white",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              padding: "3px",
-            }}
-          >
-            <Image src="/logo.png" alt="Meet Me Club" width={38} height={38} style={{ objectFit: "contain" }} priority />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-            <span style={{ fontWeight: 800, fontSize: "18px", color: "var(--color-blue)", letterSpacing: "-0.3px" }}>
-              meet <span style={{ color: "var(--color-red)" }}>me</span> club
-            </span>
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "var(--color-gray-400)", letterSpacing: "1px", textTransform: "uppercase" }}>
-              Lomé · Togo
-            </span>
-          </div>
-        </Link>
-
-        {/* Nav with High-Visibility & Elegant Buttons */}
-        <nav style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Link
-            href="/decouverte"
-            className="btn btn-sm btn-ghost hidden-mobile-nav"
-            style={{
-              color: "#0F172A",
-              fontWeight: 700,
-              fontSize: "13px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "7px 12px",
-              borderRadius: "10px",
-              border: "1px solid #E2E8F0",
-              background: "#F8FAFC",
-            }}
-          >
-            🔍 Découvrir
-          </Link>
-
-          <Link
-            href="/messages"
-            className="btn btn-sm hidden-mobile-nav"
-            style={{
-              background: "linear-gradient(135deg, #0B2559 0%, #1E3A8A 100%)",
-              color: "white",
-              fontWeight: 800,
-              fontSize: "13px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "7px 12px",
-              borderRadius: "10px",
-              boxShadow: "0 2px 8px rgba(11, 37, 89, 0.25)",
-            }}
-          >
-            💬 Messages
-            <span
-              style={{
-                background: "#E10600",
-                color: "white",
-                fontSize: "10px",
-                padding: "2px 6px",
-                borderRadius: "9999px",
-                fontWeight: 900,
-              }}
-            >
-              1
-            </span>
-          </Link>
-
-          <Link
-            href="/rendez-vous"
-            className="btn btn-sm btn-ghost hidden-mobile-nav"
-            style={{
-              color: "#0F172A",
-              fontWeight: 700,
-              fontSize: "13px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "7px 12px",
-              borderRadius: "10px",
-              border: "1px solid #E2E8F0",
-              background: "#F8FAFC",
-            }}
-          >
-            📅 Sorties
-          </Link>
-
-          <Link
-            href="/tarifs"
-            className="btn btn-sm"
-            style={{
-              background: "#FEF2F2",
-              color: "#E10600",
-              border: "1.5px solid #E10600",
-              fontWeight: 800,
-              fontSize: "13px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "8px 14px",
-              borderRadius: "10px",
-            }}
-          >
-            💎 Tarifs
-          </Link>
-
-          <Link
-            href="/connexion"
-            className="btn btn-outline-blue btn-sm"
-            style={{ fontWeight: 700, padding: "8px 14px", borderRadius: "10px" }}
-          >
-            Connexion
-          </Link>
-
-          <Link
-            href="/inscription"
-            className="btn btn-primary btn-sm"
-            style={{ fontWeight: 800, padding: "8px 16px", borderRadius: "10px" }}
-          >
-            Rejoindre ❤️
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
 // ── Footer Component ───────────────────────────────────────────
 
 function Footer() {
@@ -1140,7 +1013,7 @@ function Footer() {
               </div>
             </div>
             <p style={{ fontSize: "14px", lineHeight: 1.7 }}>
-              Plus qu'une rencontre, un rendez-vous. La première plateforme de rencontres avec réservation au Togo.
+              Plus qu&apos;une rencontre, un rendez-vous. La première plateforme de rencontres avec réservation au Togo.
             </p>
           </div>
           {/* Links */}
@@ -1162,16 +1035,28 @@ function Footer() {
           </div>
           <div>
             <h4 style={{ color: "white", marginBottom: "16px", fontSize: "15px" }}>Contact & Assistance</h4>
-            <p style={{ fontSize: "14px", lineHeight: 1.8 }}>
-              <Link href="/contact" style={{ color: "white", fontWeight: 700, textDecoration: "none", display: "inline-block", marginBottom: "6px" }}>💬 Assistance & Support</Link><br />
-              📧 contact@meetmeclub.tg<br />
-              📍 Lomé, Togo
-            </p>
+            <div style={{ fontSize: "14px", lineHeight: 1.8, display: "flex", flexDirection: "column", gap: "6px" }}>
+              <Link href="/contact" style={{ color: "white", fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Headphones size={15} />
+                <span>Assistance & Support</span>
+              </Link>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Mail size={15} />
+                <span>contact@meetmeclub.tg</span>
+              </span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <MapPin size={15} />
+                <span>Lomé, Togo</span>
+              </span>
+            </div>
           </div>
         </div>
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
           <p style={{ fontSize: "13px" }}>© {new Date().getFullYear()} Meet Me Club. Tous droits réservés.</p>
-          <p style={{ fontSize: "13px" }}>🔞 Réservé aux adultes de 18 ans et plus · Lomé, Togo</p>
+          <p style={{ fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <ShieldCheck size={14} className="text-emerald-400" />
+            <span>Réservé aux adultes de 18 ans et plus · Lomé, Togo</span>
+          </p>
         </div>
       </div>
     </footer>

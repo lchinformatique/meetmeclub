@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import Header from "@/components/Header";
 
 // ── Types ─────────────────────────────────────────────────────
 interface ChatMessage {
@@ -638,148 +639,8 @@ function MessagesContent() {
 
   return (
     <div style={{ minHeight: "100dvh", background: "#F8FAFC", display: "flex", flexDirection: "column" }}>
-      {/* ── Top Header with High-Contrast Navigation ── */}
-      <header
-        style={{
-          background: "white",
-          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          height: "var(--header-height)",
-          display: "flex",
-          alignItems: "center",
-          borderBottom: "1px solid #E2E8F0",
-        }}
-      >
-        <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none" }}>
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: "2px solid #0B2559",
-                background: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "2px",
-              }}
-            >
-              <Image src="/logo.png" alt="Meet Me Club" width={36} height={36} style={{ objectFit: "contain" }} priority />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-              <span style={{ fontWeight: 800, fontSize: "17px", color: "#0B2559" }}>
-                meet <span style={{ color: "#E10600" }}>me</span> club
-              </span>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", letterSpacing: "1px", textTransform: "uppercase" }}>
-                Chat, Vocaux & Vidéo
-              </span>
-            </div>
-          </Link>
-
-          {/* Elegant & Highly Visible Top Actions */}
-          <nav style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <Link
-              href="/decouverte"
-              className="btn btn-sm btn-ghost"
-              style={{
-                color: "#0F172A",
-                fontWeight: 700,
-                fontSize: "13px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 14px",
-                borderRadius: "10px",
-                border: "1px solid #E2E8F0",
-                background: "#F8FAFC",
-              }}
-            >
-              🔍 Découvrir
-            </Link>
-
-            <Link
-              href="/messages"
-              className="btn btn-sm"
-              style={{
-                background: "linear-gradient(135deg, #0B2559 0%, #1E3A8A 100%)",
-                color: "white",
-                fontWeight: 800,
-                fontSize: "13px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 14px",
-                borderRadius: "10px",
-                boxShadow: "0 2px 8px rgba(11, 37, 89, 0.25)",
-              }}
-            >
-              💬 Messages
-              <span
-                style={{
-                  background: "#E10600",
-                  color: "white",
-                  fontSize: "10px",
-                  padding: "2px 6px",
-                  borderRadius: "9999px",
-                  fontWeight: 900,
-                }}
-              >
-                1
-              </span>
-            </Link>
-
-            <Link
-              href="/rendez-vous"
-              className="btn btn-sm btn-ghost"
-              style={{
-                color: "#0F172A",
-                fontWeight: 700,
-                fontSize: "13px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 14px",
-                borderRadius: "10px",
-                border: "1px solid #E2E8F0",
-                background: "#F8FAFC",
-              }}
-            >
-              📅 Rendez-vous
-            </Link>
-
-            <Link
-              href="/tarifs"
-              className="btn btn-sm"
-              style={{
-                background: "#FEF2F2",
-                color: "#E10600",
-                border: "1.5px solid #E10600",
-                fontWeight: 800,
-                fontSize: "13px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 14px",
-                borderRadius: "10px",
-              }}
-            >
-              💎 Tarifs
-            </Link>
-
-            <Link
-              href="/profil"
-              className="btn btn-sm btn-outline-blue"
-              style={{ fontWeight: 800, padding: "8px 14px", borderRadius: "10px" }}
-            >
-              Mon Profil
-            </Link>
-          </nav>
-        </div>
-      </header>
+      {/* ── Top Standardized Header ── */}
+      <Header />
 
       {/* ── Main Split View ──────────────────────────────────── */}
       <div
@@ -1805,7 +1666,11 @@ function MessagesContent() {
               }}
               title={isCameraOff ? "Activer la caméra" : "Couper la caméra"}
             >
-              {isCameraOff ? "🚫" : "📹"}
+              {isCameraOff ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M10.66 6H14a2 2 0 0 1 2 2v2.5l5.248-3.062A.5.5 0 0 1 22 7.938v12.124a.5.5 0 0 1-.752.434L16 17.5V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 8.27a.5.5 0 0 0-.5-.49.48.48 0 0 0-.252.07L16 11V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3l5.248 3.15a.5.5 0 0 0 .752-.434V8.27Z"/></svg>
+              )}
             </button>
 
             <button

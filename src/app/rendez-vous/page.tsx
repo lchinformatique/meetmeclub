@@ -5,6 +5,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Header from "@/components/Header";
+import { Calendar, CheckCircle2, Clock, MapPin, MessageSquare, Star } from "lucide-react";
 
 type Status = "PENDING" | "ACCEPTED" | "COMPLETED" | "CANCELLED";
 
@@ -134,88 +136,8 @@ export default function RendezVousPage() {
         flexDirection: "column",
       }}
     >
-      {/* ── Header ─────────────────────────────────────── */}
-      <header
-        style={{
-          background: "white",
-          boxShadow: "var(--shadow-sm)",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          height: "var(--header-height)",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <div
-          className="container"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Link
-            href="/"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              textDecoration: "none",
-            }}
-          >
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: "2px solid rgba(11, 46, 107, 0.12)",
-                background: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                src="/logo.png"
-                alt="Meet Me Club"
-                width={40}
-                height={40}
-                style={{ objectFit: "cover" }}
-                priority
-              />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-              <span style={{ fontWeight: 800, fontSize: "17px", color: "var(--color-blue)" }}>
-                meet <span style={{ color: "var(--color-red)" }}>me</span> club
-              </span>
-              <span
-                style={{
-                  fontSize: "9px",
-                  fontWeight: 700,
-                  color: "var(--color-gray-400)",
-                  letterSpacing: "1px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Rendez-vous
-              </span>
-            </div>
-          </Link>
-          <nav style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <Link href="/decouverte" className="btn btn-ghost btn-sm">
-              🔍 Découvrir
-            </Link>
-            <Link href="/messages" className="btn btn-ghost btn-sm">
-              💬 Messages
-            </Link>
-            <Link href="/profil" className="btn btn-outline-blue btn-sm">
-              Mon profil
-            </Link>
-          </nav>
-        </div>
-      </header>
+      {/* ── Standardized Header ──────────────────────────── */}
+      <Header />
 
       {/* ── Content ────────────────────────────────────── */}
       <div
@@ -260,26 +182,31 @@ export default function RendezVousPage() {
           }}
         >
           {[
-            { label: "À venir", value: 2, color: "var(--color-blue)", icon: "📅" },
-            { label: "Réalisés", value: 1, color: "var(--color-success)", icon: "✅" },
-            { label: "En attente", value: 1, color: "#D97706", icon: "⏳" },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="card"
-              style={{ padding: "16px 20px", textAlign: "center" }}
-            >
-              <div style={{ fontSize: "24px", marginBottom: "4px" }}>{s.icon}</div>
+            { label: "À venir", value: 2, color: "var(--color-blue)", Icon: Calendar },
+            { label: "Réalisés", value: 1, color: "var(--color-success)", Icon: CheckCircle2 },
+            { label: "En attente", value: 1, color: "#D97706", Icon: Clock },
+          ].map((s) => {
+            const SIcon = s.Icon;
+            return (
               <div
-                style={{ fontSize: "28px", fontWeight: 800, color: s.color }}
+                key={s.label}
+                className="card"
+                style={{ padding: "16px 20px", textAlign: "center" }}
               >
-                {s.value}
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px", color: s.color }}>
+                  <SIcon size={24} />
+                </div>
+                <div
+                  style={{ fontSize: "28px", fontWeight: 800, color: s.color }}
+                >
+                  {s.value}
+                </div>
+                <div style={{ fontSize: "13px", color: "var(--color-gray-500)" }}>
+                  {s.label}
+                </div>
               </div>
-              <div style={{ fontSize: "13px", color: "var(--color-gray-500)" }}>
-                {s.label}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Filter tabs */}
@@ -329,7 +256,9 @@ export default function RendezVousPage() {
               className="card card-padded"
               style={{ textAlign: "center", color: "var(--color-gray-400)" }}
             >
-              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📅</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px", color: "var(--color-gray-400)" }}>
+                <Calendar size={44} />
+              </div>
               <p style={{ fontSize: "16px", fontWeight: 600 }}>
                 Aucun rendez-vous dans cette catégorie
               </p>

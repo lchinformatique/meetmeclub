@@ -7,6 +7,8 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { getProfileByUserId, saveProfile, PLAN_LIMITS } from "@/lib/db-store";
+import Header from "@/components/Header";
+import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Mon Profil",
@@ -52,11 +54,11 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   const isFree = profile.plan === "FREE";
 
   const GOAL_LABELS: Record<string, string> = {
-    FRIENDSHIP: "💛 Amitié & Partage",
-    CASUAL: "🎉 Sorties & Convivialité",
-    SERIOUS: "❤️ Relation sérieuse",
-    MARRIAGE: "💍 Mariage & Foyer",
-    EXCHANGE: "🤝 Échange & Discussion",
+    FRIENDSHIP: "Amitié & Partage",
+    CASUAL: "Sorties & Convivialité",
+    SERIOUS: "Relation sérieuse",
+    MARRIAGE: "Mariage & Foyer",
+    EXCHANGE: "Échange & Discussion",
   };
 
   const DAYS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -64,54 +66,17 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
 
   return (
     <div style={{ minHeight: "100dvh", background: "#F8FAFC", color: "#0F172A" }}>
-      {/* ── Member Header ─────────────────────────────── */}
-      <header style={{ background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", position: "sticky", top: 0, zIndex: 50, height: "var(--header-height)", display: "flex", alignItems: "center" }}>
-        <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: "2px solid rgba(11, 46, 107, 0.12)",
-                background: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                padding: "3px",
-              }}
-            >
-              <Image src="/logo.png" alt="Meet Me Club" width={38} height={38} style={{ objectFit: "contain" }} priority />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-              <span style={{ fontWeight: 800, fontSize: "17px", color: "var(--color-blue)" }}>
-                meet <span style={{ color: "var(--color-red)" }}>me</span> club
-              </span>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#64748B", letterSpacing: "1px", textTransform: "uppercase" }}>
-                Espace Membre
-              </span>
-            </div>
-          </Link>
-          <nav style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <Link href="/decouverte" className="btn btn-ghost btn-sm" style={{ fontWeight: 700, color: "var(--color-blue)" }}>🔍 Découvrir</Link>
-            <Link href="/messages" className="btn btn-ghost btn-sm" style={{ fontWeight: 700, color: "var(--color-blue)" }}>💬 Messages</Link>
-            <Link href="/rendez-vous" className="btn btn-ghost btn-sm" style={{ fontWeight: 700, color: "var(--color-blue)" }}>📅 Rendez-vous</Link>
-            <Link href="/profil" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>Mon Profil</Link>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Welcome Toast */}
       {isWelcome && (
         <div style={{ background: "var(--gradient-red)", color: "white", textAlign: "center", padding: "14px 16px", fontWeight: 700, fontSize: "15px" }}>
-          🎉 Bienvenue sur Meet Me Club Lomé ! Votre profil a bien été enregistré dans le club.
+          Bienvenue sur Meet Me Club Lomé ! Votre profil a bien été enregistré dans le club.
         </div>
       )}
 
       <div className="container" style={{ paddingBlock: "36px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: "28px", alignItems: "start" }}>
+        <div className="profil-layout-grid">
 
           {/* ── Left Sidebar ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -141,13 +106,13 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                     {mainPhoto ? (
                       <Image src={mainPhoto.url} alt={profile.firstName} fill style={{ objectFit: "cover" }} />
                     ) : (
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "36px" }}>
-                        👤
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "13px", fontWeight: 700, color: "#94A3B8" }}>
+                        Photo
                       </div>
                     )}
                   </div>
                   <Link href="/profil/edit" className="btn btn-outline-blue btn-sm" style={{ fontWeight: 700 }}>
-                    ✏️ Modifier
+                    Modifier
                   </Link>
                 </div>
 
@@ -160,7 +125,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   </p>
                 )}
                 <p style={{ color: "#475569", fontSize: "14px", margin: "0 0 16px", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span>📍 {profile.city}</span>
+                  <span>{profile.city}</span>
                   {profile.neighborhood && <span>· {profile.neighborhood}</span>}
                   <span>· {profile.age} ans</span>
                 </p>
@@ -168,13 +133,13 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                 {/* Verification badges */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   <span style={{ fontSize: "12px", fontWeight: 700, background: "#EFF6FF", color: "#1D4ED8", padding: "4px 10px", borderRadius: "var(--radius-full)", border: "1px solid #BFDBFE" }}>
-                    📱 Numéro certifié
+                    Vérifié
                   </span>
                   <span style={{ fontSize: "12px", fontWeight: 700, background: "#ECFDF5", color: "#047857", padding: "4px 10px", borderRadius: "var(--radius-full)", border: "1px solid #A7F3D0" }}>
-                    ✅ 18+ Vérifié
+                    18+ Confirmé
                   </span>
                   <span style={{ fontSize: "12px", fontWeight: 700, background: "#FEF2F2", color: "#B91C1C", padding: "4px 10px", borderRadius: "var(--radius-full)", border: "1px solid #FECACA" }}>
-                    ⭐ Membre Lomé
+                    Membre Lomé
                   </span>
                 </div>
               </div>
@@ -207,8 +172,8 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                     </div>
                     <p style={{ fontSize: "12px", color: "#78350F", margin: "8px 0 0", lineHeight: 1.4 }}>
                       {contactedCount >= 3
-                        ? "⚠️ Quota de 3 partenaires atteint. Passez au Pass Essentiel pour échanger sans limite."
-                        : `💡 Il vous reste ${3 - contactedCount} partenaire(s) gratuit(s) à choisir.`}
+                        ? "Quota de 3 partenaires atteint. Passez au Pass Essentiel pour échanger sans limite."
+                        : `Il vous reste ${3 - contactedCount} partenaire(s) gratuit(s) à choisir.`}
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -219,7 +184,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                       className="btn btn-primary"
                       style={{ width: "100%", textAlign: "center", justifyContent: "center", fontWeight: 800, fontSize: "14px", textDecoration: "none" }}
                     >
-                      💳 Payer le Pass Illimité (3 000 F · Saspay)
+                      Passer au Pass Illimité — 3 000 F
                     </a>
                     <Link
                       href="/tarifs"
@@ -233,7 +198,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
               ) : (
                 <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "var(--radius-md)", padding: "12px", marginBottom: "16px" }}>
                   <p style={{ fontSize: "13px", fontWeight: 700, color: "#166534", margin: 0 }}>
-                    ✨ Échanges, discussions et partenaires illimités actifs !
+                    Échanges, discussions et partenaires illimités actifs.
                   </p>
                 </div>
               )}
@@ -243,11 +208,11 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
             <div className="card card-padded" style={{ background: "white", borderRadius: "var(--radius-xl)", border: "1px solid #E2E8F0" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {[
-                  { href: "/profil/edit", icon: "✏️", label: "Modifier mes informations" },
-                  { href: "/profil/photos", icon: "📸", label: "Mes photos" },
-                  { href: "/profil/disponibilites", icon: "📅", label: "Mes créneaux de sortie" },
-                  { href: "/profil/securite", icon: "🔒", label: "Sécurité & Déconnexion" },
-                  { href: "/tarifs", icon: "💎", label: "Voir tous les abonnements" },
+                  { href: "/profil/edit", Icon: Edit3, label: "Modifier mes informations" },
+                  { href: "/profil/photos", Icon: Camera, label: "Mes photos" },
+                  { href: "/profil/disponibilites", Icon: CalendarDays, label: "Mes créneaux de sortie" },
+                  { href: "/profil/securite", Icon: ShieldCheck, label: "Sécurité & Déconnexion" },
+                  { href: "/tarifs", Icon: Gem, label: "Voir tous les abonnements" },
                 ].map((item) => (
                   <Link
                     key={item.href}
@@ -265,9 +230,9 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                       transition: "background 0.15s ease",
                     }}
                   >
-                    <span style={{ fontSize: "18px" }}>{item.icon}</span>
+                    <item.Icon size={16} style={{ color: "#0B2559", flexShrink: 0 }} />
                     <span>{item.label}</span>
-                    <span style={{ marginLeft: "auto", color: "#94A3B8" }}>›</span>
+                    <ChevronRight size={14} style={{ marginLeft: "auto", color: "#94A3B8" }} />
                   </Link>
                 ))}
               </div>
@@ -357,7 +322,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                         border: "1px solid #DBEAFE",
                       }}
                     >
-                      ✨ {interest}
+                      {interest}
                     </span>
                   ))
                 ) : (
@@ -442,7 +407,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
           meet <span style={{ color: "var(--color-red)" }}>me</span> club · Lomé, Togo
         </div>
         <p style={{ fontSize: "12px", color: "#64748B", margin: 0 }}>
-          « Plus qu&apos;une rencontre, un rendez-vous ! » · 🔞 Réservé aux 18 ans et plus
+          « Plus qu&apos;une rencontre, un rendez-vous ! » · Réservé aux 18 ans et plus
         </p>
       </footer>
     </div>
