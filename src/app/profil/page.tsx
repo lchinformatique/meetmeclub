@@ -27,8 +27,13 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
     let dbUser: any = null;
     try {
       const { prisma } = await import("@/lib/prisma");
-      dbUser = await prisma.user.findUnique({
-        where: { id: session.userId },
+      dbUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: session.userId },
+            ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
+          ],
+        },
         include: { profile: true },
       });
     } catch (e) {
@@ -36,31 +41,58 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
     }
 
     const fallbackFirstName = dbUser?.profile?.firstName || session.email?.split("@")[0] || "Membre";
-    const fallbackPseudo = dbUser?.profile?.pseudo || `${fallbackFirstName.toLowerCase()}_${Math.floor(100 + Math.random() * 900)}`;
+    const fallbackPseudo = dbUser?.profile?.pseudo || fallbackFirstName;
 
-    profile = saveProfile({
-      userId: session.userId,
-      firstName: fallbackFirstName,
-      lastName: "",
-      pseudo: fallbackPseudo,
-      gender: (dbUser?.profile?.gender as any) || "OTHER",
-      age: 26,
-      phone: session.phone || undefined,
-      city: "Lomé",
-      neighborhood: "Centre-ville",
-      profession: "Membre actif",
-      bio: "Nouveau membre sur Meet Me Club à Lomé.",
-      relationshipGoal: "SERIOUS",
-      plan: "FREE",
-      partnersContacted: [],
-      photos: [
-        { id: "p1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }
-      ],
-      interests: ["Discussions", "Sorties Lomé", "Cafés"],
-      availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
-      isVerified: true,
-      isVisible: true,
-    });
+    try {
+      profile = saveProfile({
+        userId: session.userId,
+        firstName: fallbackFirstName,
+        lastName: "",
+        pseudo: fallbackPseudo,
+        gender: (dbUser?.profile?.gender as any) || "OTHER",
+        age: 26,
+        phone: session.phone || undefined,
+        city: dbUser?.profile?.city || "Lomé",
+        neighborhood: dbUser?.profile?.neighborhood || "Centre-ville",
+        profession: dbUser?.profile?.profession || "Membre actif",
+        bio: dbUser?.profile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+        relationshipGoal: (dbUser?.profile?.relationshipGoal as any) || "SERIOUS",
+        plan: "FREE",
+        partnersContacted: [],
+        photos: [
+          { id: "p1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }
+        ],
+        interests: ["Discussions", "Sorties Lomé", "Cafés"],
+        availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
+        isVerified: true,
+        isVisible: true,
+      });
+    } catch {}
+
+    if (!profile) {
+      profile = {
+        id: `prof_${session.userId}`,
+        userId: session.userId,
+        firstName: fallbackFirstName,
+        pseudo: fallbackPseudo,
+        gender: "OTHER",
+        age: 26,
+        city: "Lomé",
+        bio: "Nouveau membre sur Meet Me Club à Lomé.",
+        relationshipGoal: "SERIOUS",
+        plan: "FREE",
+        partnersContacted: [],
+        photos: [
+          { id: "p1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }
+        ],
+        interests: ["Discussions", "Sorties Lomé"],
+        availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
+        isVerified: true,
+        isVisible: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
   }
 
   const planInfo = PLAN_LIMITS[profile.plan] || PLAN_LIMITS.FREE;
@@ -289,6 +321,121 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
 
           {/* ── Main Content Column ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+            {/* ── Chat & Options d'enrichissement Bannière ── */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+                borderRadius: "var(--radius-xl)",
+                padding: "24px",
+                color: "white",
+                boxShadow: "0 10px 30px rgba(11,37,89,0.18)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px", marginBottom: "18px" }}>
+                <div>
+                  <span style={{ fontSize: "12px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px", color: "#FDE047", display: "inline-block", marginBottom: "4px" }}>
+                    Espace Rencontres & Chat · Plan Gratuit
+                  </span>
+                  <h2 style={{ fontSize: "22px", fontWeight: 800, color: "white", margin: 0 }}>
+                    Bienvenue dans votre salon membre, {profile.firstName} !
+                  </h2>
+                  <p style={{ fontSize: "14px", color: "#CBD5E1", margin: "6px 0 0", maxWidth: "560px", lineHeight: 1.5 }}>
+                    Vos informations enrichissent les conversations avec les membres. Complétez vos photos, votre bio et vos créneaux pour commencer à chatter.
+                  </p>
+                </div>
+                <Link
+                  href="/messages"
+                  className="btn btn-primary btn-md"
+                  style={{
+                    background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+                    color: "white",
+                    fontWeight: 800,
+                    fontSize: "14px",
+                    boxShadow: "0 4px 14px rgba(225,6,0,0.40)",
+                    textDecoration: "none",
+                  }}
+                >
+                  💬 Accéder au Chat ({Math.max(0, 3 - (profile.partnersContacted?.length || 0))} restants) →
+                </Link>
+              </div>
+
+              {/* Raccourcis rapides d'enrichissement */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px" }}>
+                <Link
+                  href="/profil/photos"
+                  style={{
+                    background: "rgba(255,255,255,0.12)",
+                    borderRadius: "12px",
+                    padding: "10px 12px",
+                    textDecoration: "none",
+                    color: "white",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <Camera size={16} color="#93C5FD" />
+                  <span>Mes Photos</span>
+                </Link>
+                <Link
+                  href="/profil/edit"
+                  style={{
+                    background: "rgba(255,255,255,0.12)",
+                    borderRadius: "12px",
+                    padding: "10px 12px",
+                    textDecoration: "none",
+                    color: "white",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <Edit3 size={16} color="#93C5FD" />
+                  <span>Ma Bio & Infos</span>
+                </Link>
+                <Link
+                  href="/profil/disponibilites"
+                  style={{
+                    background: "rgba(255,255,255,0.12)",
+                    borderRadius: "12px",
+                    padding: "10px 12px",
+                    textDecoration: "none",
+                    color: "white",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <CalendarDays size={16} color="#93C5FD" />
+                  <span>Créneaux sorties</span>
+                </Link>
+                <Link
+                  href="/profil/securite"
+                  style={{
+                    background: "rgba(255,255,255,0.12)",
+                    borderRadius: "12px",
+                    padding: "10px 12px",
+                    textDecoration: "none",
+                    color: "white",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <ShieldCheck size={16} color="#86EFAC" />
+                  <span>Pièce & Selfie</span>
+                </Link>
+              </div>
+            </div>
 
             {/* Personal Details & Bio */}
             <div className="card card-padded" style={{ background: "white", borderRadius: "var(--radius-xl)", border: "1px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>

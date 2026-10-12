@@ -13,17 +13,35 @@ export async function GET() {
 
   let profile = getProfileByUserId(session.userId);
 
-  // If not created yet, create a default draft for this session
+  // If not created yet, look up in Prisma or create a default draft for this session
   if (!profile) {
+    let dbUser: any = null;
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      dbUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: session.userId },
+            ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
+          ],
+        },
+        include: { profile: true },
+      });
+    } catch {}
+
+    const fallbackFirstName = dbUser?.profile?.firstName || session.email?.split("@")[0] || "Nouveau Membre";
+    const fallbackPseudo = dbUser?.profile?.pseudo || fallbackFirstName;
+
     profile = saveProfile({
       userId: session.userId,
-      firstName: session.phone ? "Membre" : "Nouveau Membre",
+      firstName: fallbackFirstName,
+      pseudo: fallbackPseudo,
       phone: session.phone || undefined,
-      gender: "OTHER",
-      city: "Lomé",
+      gender: (dbUser?.profile?.gender as any) || "OTHER",
+      city: dbUser?.profile?.city || "Lomé",
       age: 26,
-      bio: "Nouveau membre sur Meet Me Club à Lomé.",
-      relationshipGoal: "SERIOUS",
+      bio: dbUser?.profile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+      relationshipGoal: (dbUser?.profile?.relationshipGoal as any) || "SERIOUS",
       plan: "FREE",
       partnersContacted: [],
       photos: [

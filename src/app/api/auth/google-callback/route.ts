@@ -22,24 +22,15 @@ export async function POST(req: NextRequest) {
     const cleanEmail = (email as string).toLowerCase().trim();
 
     // ── 1. Chercher un utilisateur existant par email ou googleId ──────────
-    let user: {
-      id: string;
-      email: string | null;
-      role: "MEMBER" | "PARTNER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
-      status:
-        | "PENDING_VERIFICATION"
-        | "ONBOARDING"
-        | "ACTIVE"
-        | "SUSPENDED"
-        | "BANNED";
-      googleId: string | null;
-      profile: { firstName: string } | null;
-    } | null = null;
+    let user: any = null;
 
     try {
       user = await prisma.user.findFirst({
         where: {
-          OR: [{ email: cleanEmail }, { googleId: supabaseId }],
+          OR: [
+            { email: { equals: cleanEmail, mode: "insensitive" } },
+            { googleId: supabaseId },
+          ],
         },
         select: {
           id: true,
@@ -54,20 +45,20 @@ export async function POST(req: NextRequest) {
       console.warn("[google-callback] DB lookup error:", dbErr);
     }
 
+    const firstName =
+      (name as string)?.split(" ")[0]?.trim() ||
+      cleanEmail.split("@")[0] ||
+      "Membre";
+
     // ── 2. Créer l'utilisateur s'il n'existe pas ───────────────────────────
     if (!user) {
       try {
-        const firstName =
-          (name as string)?.split(" ")[0]?.trim() ||
-          cleanEmail.split("@")[0] ||
-          "Membre";
-
         const newUser = await prisma.user.create({
           data: {
             email: cleanEmail,
             googleId: supabaseId,
             emailVerifiedAt: new Date(),
-            dateOfBirth: new Date("2000-01-01"), // valeur par défaut — à mettre à jour en onboarding
+            dateOfBirth: new Date("2000-01-01"),
             isAdult: true,
             status: "ACTIVE",
             role: "MEMBER",
@@ -85,35 +76,13 @@ export async function POST(req: NextRequest) {
               city: "Lomé",
               bio: "Nouveau membre sur Meet Me Club à Lomé.",
               relationshipGoal: "SERIOUS",
-              profileCompleteness: 40,
+              profileCompleteness: 50,
               isVisible: true,
             },
           });
         } catch (profErr) {
           console.warn("[google-callback] Profile creation warning:", profErr);
         }
-
-        // Store local fallback
-        saveProfile({
-          userId: newUser.id,
-          firstName,
-          pseudo: firstName.toLowerCase(),
-          gender: "OTHER",
-          city: "Lomé",
-          age: 25,
-          dateOfBirth: "2000-01-01",
-          bio: "Nouveau membre sur Meet Me Club à Lomé.",
-          relationshipGoal: "SERIOUS",
-          plan: "FREE",
-          partnersContacted: [],
-          photos: avatarUrl
-            ? [{ id: `p_${newUser.id}`, url: avatarUrl as string, isMain: true }]
-            : [],
-          interests: [],
-          availabilities: [],
-          isVerified: true,
-          isVisible: true,
-        });
 
         user = {
           id: newUser.id,
@@ -124,16 +93,33 @@ export async function POST(req: NextRequest) {
           profile: { firstName },
         };
       } catch (createErr) {
-        console.warn("[google-callback] User creation error:", createErr);
-        // Fallback: créer un utilisateur virtuel si la DB est inaccessible
-        user = {
-          id: `google_${supabaseId}`,
-          email: cleanEmail,
-          role: "MEMBER",
-          status: "ACTIVE",
-          googleId: supabaseId,
-          profile: null,
-        };
+        console.warn("[google-callback] User creation error, checking existing:", createErr);
+        // If create failed (e.g. user already existed), try finding again
+        try {
+          user = await prisma.user.findFirst({
+            where: { email: { equals: cleanEmail, mode: "insensitive" } },
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              status: true,
+              googleId: true,
+              profile: { select: { firstName: true } },
+            },
+          });
+        } catch {}
+
+        if (!user) {
+          // Fallback utilisateur virtuel
+          user = {
+            id: `google_${supabaseId.replace(/[^a-zA-Z0-9_-]/g, "")}`,
+            email: cleanEmail,
+            role: "MEMBER",
+            status: "ACTIVE",
+            googleId: supabaseId,
+            profile: { firstName },
+          };
+        }
       }
     } else {
       // ── 3. Mettre à jour le googleId si l'utilisateur existe déjà ─────────
@@ -149,6 +135,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Sauvegarde store local (non-bloquante)
+    try {
+      saveProfile({
+        userId: user.id,
+        firstName,
+        pseudo: firstName.toLowerCase(),
+        gender: "OTHER",
+        city: "Lomé",
+        age: 25,
+        dateOfBirth: "2000-01-01",
+        bio: "Nouveau membre sur Meet Me Club à Lomé.",
+        relationshipGoal: "SERIOUS",
+        plan: "FREE",
+        partnersContacted: [],
+        photos: avatarUrl
+          ? [{ id: `p_${user.id}`, url: avatarUrl as string, isMain: true }]
+          : [],
+        interests: ["Discussions", "Sorties"],
+        availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
+        isVerified: true,
+        isVisible: true,
+      });
+    } catch (saveErr) {
+      console.warn("[google-callback] saveProfile non-fatal warning:", saveErr);
+    }
+
     // Vérification compte suspendu/banni
     if (user.status === "BANNED" || user.status === "SUSPENDED") {
       return NextResponse.json(
@@ -160,23 +172,21 @@ export async function POST(req: NextRequest) {
     // ── 4. Créer la session JWT ────────────────────────────────────────────
     await setSessionCookie({
       userId: user.id,
-      role: user.role,
-      status: user.status,
+      role: user.role || "MEMBER",
+      status: user.status || "ACTIVE",
       email: cleanEmail,
     });
 
     // ── 5. Déterminer la redirection ────────────────────────────────────────
-    const redirect = "/profil?welcome=1";
-
     return NextResponse.json({
       success: true,
-      redirect,
+      redirect: "/profil?welcome=1",
       isNew: !user.profile,
     });
   } catch (error) {
     console.error("[POST /api/auth/google-callback]", error);
     return NextResponse.json(
-      { error: "Erreur serveur lors de la connexion Google." },
+      { error: "Erreur serveur lors de la connexion Google. Veuillez réessayer." },
       { status: 500 }
     );
   }

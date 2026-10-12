@@ -42,16 +42,27 @@ export interface StoredProfile {
   updatedAt: string;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const isVercel = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === "production");
+const DATA_DIR = isVercel ? "/tmp" : path.join(process.cwd(), "data");
 const PROFILES_FILE = path.join(DATA_DIR, "profiles.json");
+
+// In-memory fallback to guarantee zero crashes even on read-only environments
+let memoryProfiles: StoredProfile[] = [];
 
 // Ensure data folder exists
 function ensureFile() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (memoryProfiles.length === 0) {
+    memoryProfiles = [...DEFAULT_PROFILES];
   }
-  if (!fs.existsSync(PROFILES_FILE)) {
-    fs.writeFileSync(PROFILES_FILE, JSON.stringify(DEFAULT_PROFILES, null, 2), "utf8");
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(PROFILES_FILE)) {
+      fs.writeFileSync(PROFILES_FILE, JSON.stringify(DEFAULT_PROFILES, null, 2), "utf8");
+    }
+  } catch {
+    // Silent catch for read-only serverless filesystems
   }
 }
 
@@ -162,20 +173,26 @@ const DEFAULT_PROFILES: StoredProfile[] = [
 export function getAllProfiles(): StoredProfile[] {
   ensureFile();
   try {
-    const raw = fs.readFileSync(PROFILES_FILE, "utf8");
-    return JSON.parse(raw);
+    if (fs.existsSync(PROFILES_FILE)) {
+      const raw = fs.readFileSync(PROFILES_FILE, "utf8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryProfiles = parsed;
+        return parsed;
+      }
+    }
   } catch {
-    return DEFAULT_PROFILES;
+    // Read failed, use memory fallback
   }
+  return memoryProfiles;
 }
 
 export function getProfileByUserId(userId: string): StoredProfile | null {
   const profiles = getAllProfiles();
-  return profiles.find((p) => p.userId === userId) || null;
+  return profiles.find((p) => p.userId === userId || p.id === userId) || null;
 }
 
 export function saveProfile(profileData: Partial<StoredProfile> & { userId: string }): StoredProfile {
-  ensureFile();
   const profiles = getAllProfiles();
   const index = profiles.findIndex((p) => p.userId === profileData.userId);
 
@@ -222,7 +239,15 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
     profiles.unshift(updatedProfile);
   }
 
-  fs.writeFileSync(PROFILES_FILE, JSON.stringify(profiles, null, 2), "utf8");
+  memoryProfiles = profiles;
+
+  try {
+    ensureFile();
+    fs.writeFileSync(PROFILES_FILE, JSON.stringify(profiles, null, 2), "utf8");
+  } catch {
+    // Disk write may fail on serverless, memoryProfiles is preserved
+  }
+
   return updatedProfile;
 }
 

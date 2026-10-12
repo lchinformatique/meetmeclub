@@ -191,10 +191,10 @@ function ConnexionForm() {
             </Link>
 
             <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#0B2559", margin: "0 0 6px", letterSpacing: "-0.4px" }}>
-              Bon retour parmi nous
+              Connexion à votre compte
             </h1>
             <p style={{ fontSize: "14px", color: "#6B7A99", margin: 0, fontWeight: 500 }}>
-              Connectez-vous pour retrouver vos rencontres et messages
+              Accédez directement à votre profil et à vos conversations
             </p>
 
             <div style={{ marginTop: "12px", display: "flex", justifyContent: "center" }}>

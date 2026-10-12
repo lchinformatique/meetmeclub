@@ -20,28 +20,32 @@ function isAdult(dateOfBirth: Date): boolean {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, dateOfBirth, firstName, pseudo, gender } = body;
+    const { email, login, identifier, password, dateOfBirth, firstName, pseudo, gender } = body;
 
-    // 1. Validation de base
-    if (!email || typeof email !== "string" || !email.includes("@")) {
+    const rawInput = (login || identifier || pseudo || email || "").toString().trim();
+    if (!rawInput) {
       return NextResponse.json(
-        { error: "Veuillez entrer une adresse e-mail valide." },
+        { error: "Veuillez entrer votre pseudo ou votre adresse e-mail." },
         { status: 400 }
       );
     }
 
-    const cleanEmail = email.toLowerCase().trim();
+    const isEmail = rawInput.includes("@");
+    const cleanPseudo = (pseudo || (isEmail ? rawInput.split("@")[0] : rawInput)).toString().trim();
+    const cleanEmail = isEmail
+      ? rawInput.toLowerCase()
+      : `${cleanPseudo.toLowerCase().replace(/[^a-z0-9_]/gi, "")}@meetmeclub.tg`;
 
-    // 2. Vérification de l'âge (18+ obligatoire)
-    if (!dateOfBirth) {
-      return NextResponse.json(
-        { error: "La date de naissance est obligatoire pour valider votre majorité (18+)." },
-        { status: 400 }
-      );
+    // 2. Date de naissance (par défaut 2000-01-01 pour 18+ si non fournie)
+    let dob = new Date("2000-01-01");
+    if (dateOfBirth) {
+      const parsed = new Date(dateOfBirth);
+      if (!isNaN(parsed.getTime())) {
+        dob = parsed;
+      }
     }
 
-    const dob = new Date(dateOfBirth);
-    if (isNaN(dob.getTime()) || !isAdult(dob)) {
+    if (!isAdult(dob)) {
       return NextResponse.json(
         { error: "Désolé, Meet Me Club est réservé exclusivement aux adultes de 18 ans et plus. 🔞" },
         { status: 403 }
@@ -57,21 +61,26 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const resolvedName = (firstName && firstName.trim()) || cleanEmail.split("@")[0];
-    const resolvedPseudo = (pseudo && pseudo.trim()) || resolvedName;
+    const resolvedName = (firstName && firstName.trim()) || cleanPseudo;
+    const resolvedPseudo = cleanPseudo;
     const resolvedGender = gender && ["MALE", "FEMALE", "OTHER"].includes(gender) ? gender : "OTHER";
 
     let user: any = null;
 
-    // 4. Tentative de création dans Supabase
+    // 4. Tentative de création dans Supabase / Prisma
     try {
       const existing = await prisma.user.findFirst({
-        where: { email: cleanEmail },
+        where: {
+          OR: [
+            { email: { equals: cleanEmail, mode: "insensitive" } },
+            { profile: { pseudo: { equals: resolvedPseudo, mode: "insensitive" } } },
+          ],
+        },
       });
 
       if (existing) {
         return NextResponse.json(
-          { error: "Un compte existe déjà avec cette adresse email. Veuillez vous connecter." },
+          { error: "Un compte existe déjà avec ce pseudo ou cet e-mail. Veuillez vous connecter." },
           { status: 409 }
         );
       }
@@ -94,12 +103,12 @@ export async function POST(req: NextRequest) {
           data: {
             userId: user.id,
             firstName: resolvedName,
-            pseudo: `${resolvedPseudo}_${Math.floor(100 + Math.random() * 900)}`,
+            pseudo: resolvedPseudo,
             gender: resolvedGender as any,
             city: "Lomé",
             bio: "Nouveau membre sur Meet Me Club à Lomé.",
             relationshipGoal: "SERIOUS",
-            profileCompleteness: 60,
+            profileCompleteness: 50,
             isVisible: true,
           },
         });
