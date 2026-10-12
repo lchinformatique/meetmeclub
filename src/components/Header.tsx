@@ -562,6 +562,17 @@ export default function Header() {
           {navLinks.map((item) => {
             const active = isActive(item.href);
             const Icon = item.Icon;
+
+            // map href to a color class for hover effect
+            const colorClass: Record<string, string> = {
+              "/": "mob-link-accueil",
+              "/decouverte": "mob-link-decouverte",
+              "/messages": "mob-link-messages",
+              "/rendez-vous": "mob-link-sorties",
+              "/tarifs": "mob-link-tarifs",
+            };
+            const mobClass = active ? "" : `mobile-nav-link-hover ${colorClass[item.href] || ""}`;
+
             return (
               <Link
                 key={item.href}
@@ -583,9 +594,10 @@ export default function Header() {
                   transition: "all 0.18s ease",
                   position: "relative",
                 }}
-                className={active ? "" : "mobile-nav-link-hover"}
+                className={mobClass}
               >
                 <div
+                  className="mob-icon"
                   style={{
                     width: "38px",
                     height: "38px",
@@ -595,12 +607,13 @@ export default function Header() {
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
+                    transition: "background 0.18s ease",
                   }}
                 >
                   <Icon
                     size={18}
                     strokeWidth={active ? 2.5 : 2}
-                    style={{ color: active ? "white" : "#0B2559" }}
+                    style={{ color: active ? "white" : "#0B2559", transition: "color 0.18s ease" }}
                   />
                 </div>
                 <span style={{ flex: 1 }}>{item.label}</span>
@@ -767,61 +780,132 @@ export default function Header() {
           RESPONSIVE STYLES (injected via style tag)
       ══════════════════════════════════════════ */}
       <style>{`
-        /* Desktop — show nav, hide hamburger */
+        /* ── Responsive breakpoints ── */
         @media (min-width: 768px) {
           .header-desktop-nav { display: flex !important; }
-          .header-hamburger { display: none !important; }
-          .header-profile-name { display: inline !important; }
-          .header-logout-text { display: inline !important; }
+          .header-hamburger   { display: none !important; }
         }
-
-        /* Mobile — hide desktop nav, show hamburger */
         @media (max-width: 767px) {
           .header-desktop-nav { display: none !important; }
-          .header-hamburger { display: flex !important; }
-          .header-login-btn { display: none !important; }
-          .header-join-btn { display: none !important; }
-          .profile-btn { display: none !important; }
-          .logout-btn { display: none !important; }
+          .header-hamburger   { display: flex !important; }
+          .header-login-btn   { display: none !important; }
+          .header-join-btn    { display: none !important; }
+          .profile-btn        { display: none !important; }
+          .logout-btn         { display: none !important; }
         }
 
-        /* Hover states */
-        .nav-link:hover {
-          background: #F0F4FB !important;
-          color: #0B2559 !important;
+        /* ── Logo hover ── */
+        .header-logo-wrap { transition: transform 0.2s ease; }
+        .header-logo-wrap:hover { transform: scale(1.07); }
+
+        /* ── Desktop nav links — per-item vivid accent on hover ── */
+        .nav-link {
+          transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+          position: relative;
+          overflow: hidden;
         }
-        .nav-link:hover svg {
-          color: #0B2559 !important;
+        /* Bottom indicator bar (slides up on hover) */
+        .nav-link::after {
+          content: '';
+          position: absolute;
+          bottom: 0; left: 50%;
+          transform: translateX(-50%) scaleX(0);
+          width: 60%; height: 2.5px;
+          border-radius: 99px;
+          background: currentColor;
+          transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+          opacity: 0.7;
+        }
+        .nav-link:hover::after { transform: translateX(-50%) scaleX(1); }
+
+        /* Accueil — indigo */
+        .nav-link[href="/"] { --hov-bg: #EEF2FF; --hov-fg: #4338CA; --hov-ico: #6366F1; }
+        /* Découvrir — teal */
+        .nav-link[href="/decouverte"] { --hov-bg: #ECFDF5; --hov-fg: #0D9488; --hov-ico: #14B8A6; }
+        /* Messages — violet */
+        .nav-link[href="/messages"] { --hov-bg: #F5F3FF; --hov-fg: #7C3AED; --hov-ico: #8B5CF6; }
+        /* Sorties — amber */
+        .nav-link[href="/rendez-vous"] { --hov-bg: #FFFBEB; --hov-fg: #B45309; --hov-ico: #F59E0B; }
+        /* Tarifs — rose */
+        .nav-link[href="/tarifs"] { --hov-bg: #FFF1F2; --hov-fg: #BE123C; --hov-ico: #F43F5E; }
+
+        .nav-link:not(.nav-link-active):hover {
+          background: var(--hov-bg, #F0F4FB) !important;
+          color:      var(--hov-fg, #0B2559) !important;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .nav-link:not(.nav-link-active):hover svg {
+          color: var(--hov-ico, #0B2559) !important;
+          transform: scale(1.15);
+          transition: transform 0.18s ease, color 0.18s ease;
+        }
+        .nav-link:active { transform: scale(0.96) !important; }
+
+        /* ── Auth buttons ── */
+        .header-login-btn {
+          transition: all 0.18s ease;
         }
         .header-login-btn:hover {
-          background: #F0F4FB !important;
-          border-color: #B0BCD4 !important;
+          background: #EEF2FF !important;
+          border-color: #6366F1 !important;
+          color: #4338CA !important;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(99,102,241,0.18);
+        }
+        .header-join-btn {
+          transition: all 0.20s cubic-bezier(0.4,0,0.2,1);
         }
         .header-join-btn:hover {
-          background: linear-gradient(135deg, #FF2A25 0%, #E10600 100%) !important;
-          box-shadow: 0 6px 20px rgba(225,6,0,0.40) !important;
+          background: linear-gradient(135deg, #FF3A35 0%, #E10600 100%) !important;
+          box-shadow: 0 8px 24px rgba(225,6,0,0.45) !important;
+          transform: translateY(-2px) scale(1.03);
+        }
+        .header-join-btn:active { transform: scale(0.97) !important; }
+
+        /* ── Profile & logout ── */
+        .profile-btn { transition: all 0.18s ease; }
+        .profile-btn:hover {
+          border-color: #6366F1 !important;
+          box-shadow: 0 4px 12px rgba(99,102,241,0.15);
           transform: translateY(-1px);
         }
-        .header-logo-wrap:hover {
-          transform: scale(1.05);
-        }
-        .mobile-nav-link-hover:hover {
-          background: #F0F4FB !important;
-          color: #0B2559 !important;
-        }
+        .logout-btn { transition: all 0.18s ease; }
         .logout-btn:hover:not(:disabled) {
-          background: #FFF5F5 !important;
-        }
-        .profile-btn:hover {
-          border-color: #0B2559 !important;
-        }
-
-        /* Active scale on click */
-        .nav-link:active, .header-join-btn:active {
-          transform: scale(0.97) !important;
+          background: #FFF0F0 !important;
+          border-color: #F43F5E !important;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(244,63,94,0.15);
         }
 
-        /* Smooth transitions */
+        /* ── Mobile drawer links ── */
+        /* Accueil */
+        .mob-link-accueil:hover  { background: #EEF2FF !important; color: #4338CA !important; }
+        .mob-link-accueil:hover .mob-icon  { background: #E0E7FF !important; }
+        .mob-link-accueil:hover svg        { color: #6366F1 !important; }
+        /* Découvrir */
+        .mob-link-decouverte:hover { background: #ECFDF5 !important; color: #0D9488 !important; }
+        .mob-link-decouverte:hover .mob-icon { background: #CCFBF1 !important; }
+        .mob-link-decouverte:hover svg       { color: #14B8A6 !important; }
+        /* Messages */
+        .mob-link-messages:hover { background: #F5F3FF !important; color: #7C3AED !important; }
+        .mob-link-messages:hover .mob-icon { background: #EDE9FE !important; }
+        .mob-link-messages:hover svg       { color: #8B5CF6 !important; }
+        /* Sorties */
+        .mob-link-sorties:hover { background: #FFFBEB !important; color: #B45309 !important; }
+        .mob-link-sorties:hover .mob-icon { background: #FEF3C7 !important; }
+        .mob-link-sorties:hover svg       { color: #F59E0B !important; }
+        /* Tarifs */
+        .mob-link-tarifs:hover { background: #FFF1F2 !important; color: #BE123C !important; }
+        .mob-link-tarifs:hover .mob-icon { background: #FFE4E6 !important; }
+        .mob-link-tarifs:hover svg       { color: #F43F5E !important; }
+
+        .mobile-nav-link-hover {
+          transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+        }
+        .mobile-nav-link-hover:hover { transform: translateX(4px); }
+        .mobile-nav-link-hover:active { transform: scale(0.97); }
+
         * { box-sizing: border-box; }
       `}</style>
     </>
