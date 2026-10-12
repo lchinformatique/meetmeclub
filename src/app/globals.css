@@ -1205,4 +1205,238 @@ img,
   }
 }
 
+/* ──────────────────────────────────────────────────────────────
+   RESPONSIVE DESIGN SYSTEM — MOBILE, IPHONE, IPAD & TABLETTES
+   Centrage parfait, ergonomie tactile & navigation native
+   ────────────────────────────────────────────────────────────── */
+
+/* Empêche le zoom intempestif sur Safari iOS pour les champs de saisie */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Éléments tactiles confortables (Touch Target >= 44px) */
+button,
+a,
+input,
+select,
+.clickable-item {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Padding inférieur global sur mobile & tablettes pour ne pas masquer le contenu */
+@media (max-width: 1023px) {
+  body {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* ── Barre de Navigation Mobile Native (iOS & Android) ─────── */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  background: rgba(7, 21, 48, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 12px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 1000;
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.45);
+}
+
+@media (min-width: 1024px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.60);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 14px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 52px;
+}
+
+.mobile-nav-item:active {
+  transform: scale(0.92);
+}
+
+.mobile-nav-item.active {
+  color: #FFFFFF;
+}
+
+.mobile-nav-item.active .mobile-nav-icon-wrapper {
+  background: rgba(225, 6, 0, 0.28);
+  border: 1px solid rgba(225, 6, 0, 0.6);
+  transform: scale(1.1);
+  box-shadow: 0 2px 10px rgba(225, 6, 0, 0.35);
+}
+
+.mobile-nav-icon-wrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.mobile-nav-badge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  background: #E10600;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px rgba(225, 6, 0, 0.5);
+  border: 1px solid white;
+}
+
+.mobile-nav-label {
+  font-size: 10px;
+  letter-spacing: -0.2px;
+  font-weight: 600;
+}
+
+/* ── Positionnement du Widget Support selon l'écran ────────── */
+.customer-support-widget-root {
+  bottom: 24px;
+  right: 24px;
+}
+
+@media (max-width: 1023px) {
+  .customer-support-widget-root {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 16px !important;
+  }
+}
+
+/* ── Adaptabilité des Grilles sur Tablettes & iPads ──────────── */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .tablet-2-cols {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+  
+  .tablet-center {
+    margin-inline: auto !important;
+    max-width: 720px !important;
+  }
+}
+
+/* ── Messages Split View (Mobile & Tablet) ─────────────────── */
+.messages-split-view {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+}
+
+@media (max-width: 768px) {
+  .messages-split-view {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .hidden-on-mobile {
+    display: none !important;
+  }
+
+  .mobile-back-to-list-btn {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-back-to-list-btn {
+    display: none !important;
+  }
+}
+
+/* ── Grille de Tarifs & Packs (Mobile, iPad & Desktop) ─────── */
+.pricing-grid-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+@media (max-width: 1100px) and (min-width: 640px) {
+  .pricing-grid-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .pricing-grid-container {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    max-width: 440px;
+    margin-inline: auto;
+  }
+}
+
+.pricing-card {
+  background: #FFFFFF;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* ── Grille Découverte Profils (Mobile, iPad & Tablette) ────── */
+.discovery-profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 639px) {
+  .discovery-profiles-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    max-width: 420px;
+    margin-inline: auto;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1024px) {
+  .discovery-profiles-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
+  }
+}
+
+
+
 

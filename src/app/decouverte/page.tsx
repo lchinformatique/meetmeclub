@@ -594,10 +594,10 @@ export default function DecouvertePage() {
           </div>
         ) : (
           <div
+            className="discovery-profiles-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))",
-              gap: "24px",
+              gap: "20px",
             }}
           >
             {filtered.map((profile) => {

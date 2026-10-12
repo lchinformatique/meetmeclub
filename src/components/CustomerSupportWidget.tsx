@@ -120,7 +120,7 @@ export default function CustomerSupportWidget() {
   };
 
   return (
-    <div style={{ position: "fixed", bottom: "80px", right: "20px", zIndex: 9999 }}>
+    <div className="customer-support-widget-root" style={{ position: "fixed", zIndex: 9999 }}>
       {/* Floating Main Buttons Container */}
       {!isOpen && (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "flex-end" }}>

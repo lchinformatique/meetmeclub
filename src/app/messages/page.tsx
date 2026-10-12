@@ -172,6 +172,7 @@ function MessagesContent() {
 
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
   const [activeConvId, setActiveConvId] = useState<string>("conv-1");
+  const [mobileView, setMobileView] = useState<"list" | "chat">(contactParam ? "chat" : "list");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
   const [draft, setDraft] = useState("");
   const [myProfile, setMyProfile] = useState<any>(null);
@@ -232,6 +233,7 @@ function MessagesContent() {
 
     if (existing) {
       setActiveConvId(existing.id);
+      setMobileView("chat");
     } else {
       const newConv: Conversation = {
         id: `conv_${contactParam}`,
@@ -247,6 +249,7 @@ function MessagesContent() {
       };
       setConversations((prev) => [newConv, ...prev]);
       setActiveConvId(newConv.id);
+      setMobileView("chat");
       setMessages((prev) => ({
         ...prev,
         [newConv.id]: [
@@ -780,10 +783,9 @@ function MessagesContent() {
 
       {/* ── Main Split View ──────────────────────────────────── */}
       <div
+        className="messages-split-view"
         style={{
           flex: 1,
-          display: "grid",
-          gridTemplateColumns: "360px 1fr",
           maxWidth: "1400px",
           margin: "0 auto",
           width: "100%",
@@ -793,6 +795,7 @@ function MessagesContent() {
       >
         {/* ── Sidebar Conversations ───────────────────────────── */}
         <aside
+          className={`messages-sidebar ${mobileView === "chat" ? "hidden-on-mobile" : ""}`}
           style={{
             background: "white",
             borderRight: "1px solid #E2E8F0",
@@ -855,7 +858,10 @@ function MessagesContent() {
               return (
                 <button
                   key={conv.id}
-                  onClick={() => setActiveConvId(conv.id)}
+                  onClick={() => {
+                    setActiveConvId(conv.id);
+                    setMobileView("chat");
+                  }}
                   style={{
                     width: "100%",
                     padding: "14px 18px",
@@ -931,20 +937,46 @@ function MessagesContent() {
 
         {/* ── Chat Thread Area ───────────────────────────────── */}
         {activeConv ? (
-          <main style={{ display: "flex", flexDirection: "column", overflow: "hidden", background: "#F8FAFC" }}>
+          <main
+            className={`messages-chat-pane ${mobileView === "list" ? "hidden-on-mobile" : ""}`}
+            style={{ display: "flex", flexDirection: "column", overflow: "hidden", background: "#F8FAFC", flex: 1 }}
+          >
             {/* Active Contact Header with Video Call Button */}
             <div
               style={{
                 background: "white",
                 borderBottom: "1px solid #E2E8F0",
-                padding: "12px 24px",
+                padding: "10px 16px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                {/* Bouton retour vers la liste sur smartphone */}
+                <button
+                  type="button"
+                  onClick={() => setMobileView("list")}
+                  className="mobile-back-to-list-btn"
+                  style={{
+                    background: "#F1F5F9",
+                    border: "none",
+                    borderRadius: "10px",
+                    width: "36px",
+                    height: "36px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "18px",
+                    cursor: "pointer",
+                    color: "#0F172A",
+                    fontWeight: 800,
+                  }}
+                  title="Retour aux conversations"
+                >
+                  ←
+                </button>
                 <Image
                   src={activeConv.photoUrl}
                   alt={activeConv.firstName}
