@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
             emailVerifiedAt: new Date(),
             dateOfBirth: new Date("2000-01-01"), // valeur par défaut — à mettre à jour en onboarding
             isAdult: true,
-            status: "ONBOARDING",
+            status: "ACTIVE",
             role: "MEMBER",
           },
         });
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
           id: `google_${supabaseId}`,
           email: cleanEmail,
           role: "MEMBER",
-          status: "ONBOARDING",
+          status: "ACTIVE",
           googleId: supabaseId,
           profile: null,
         };

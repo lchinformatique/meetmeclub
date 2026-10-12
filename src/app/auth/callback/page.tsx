@@ -31,8 +31,22 @@ function AuthCallbackHandler() {
       }
 
       try {
-        // Supabase échange automatiquement le code via detectSessionInUrl
-        // On attend que la session soit établie
+        const code = params.get("code");
+
+        // 1. Si un code PKCE est présent dans l'URL, l'échanger contre une session
+        if (code) {
+          const { data: exchangedData, error: exchangedError } =
+            await supabase.auth.exchangeCodeForSession(code);
+
+          if (exchangedError) {
+            console.error("[Auth Callback] Erreur exchangeCodeForSession:", exchangedError.message);
+          } else if (exchangedData?.session?.user) {
+            await syncUserWithBackend(exchangedData.session.user);
+            return;
+          }
+        }
+
+        // 2. Vérifier si la session existe déjà (ex: flux implicite avec hash URL ou déjà stockée)
         const { data: sessionData, error: sessionError } =
           await supabase.auth.getSession();
 
@@ -43,8 +57,8 @@ function AuthCallbackHandler() {
         const session = sessionData?.session;
 
         if (!session?.user) {
-          // Attendre un peu pour que Supabase traite le code OAuth
-          await new Promise((r) => setTimeout(r, 1500));
+          // Attendre un court délai au cas où Supabase traite le hash/code en arrière-plan
+          await new Promise((r) => setTimeout(r, 1200));
           const { data: retryData, error: retryError } =
             await supabase.auth.getSession();
 
