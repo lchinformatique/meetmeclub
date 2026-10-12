@@ -20,6 +20,7 @@ import {
   ArrowRight,
   ChevronLeft,
 } from "lucide-react";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
 
 function ConnexionForm() {
   const router = useRouter();
@@ -238,6 +239,38 @@ function ConnexionForm() {
               </p>
             </div>
           )}
+
+          {/* ── Bouton Google OAuth ── */}
+          <div style={{ marginBottom: "20px" }}>
+            <GoogleAuthButton
+              label="Continuer avec Google"
+              onError={(msg) => setError(msg)}
+            />
+          </div>
+
+          {/* ── Séparateur ── */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "20px",
+            }}
+          >
+            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#A0AABF",
+                whiteSpace: "nowrap",
+                letterSpacing: "0.3px",
+              }}
+            >
+              Ou continuer avec e-mail
+            </span>
+            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
+          </div>
 
           {/* Form */}
           <form onSubmit={handleEmailLogin} noValidate>

@@ -1,6 +1,8 @@
 // src/app/(public)/layout.tsx
 // Public pages layout — shared header/footer
 
+import Image from "next/image";
+import Link from "next/link";
 import Header from "@/components/Header";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
