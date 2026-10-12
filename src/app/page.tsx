@@ -723,16 +723,23 @@ export default function HomePage() {
       {/* ── Packs ─────────────────────────────────────────────── */}
       <section
         className="section"
-        style={{ background: "var(--gradient-blue)", position: "relative" }}
+        style={{
+          background: "var(--gradient-blue)",
+          position: "relative",
+          paddingTop: "clamp(90px, 12vw, 120px)",
+          paddingBottom: "80px",
+        }}
       >
         <div
           aria-hidden
+          className="packs-wave-divider"
           style={{
             position: "absolute",
             top: 0, left: 0, right: 0,
-            height: "80px",
+            height: "45px",
             background: "white",
             clipPath: "ellipse(55% 100% at 50% 0%)",
+            pointerEvents: "none",
           }}
         />
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
@@ -749,17 +756,20 @@ export default function HomePage() {
               maxWidth: "760px",
               marginInline: "auto",
               paddingInline: "12px",
+              position: "relative",
+              zIndex: 2,
             }}
           >
             <h2
               style={{
                 fontSize: "clamp(1.65rem, 5vw, 2.5rem)",
                 fontWeight: 800,
-                color: "white",
+                color: "#FFFFFF",
                 marginBottom: "12px",
                 textAlign: "center",
                 width: "100%",
                 lineHeight: 1.25,
+                textShadow: "0 2px 10px rgba(0, 0, 0, 0.35)",
               }}
             >
               Choisissez votre pack
@@ -767,28 +777,20 @@ export default function HomePage() {
             <p
               style={{
                 fontSize: "clamp(15px, 3.8vw, 18px)",
-                color: "rgba(255,255,255,0.85)",
+                color: "rgba(255,255,255,0.9)",
                 textAlign: "center",
                 width: "100%",
                 maxWidth: "600px",
                 marginInline: "auto",
                 lineHeight: 1.5,
+                textShadow: "0 1px 6px rgba(0, 0, 0, 0.25)",
               }}
             >
               De la rencontre simple au dîner privatif — en FCFA
             </p>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: "20px",
-              maxWidth: "980px",
-              margin: "0 auto",
-              width: "100%",
-            }}
-          >
+          <div className="home-packs-grid">
             {PACKS.map((pack) => (
               <div
                 key={pack.name}
@@ -796,94 +798,106 @@ export default function HomePage() {
                   background: pack.popular ? "white" : "rgba(255,255,255,0.08)",
                   border: pack.popular ? `3px solid var(--color-red)` : "1px solid rgba(255,255,255,0.15)",
                   borderRadius: "var(--radius-xl)",
-                  padding: "28px 20px",
+                  padding: "26px 18px",
                   position: "relative",
                   backdropFilter: pack.popular ? "none" : "blur(8px)",
                   transition: "transform var(--transition-base)",
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  justifyContent: "space-between",
                 }}
               >
-                {pack.popular && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "-14px",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      background: "var(--gradient-red)",
-                      color: "white",
-                      padding: "4px 16px",
-                      borderRadius: "var(--radius-full)",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    ⭐ Le plus populaire
-                  </div>
-                )}
-                <div
-                  style={{
-                    width: "48px",
-                    height: "6px",
-                    background: pack.color,
-                    borderRadius: "var(--radius-full)",
-                    marginBottom: "16px",
-                  }}
-                />
-                <h3
-                  style={{
-                    fontSize: "20px",
-                    color: pack.popular ? "var(--color-blue)" : "white",
-                    marginBottom: "6px",
-                  }}
-                >
-                  {pack.name}
-                </h3>
-                <p
-                  style={{
-                    fontSize: "13px",
-                    color: pack.popular ? "var(--color-gray-500)" : "rgba(255,255,255,0.7)",
-                    marginBottom: "20px",
-                  }}
-                >
-                  {pack.description}
-                </p>
-                <div
-                  style={{
-                    fontSize: "28px",
-                    fontWeight: 800,
-                    color: pack.popular ? pack.color : "white",
-                    marginBottom: "20px",
-                  }}
-                >
-                  {pack.price}{" "}
-                  <span style={{ fontSize: "14px", fontWeight: 400, opacity: 0.7 }}>
-                    FCFA
-                  </span>
-                </div>
-                <ul style={{ listStyle: "none", marginBottom: "24px" }}>
-                  {pack.features.map((f) => (
-                    <li
-                      key={f}
+                <div>
+                  {pack.popular && (
+                    <div
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "14px",
-                        color: pack.popular ? "var(--color-gray-600)" : "rgba(255,255,255,0.8)",
-                        marginBottom: "8px",
+                        position: "absolute",
+                        top: "-14px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        background: "var(--gradient-red)",
+                        color: "white",
+                        padding: "4px 16px",
+                        borderRadius: "var(--radius-full)",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      <span style={{ color: pack.popular ? "var(--color-red)" : "#FFD700" }}>✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+                      ⭐ Le plus populaire
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "6px",
+                      background: pack.color,
+                      borderRadius: "var(--radius-full)",
+                      marginBottom: "16px",
+                    }}
+                  />
+                  <h3
+                    style={{
+                      fontSize: "19px",
+                      fontWeight: 800,
+                      color: pack.popular ? "var(--color-blue)" : "white",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {pack.name}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: pack.popular ? "var(--color-gray-500)" : "rgba(255,255,255,0.7)",
+                      marginBottom: "18px",
+                      minHeight: "36px",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {pack.description}
+                  </p>
+                  <div
+                    style={{
+                      fontSize: "26px",
+                      fontWeight: 800,
+                      color: pack.popular ? pack.color : "white",
+                      marginBottom: "18px",
+                    }}
+                  >
+                    {pack.price}{" "}
+                    <span style={{ fontSize: "13px", fontWeight: 400, opacity: 0.75 }}>
+                      FCFA
+                    </span>
+                  </div>
+                  <ul style={{ listStyle: "none", marginBottom: "22px", padding: 0 }}>
+                    {pack.features.map((f) => (
+                      <li
+                        key={f}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "13px",
+                          color: pack.popular ? "var(--color-gray-600)" : "rgba(255,255,255,0.85)",
+                          marginBottom: "8px",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        <span style={{ color: pack.popular ? "var(--color-red)" : "#FFD700", fontWeight: "bold" }}>✓</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
                 <Link
                   href="/inscription"
                   className={`btn ${pack.popular ? "btn-primary" : "btn-outline-red"}`}
                   style={{
                     width: "100%",
+                    marginTop: "auto",
                     ...(pack.popular ? {} : { borderColor: "rgba(255,255,255,0.4)", color: "white" }),
                   }}
                 >

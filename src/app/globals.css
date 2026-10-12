@@ -1297,6 +1297,37 @@ select,
   width: 100% !important;
 }
 
+/* ── Alignement 4 packs sur la même ligne sur ordinateur ───────── */
+.home-packs-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 1260px !important;
+  margin-inline: auto !important;
+  align-items: stretch !important;
+}
+
+@media (max-width: 1023px) {
+  .home-packs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .home-packs-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .packs-wave-divider {
+    height: 32px !important;
+  }
+}
+
 @keyframes pulse-ring {
   0% {
     transform: scale(0.95);

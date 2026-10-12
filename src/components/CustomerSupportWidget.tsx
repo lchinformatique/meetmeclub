@@ -50,9 +50,9 @@ const FAQ_KNOWLEDGE_BASE = [
   {
     keywords: ["contact", "humain", "conseiller", "numero", "telephone", "aide", "service", "whatsapp"],
     response:
-      "Notre équipe du service client à Lomé est joignable en direct sur WhatsApp (+228 90 28 35 80) du Lundi au Dimanche pour vous assister.",
+      "Notre équipe du service client à Lomé est joignable en direct sur WhatsApp du Lundi au Dimanche pour vous assister.",
     actionUrl: WHATSAPP_URL,
-    actionText: "Discuter sur WhatsApp (+228 90 28 35 80)",
+    actionText: "Discuter sur WhatsApp (Opérationnel)",
   },
 ];
 
@@ -100,9 +100,9 @@ export default function CustomerSupportWidget() {
       );
 
       let replyText =
-        "Je comprends votre question. Pour une assistance sur mesure ou un suivi direct, notre conseiller est disponible immédiatement sur WhatsApp au 0022890283580.";
+        "Je comprends votre question. Pour une assistance sur mesure ou un suivi direct, notre conseiller est disponible immédiatement sur WhatsApp.";
       let actionUrl: string | undefined = WHATSAPP_URL;
-      let actionText: string | undefined = "Continuer sur WhatsApp (+228 90 28 35 80)";
+      let actionText: string | undefined = "Continuer sur WhatsApp (Opérationnel)";
 
       if (matched) {
         replyText = matched.response;
@@ -150,17 +150,23 @@ export default function CustomerSupportWidget() {
                   fontWeight: 700,
                   color: "#166534",
                   whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
-                Assistant WhatsApp · 0022890283580
+                <span>Assistant WhatsApp</span>
+                <span style={{ fontSize: "10px", background: "#DCFCE7", color: "#15803D", padding: "1px 6px", borderRadius: "9999px" }}>
+                  Opérationnel
+                </span>
               </div>
             )}
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Discuter directement sur WhatsApp avec le support au 0022890283580"
-              title="Assistant WhatsApp direct (+228 90 28 35 80)"
+              aria-label="Contacter l'Assistant WhatsApp (Opérationnel)"
+              title="Assistant WhatsApp (Opérationnel)"
               onMouseEnter={() => setHoveredButton("whatsapp")}
               onMouseLeave={() => setHoveredButton(null)}
               className="whatsapp-chat-btn-pulse"
