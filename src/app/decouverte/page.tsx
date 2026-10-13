@@ -242,82 +242,255 @@ export default function DecouvertePage() {
       {/* ── Landing publique si non-connecté ───────────────────── */}
       {isAuthenticated === false && (
         <main>
-          {/* Section présentation */}
-          <section style={{ background: "linear-gradient(160deg, #071530 0%, #0B2559 60%, #1a0a3c 100%)", padding: "72px 20px 80px", textAlign: "center" }}>
-            <div className="container" style={{ maxWidth: "820px" }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "9999px", padding: "6px 16px", marginBottom: "24px" }}>
+          {/* Section Présentation Meet Me Club */}
+          <section style={{ background: "linear-gradient(160deg, #071530 0%, #0B2559 55%, #1a0a3c 100%)", padding: "64px 20px 72px", textAlign: "center", color: "white" }}>
+            <div className="container" style={{ maxWidth: "860px", margin: "0 auto" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", borderRadius: "9999px", padding: "6px 18px", marginBottom: "22px" }}>
                 <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 8px #10B981" }} />
-                <span style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>Club Privé International · Lomé, Togo</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>Le Club Privé n°1 de Rendez-vous au Togo · Lomé</span>
               </div>
-              <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 3rem)", fontWeight: 800, color: "white", marginBottom: "16px", lineHeight: 1.15 }}>
-                Découvrez <span style={{ color: "#FFD700" }}>Meet Me Club</span>
+
+              <h1 style={{ fontSize: "clamp(2rem, 5.5vw, 3.2rem)", fontWeight: 800, color: "white", marginBottom: "18px", lineHeight: 1.15 }}>
+                Bienvenue sur <span style={{ color: "#FFD700" }}>Meet Me Club</span>
               </h1>
-              <p style={{ fontSize: "clamp(1rem, 2.5vw, 1.2rem)", color: "rgba(255,255,255,0.85)", marginBottom: "12px", lineHeight: 1.7 }}>
-                La première plateforme de rencontres avec réservation de rendez-vous au Togo. Chattez librement avec des célibataires vérifiés du monde entier et vivez de vraies rencontres dans nos cadres partenaires exclusifs.
+
+              <p style={{ fontSize: "clamp(1.05rem, 2.5vw, 1.25rem)", color: "rgba(255,255,255,0.92)", marginBottom: "16px", lineHeight: 1.7, maxWidth: "760px", margin: "0 auto 16px" }}>
+                Meet Me Club est le premier club privé international pensé pour transformer les simples échanges virtuels en <strong>vrais rendez-vous inoubliables</strong> dans les plus beaux cadres de Lomé. Fini les faux profils et les conversations sans suite : ici, tout est authentique, sécurisé et organisé de A à Z.
               </p>
-              <p style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.7)", marginBottom: "40px", fontStyle: "italic" }}>
-                Plus qu&apos;une rencontre — un seul rendez-vous suffit.
+
+              <p className="font-script" style={{ fontSize: "clamp(1.4rem, 3.5vw, 1.9rem)", color: "#FFD700", marginBottom: "36px" }}>
+                « Plus qu&apos;une rencontre, un rendez-vous ! »
               </p>
-              {/* Stats rapides */}
-              <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "24px", marginBottom: "48px" }}>
-                {[{v:"1 200+",l:"Membres inscrits"},{v:"12",l:"Lieux partenaires"},{v:"340+",l:"Rendez-vous réussis"},{v:"4.7★",l:"Note moyenne"}].map(s => (
-                  <div key={s.l} style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "white" }}>{s.v}</div>
-                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", marginTop: "2px" }}>{s.l}</div>
+
+              {/* Les 3 Piliers Clés */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "40px", textAlign: "left" }}>
+                <div style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "18px", padding: "20px" }}>
+                  <div style={{ fontSize: "28px", marginBottom: "10px" }}>🛡️</div>
+                  <div style={{ fontSize: "15px", fontWeight: 800, color: "white", marginBottom: "6px" }}>Profils 100% Vérifiés (+18)</div>
+                  <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>
+                    Contrôle systématique de majorité et certification d&apos;identité pour échanger en toute confiance avec de vraies personnes.
                   </div>
-                ))}
+                </div>
+
+                <div style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "18px", padding: "20px" }}>
+                  <div style={{ fontSize: "28px", marginBottom: "10px" }}>🍽️</div>
+                  <div style={{ fontSize: "15px", fontWeight: 800, color: "white", marginBottom: "6px" }}>Lieux Partenaires Sélectionnés</div>
+                  <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>
+                    Restaurants réputés, lounges feutrés et salons privés à Lomé où votre table et vos consommations sont prêtes à l&apos;arrivée.
+                  </div>
+                </div>
+
+                <div style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "18px", padding: "20px" }}>
+                  <div style={{ fontSize: "28px", marginBottom: "10px" }}>🔒</div>
+                  <div style={{ fontSize: "15px", fontWeight: 800, color: "white", marginBottom: "6px" }}>Discrétion & Zéro Harcèlement</div>
+                  <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>
+                    Votre numéro de téléphone n&apos;est jamais communiqué. Tout passe par notre messagerie chiffrée avec contrôle d&apos;accès strict.
+                  </div>
+                </div>
               </div>
-              {/* Plans */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "48px", maxWidth: "760px", margin: "0 auto 48px" }}>
+
+              {/* Chiffres Clés */}
+              <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "28px", padding: "20px", background: "rgba(0,0,0,0.2)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)" }}>
                 {[
-                  {name:"Découverte",price:"2 000",desc:"Rencontre simple en lieu public",color:"#64748B",badge:""},
-                  {name:"Complice",price:"5 000",desc:"Table réservée + boisson",color:"#3B82F6",badge:""},
-                  {name:"Dîner",price:"12 000",desc:"Menu complet — le plus populaire",color:"#E10600",badge:"⭐ Populaire"},
-                  {name:"VIP",price:"30 000",desc:"Espace privatif + appel vidéo",color:"#D97706",badge:"👑 VIP"},
-                ].map(pack => (
-                  <div key={pack.name} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${pack.color}55`, borderRadius: "16px", padding: "20px 16px", textAlign: "center", position: "relative" }}>
-                    {pack.badge && <div style={{ position: "absolute", top: "-10px", left: "50%", transform: "translateX(-50%)", background: pack.color, color: "white", fontSize: "10px", fontWeight: 700, padding: "2px 10px", borderRadius: "9999px", whiteSpace: "nowrap" }}>{pack.badge}</div>}
-                    <div style={{ fontSize: "15px", fontWeight: 800, color: "white", marginBottom: "4px" }}>{pack.name}</div>
-                    <div style={{ fontSize: "20px", fontWeight: 800, color: pack.color, marginBottom: "4px" }}>{pack.price} <span style={{ fontSize: "11px", opacity: 0.8 }}>FCFA</span></div>
-                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)" }}>{pack.desc}</div>
+                  { v: "1 200+", l: "Célibataires Inscrits" },
+                  { v: "12", l: "Lieux Partenaires Lomé" },
+                  { v: "340+", l: "Rendez-vous Réalisés" },
+                  { v: "4.7 / 5 ★", l: "Satisfaction Membres" },
+                ].map((s) => (
+                  <div key={s.l} style={{ textAlign: "center", minWidth: "120px" }}>
+                    <div style={{ fontSize: "1.7rem", fontWeight: 800, color: "#FFD700" }}>{s.v}</div>
+                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", marginTop: "2px" }}>{s.l}</div>
                   </div>
                 ))}
               </div>
-              {/* CTAs */}
-              <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap", marginBottom: "24px" }}>
-                <Link href="/connexion" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "15px 32px", borderRadius: "9999px", background: "linear-gradient(135deg, #E10600, #B30500)", color: "white", fontWeight: 700, fontSize: "16px", textDecoration: "none", boxShadow: "0 8px 25px rgba(225,6,0,0.4)" }}>
-                  ❤️ Rejoindre gratuitement
-                </Link>
-                <Link href="/connexion" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "15px 28px", borderRadius: "9999px", background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.3)", color: "white", fontWeight: 600, fontSize: "15px", textDecoration: "none" }}>
-                  Se connecter
-                </Link>
-              </div>
-              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)" }}>Ou connectez-vous avec Google sur la page de connexion • Accès gratuit immédiat</p>
             </div>
           </section>
-          {/* Section fonctionnement */}
-          <section style={{ background: "white", padding: "64px 20px" }}>
-            <div className="container" style={{ maxWidth: "900px" }}>
-              <h2 style={{ textAlign: "center", fontSize: "clamp(1.4rem, 4vw, 2.2rem)", marginBottom: "48px", color: "#0B2559" }}>Comment ça marche ?</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "32px", textAlign: "center" }}>
+
+          {/* Section Les Packs de Rendez-vous organisés */}
+          <section style={{ background: "#FFFFFF", padding: "64px 20px" }}>
+            <div className="container" style={{ maxWidth: "980px", margin: "0 auto" }}>
+              <div style={{ textAlign: "center", marginBottom: "40px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#E10600", textTransform: "uppercase", letterSpacing: "1px" }}>
+                  Des formules adaptées à chaque envie
+                </span>
+                <h2 style={{ fontSize: "clamp(1.6rem, 4vw, 2.3rem)", fontWeight: 800, color: "#0B2559", marginTop: "6px" }}>
+                  Nos 4 Packs de Rendez-vous Clé en Main
+                </h2>
+                <p style={{ fontSize: "14px", color: "#64748B", maxWidth: "600px", margin: "10px auto 0" }}>
+                  Choisissez une formule selon vos attentes. Le club s&apos;occupe de la réservation et de l&apos;accueil pour que vous n&apos;ayez qu&apos;à profiter de l&apos;instant.
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px", marginBottom: "40px" }}>
                 {[
-                  {num:"01",icon:"👤",t:"Créez votre profil",d:"Inscription gratuite en quelques minutes avec votre email, pseudo ou compte Google."},
-                  {num:"02",icon:"🔍",t:"Découvrez des profils",d:"Parcourez des profils vérifiés et échangez librement par messagerie."},
-                  {num:"03",icon:"📅",t:"Proposez un rendez-vous",d:"Choisissez un pack, un lieu partenaire et une date. L’autre accepte ou contre-propose."},
-                  {num:"04",icon:"✨",t:"Vivez le moment",d:"Table réservée, repas commandé, accueil soigné — tout est prêt à votre arrivée."},
-                ].map(s => (
-                  <div key={s.num}>
-                    <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>{s.icon}</div>
-                    <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#E10600", color: "white", fontSize: "11px", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>{s.num}</div>
-                    <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#0B2559", marginBottom: "8px" }}>{s.t}</h3>
-                    <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: 1.6 }}>{s.d}</p>
+                  {
+                    name: "Découverte",
+                    price: "2 000",
+                    tag: "Rencontre Conviviale",
+                    desc: "Idéal pour briser la glace dans un café ou salon public partenaire.",
+                    features: ["Lieu public vérifié", "Chat sécurisé inclus", "Rappels automatiques de RDV"],
+                    color: "#0B2559",
+                    bg: "#F8FAFC",
+                    popular: false,
+                  },
+                  {
+                    name: "Complice",
+                    price: "5 000",
+                    tag: "Détente & Boisson",
+                    desc: "Table réservée avec 1 boisson offerte par personne dans un cadre chaleureux.",
+                    features: ["Table réservée à votre nom", "1 boisson incluse / pers.", "Chat dédié & suivi"],
+                    color: "#3B82F6",
+                    bg: "#F0F7FF",
+                    popular: false,
+                  },
+                  {
+                    name: "Dîner",
+                    price: "12 000",
+                    tag: "⭐ Le Plus Prisé",
+                    desc: "La formule romantique par excellence avec menu complet en restaurant partenaire.",
+                    features: ["Table réservée soignée", "Menu complet (Entrée/Plat/Boisson)", "Ambiance tamisée intime"],
+                    color: "#E10600",
+                    bg: "#FFF5F5",
+                    popular: true,
+                  },
+                  {
+                    name: "VIP Premium",
+                    price: "30 000",
+                    tag: "👑 Prestige & Intimité",
+                    desc: "Espace privatif d'exception, menu gastronomique et accueil dédié haut de gamme.",
+                    features: ["Espace privatif exclusif", "Repas gastronomique + Champagne", "Appels vidéo live illimités"],
+                    color: "#D97706",
+                    bg: "#FFFBEB",
+                    popular: false,
+                  },
+                ].map((pack) => (
+                  <div
+                    key={pack.name}
+                    style={{
+                      background: pack.bg,
+                      border: pack.popular ? "2px solid #E10600" : "1.5px solid #E2E8F0",
+                      borderRadius: "20px",
+                      padding: "24px 20px",
+                      display: "flex",
+                      flexDirection: "column",
+                      position: "relative",
+                      boxShadow: pack.popular ? "0 12px 30px rgba(225, 6, 0, 0.12)" : "0 4px 12px rgba(0,0,0,0.04)",
+                    }}
+                  >
+                    {pack.popular && (
+                      <div style={{ position: "absolute", top: "-11px", left: "50%", transform: "translateX(-50%)", background: "#E10600", color: "white", fontSize: "11px", fontWeight: 800, padding: "3px 14px", borderRadius: "9999px", whiteSpace: "nowrap" }}>
+                        ⭐ Recommandé
+                      </div>
+                    )}
+                    <div style={{ fontSize: "12px", fontWeight: 800, color: pack.color, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                      {pack.tag}
+                    </div>
+                    <div style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: "4px 0" }}>
+                      {pack.name}
+                    </div>
+                    <div style={{ fontSize: "26px", fontWeight: 800, color: pack.color, marginBottom: "8px" }}>
+                      {pack.price} <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748B" }}>FCFA</span>
+                    </div>
+                    <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.4, marginBottom: "16px", minHeight: "36px" }}>
+                      {pack.desc}
+                    </p>
+                    <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
+                      {pack.features.map((f, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#334155", fontWeight: 600 }}>
+                          <span style={{ color: "#10B981" }}>✓</span>
+                          <span>{f}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
-              <div style={{ textAlign: "center", marginTop: "48px" }}>
-                <Link href="/connexion" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "14px 32px", borderRadius: "9999px", background: "linear-gradient(135deg, #0B2559, #163B8A)", color: "white", fontWeight: 700, fontSize: "15px", textDecoration: "none", boxShadow: "0 6px 20px rgba(11,37,89,0.3)" }}>
-                  Commencer maintenant →
-                </Link>
+            </div>
+          </section>
+
+          {/* ── ESPACE D'ENTRÉE ATTRACTIF AVEC CRÉATION DE COMPTE ── */}
+          <section style={{ background: "linear-gradient(135deg, #071530 0%, #0B2559 100%)", padding: "64px 20px 80px", color: "white" }}>
+            <div className="container" style={{ maxWidth: "680px", margin: "0 auto", textAlign: "center" }}>
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  backdropFilter: "blur(16px)",
+                  border: "2px solid rgba(255,255,255,0.2)",
+                  borderRadius: "28px",
+                  padding: "36px 24px",
+                  boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+                }}
+              >
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(225, 6, 0, 0.2)", border: "1px solid rgba(225, 6, 0, 0.4)", borderRadius: "9999px", padding: "6px 16px", marginBottom: "16px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 800, color: "#FF6B6B" }}>🎁 Offre Spéciale de Bienvenue</span>
+                </div>
+
+                <h2 style={{ fontSize: "clamp(1.6rem, 4.5vw, 2.3rem)", fontWeight: 800, color: "white", marginBottom: "12px" }}>
+                  Activez votre <span style={{ color: "#FFD700" }}>Plan Gratuit</span> en 30 secondes
+                </h2>
+
+                <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.9)", lineHeight: 1.6, marginBottom: "24px", maxWidth: "520px", margin: "0 auto 24px" }}>
+                  Rejoignez dès maintenant notre communauté de célibataires à Lomé. Dès votre premier accès, bénéficiez de <strong>7 jours d&apos;essai offert</strong> avec 3 contacts inclus pour démarrer vos premières discussions !
+                </p>
+
+                {/* Avantages Inclus */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", marginBottom: "28px", textAlign: "left" }}>
+                  {[
+                    "✓ 7 jours d'essai 100% gratuit",
+                    "✓ 3 contacts débloqués au choix",
+                    "✓ Messagerie privée sécurisée",
+                    "✓ Réservation de RDV disponible",
+                  ].map((adv, i) => (
+                    <div key={i} style={{ background: "rgba(255,255,255,0.1)", borderRadius: "10px", padding: "8px 12px", fontSize: "12px", fontWeight: 700, color: "white" }}>
+                      {adv}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Boutons d'Action Directe */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxWidth: "420px", margin: "0 auto" }}>
+                  <Link
+                    href="/rejoindre"
+                    className="btn btn-lg"
+                    style={{
+                      background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+                      color: "white",
+                      fontWeight: 800,
+                      fontSize: "16px",
+                      padding: "16px 28px",
+                      borderRadius: "9999px",
+                      textDecoration: "none",
+                      boxShadow: "0 8px 30px rgba(225, 6, 0, 0.45)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "10px",
+                    }}
+                  >
+                    <span>❤️ Rejoindre le Club & Activer mon Plan Gratuit</span>
+                  </Link>
+
+                  <Link
+                    href="/connexion"
+                    className="btn"
+                    style={{
+                      background: "rgba(255,255,255,0.15)",
+                      border: "1.5px solid rgba(255,255,255,0.35)",
+                      color: "white",
+                      fontWeight: 700,
+                      fontSize: "14px",
+                      padding: "13px 20px",
+                      borderRadius: "9999px",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Déjà membre ? S&apos;identifier avec ses identifiants
+                  </Link>
+                </div>
+
+                <div style={{ marginTop: "20px", fontSize: "11px", color: "rgba(255,255,255,0.6)" }}>
+                  Plateforme réservée aux personnes majeures (+18) · Données chiffrées & confidentielles
+                </div>
               </div>
             </div>
           </section>

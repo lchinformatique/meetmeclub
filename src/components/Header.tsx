@@ -434,7 +434,7 @@ export default function Header() {
                 </Link>
 
                 <Link
-                  href="/connexion"
+                  href="/rejoindre"
                   style={{
                     display: "flex",
                     alignItems: "center",

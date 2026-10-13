@@ -186,13 +186,13 @@ export default function HomePage() {
 
       {/* ── Hero Section ──────────────────────────────────────── */}
       <section
+        className="hero-section"
         style={{
           position: "relative",
           minHeight: "calc(100vh - var(--header-height) - 36px)",
           display: "flex",
           alignItems: "center",
           overflow: "hidden",
-          paddingBlock: "80px 120px",
         }}
       >
         {/* Background Image: Couple meetmeclub with Scrim & Vignette */}
@@ -221,12 +221,12 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="container" style={{ position: "relative", zIndex: 1, width: "100%" }}>
+        <div className="container hero-container" style={{ position: "relative", zIndex: 1, width: "100%", minWidth: 0 }}>
           <div className="hero-grid">
             {/* Left Column: All Core Information, CTAs & Value Props */}
-            <div className="animate-fade-in hero-content-column" style={{ maxWidth: "620px" }}>
+            <div className="animate-fade-in hero-content-column" style={{ maxWidth: "620px", width: "100%", minWidth: 0 }}>
               {/* Animated Pillars Ticker */}
-              <div className="hero-pillars-ticker" style={{ marginBottom: "24px", overflow: "hidden" }}>
+              <div className="hero-pillars-ticker" style={{ marginBottom: "20px", overflow: "hidden", width: "100%", minWidth: 0 }}>
                 <div className="hero-pillars-track">
                   {[
                     { icon: "❤️", label: "Rencontrez" },
@@ -248,18 +248,19 @@ export default function HomePage() {
               </div>
 
               <h1
+                className="hero-title"
                 style={{
-                  fontSize: "clamp(2.2rem, 5vw, 3.8rem)",
+                  fontSize: "clamp(2rem, 5.2vw, 3.8rem)",
                   fontWeight: 800,
                   color: "white",
-                  lineHeight: 1.1,
+                  lineHeight: 1.15,
                   marginBottom: "16px",
                   textShadow: "0 2px 16px rgba(0,0,0,0.45)",
                 }}
               >
-                Plus qu'une rencontre,{" "}
+                Plus qu&apos;une rencontre,{" "}
                 <span
-                  className="font-script"
+                  className="font-script hero-title-accent"
                   style={{
                     color: "#FFD700",
                     fontSize: "1.1em",
@@ -272,8 +273,9 @@ export default function HomePage() {
               </h1>
 
               <p
+                className="hero-description"
                 style={{
-                  fontSize: "clamp(1.05rem, 2vw, 1.25rem)",
+                  fontSize: "clamp(1rem, 2.2vw, 1.25rem)",
                   color: "rgba(255,255,255,0.92)",
                   marginBottom: "14px",
                   fontWeight: 400,
@@ -285,11 +287,11 @@ export default function HomePage() {
               </p>
 
               <p
-                className="font-script"
+                className="font-script hero-subtitle"
                 style={{
-                  fontSize: "clamp(1.4rem, 2.5vw, 1.9rem)",
+                  fontSize: "clamp(1.35rem, 3.5vw, 1.9rem)",
                   color: "rgba(255,255,255,0.9)",
-                  marginBottom: "36px",
+                  marginBottom: "32px",
                   textShadow: "0 2px 10px rgba(0,0,0,0.4)",
                 }}
               >
@@ -298,8 +300,8 @@ export default function HomePage() {
 
               <div className="hero-cta-group">
                 <Link
-                  href="/inscription"
-                  className="btn btn-lg"
+                  href="/rejoindre"
+                  className="btn btn-lg hero-btn-primary"
                   style={{
                     background: "var(--color-red)",
                     color: "white",
@@ -312,7 +314,7 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/tarifs"
-                  className="btn btn-lg"
+                  className="btn btn-lg hero-btn-secondary"
                   style={{
                     background: "rgba(255,255,255,0.15)",
                     backdropFilter: "blur(12px)",
