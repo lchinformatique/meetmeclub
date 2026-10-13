@@ -107,13 +107,25 @@ export async function POST(req: NextRequest) {
             gender: resolvedGender as any,
             city: "Lomé",
             bio: "Nouveau membre sur Meet Me Club à Lomé.",
-            relationshipGoal: "SERIOUS",
-            profileCompleteness: 50,
             isVisible: true,
           },
         });
+
+        // Création de l'abonnement initial Plan Gratuit (7 jours)
+        await (prisma as any).subscription.create({
+          data: {
+            userId: user.id,
+            plan: "FREE",
+            status: "ACTIVE",
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            priceFcfa: 0,
+            paymentRef: "FREE_REGISTRATION",
+            paymentMethod: "FREE",
+          },
+        }).catch(() => {});
       } catch (profErr) {
-        console.warn("[register] Profile creation warning:", profErr);
+        console.warn("[register] Profile/Subscription creation warning:", profErr);
       }
     } catch (dbErr) {
       console.warn("[register] Supabase direct error, using local fallback:", dbErr);
