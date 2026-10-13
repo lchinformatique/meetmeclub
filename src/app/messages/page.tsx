@@ -14,6 +14,7 @@ interface ChatMessage {
   senderId: string;
   body: string;
   imageUrl?: string;
+  videoUrl?: string;
   audioUrl?: string;
   audioDuration?: number; // duration in seconds
   location?: {
@@ -166,14 +167,26 @@ function MessagesContent() {
           if (data.messages) {
             setMessages((prev) => ({
               ...prev,
-              [activeConvId]: data.messages.map((m: any) => ({
-                id: m.id,
-                senderId: m.senderId,
-                body: m.body,
-                imageUrl: m.mediaUrl || undefined,
-                createdAt: m.createdAt,
-                status: m.status,
-              })),
+              [activeConvId]: data.messages.map((m: any) => {
+                const isVideo =
+                  m.mediaUrl?.startsWith("data:video/") ||
+                  m.mediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) ||
+                  m.body?.includes("🎥");
+                const isAudio =
+                  m.mediaUrl?.startsWith("data:audio/") ||
+                  m.mediaUrl?.match(/\.(mp3|wav|ogg|webm)$/i) ||
+                  m.body?.startsWith("🎙️");
+                return {
+                  id: m.id,
+                  senderId: m.senderId,
+                  body: m.body,
+                  imageUrl: !isVideo && !isAudio && m.mediaUrl ? m.mediaUrl : undefined,
+                  videoUrl: isVideo ? m.mediaUrl : undefined,
+                  audioUrl: isAudio ? m.mediaUrl : undefined,
+                  createdAt: m.createdAt,
+                  status: m.status,
+                };
+              }),
             }));
           }
         }
@@ -396,11 +409,12 @@ function MessagesContent() {
     setVoiceRecordingSeconds(0);
   };
 
-  const dispatchVoiceMessage = (url: string, durationSec: number) => {
+  const dispatchVoiceMessage = async (url: string, durationSec: number) => {
+    const voiceText = `🎙️ Note vocale (${formatTimer(durationSec)})`;
     const msg: ChatMessage = {
       id: `voice-${Date.now()}`,
       senderId: ME_ID,
-      body: `🎙️ Note vocale (${formatTimer(durationSec)})`,
+      body: voiceText,
       audioUrl: url,
       audioDuration: durationSec,
       createdAt: new Date().toISOString(),
@@ -415,10 +429,24 @@ function MessagesContent() {
     setConversations((prev) =>
       prev.map((c) =>
         c.id === activeConvId
-          ? { ...c, lastMessage: `🎙️ Note vocale (${formatTimer(durationSec)})`, lastMessageAt: new Date().toISOString() }
+          ? { ...c, lastMessage: voiceText, lastMessageAt: new Date().toISOString() }
           : c
       )
     );
+
+    try {
+      await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: activeConvId,
+          body: voiceText,
+          mediaUrl: url.startsWith("blob:") ? undefined : url,
+        }),
+      });
+    } catch (err) {
+      console.warn("Could not sync voice message to server:", err);
+    }
   };
 
   // ── Voice Message Playback ───────────────────────────────────
@@ -555,8 +583,8 @@ function MessagesContent() {
     }
   }, [draft, activeConvId, isVerifiedForChat, isFreePlan, conversations]);
 
-  // Send Photo from Device
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Send Photo or Video from Device
+  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -571,14 +599,18 @@ function MessagesContent() {
       return;
     }
 
+    const isVideo = file.type.startsWith("video/");
+    const mediaLabel = isVideo ? "🎥 Vidéo partagée" : "📷 Photo partagée";
+
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
+    reader.onload = async (event) => {
+      const mediaUrl = event.target?.result as string;
       const msg: ChatMessage = {
-        id: `img-${Date.now()}`,
+        id: `media-${Date.now()}`,
         senderId: ME_ID,
-        body: "📷 Photo partagée",
-        imageUrl,
+        body: mediaLabel,
+        imageUrl: isVideo ? undefined : mediaUrl,
+        videoUrl: isVideo ? mediaUrl : undefined,
         createdAt: new Date().toISOString(),
         status: "SENT",
       };
@@ -589,10 +621,25 @@ function MessagesContent() {
       setConversations((prev) =>
         prev.map((c) =>
           c.id === activeConvId
-            ? { ...c, lastMessage: "📷 Photo partagée", lastMessageAt: new Date().toISOString() }
+            ? { ...c, lastMessage: mediaLabel, lastMessageAt: new Date().toISOString() }
             : c
         )
       );
+
+      // Persist to server
+      try {
+        await fetch("/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId: activeConvId,
+            body: mediaLabel,
+            mediaUrl,
+          }),
+        });
+      } catch (err) {
+        console.warn("Could not sync media to server:", err);
+      }
     };
     reader.readAsDataURL(file);
     e.target.value = "";
@@ -1111,6 +1158,26 @@ function MessagesContent() {
                           </div>
                         )}
 
+                        {/* 🎥 Video Display */}
+                        {msg.videoUrl && (
+                          <div style={{ marginBottom: msg.body && msg.body !== "🎥 Vidéo partagée" ? "8px" : "0" }}>
+                            <video
+                              src={msg.videoUrl}
+                              controls
+                              controlsList="nodownload noplaybackrate"
+                              disablePictureInPicture
+                              onContextMenu={(e) => e.preventDefault()}
+                              style={{
+                                maxWidth: "100%",
+                                maxHeight: "280px",
+                                borderRadius: "12px",
+                                background: "#000",
+                                border: isMe ? "2px solid rgba(255,255,255,0.4)" : "2px solid #E2E8F0",
+                              }}
+                            />
+                          </div>
+                        )}
+
                         {/* 📷 Photo Display */}
                         {msg.imageUrl && (
                           <div style={{ marginBottom: msg.body && msg.body !== "📷 Photo partagée" ? "8px" : "0" }}>
@@ -1119,12 +1186,14 @@ function MessagesContent() {
                               src={msg.imageUrl}
                               alt="Photo envoyée"
                               onClick={() => setEnlargedImage(msg.imageUrl || null)}
+                              onContextMenu={(e) => e.preventDefault()}
                               style={{
                                 maxWidth: "100%",
                                 maxHeight: "260px",
                                 borderRadius: "12px",
                                 objectFit: "cover",
                                 cursor: "pointer",
+                                userSelect: "none",
                                 border: isMe ? "2px solid rgba(255,255,255,0.4)" : "2px solid #E2E8F0",
                               }}
                             />
@@ -1175,6 +1244,7 @@ function MessagesContent() {
 
                         {/* Plain text body if not just an attachment title */}
                         {(!msg.imageUrl || msg.body !== "📷 Photo partagée") &&
+                          (!msg.videoUrl || msg.body !== "🎥 Vidéo partagée") &&
                           (!msg.audioUrl || !msg.body.startsWith("🎙️ Note vocale")) && (
                             <div>{msg.body}</div>
                           )}
@@ -1260,12 +1330,12 @@ function MessagesContent() {
 
             {/* Chat Input Bar: Photo, GPS, Audio Voice Notes & Text */}
             <div style={{ padding: "14px 24px", background: "white", borderTop: "1px solid #E2E8F0" }}>
-              {/* Hidden file input for photos */}
+              {/* Hidden file input for photos and videos */}
               <input
                 type="file"
                 ref={fileInputRef}
-                accept="image/*"
-                onChange={handleImageSelect}
+                accept="image/*,video/*"
+                onChange={handleMediaSelect}
                 style={{ display: "none" }}
               />
 
@@ -1351,11 +1421,11 @@ function MessagesContent() {
                   </div>
                 ) : (
                   <>
-                    {/* 📷 Photo Upload Button */}
+                    {/* 📷 Photo / Video Upload Button */}
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      title="Envoyer une photo depuis votre téléphone ou galerie"
+                      title="Envoyer une photo ou une vidéo depuis votre téléphone ou galerie"
                       style={{
                         background: "white",
                         border: "1px solid #CBD5E1",

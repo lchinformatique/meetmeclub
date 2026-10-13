@@ -65,15 +65,15 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { conversationId, body: messageBody } = body;
+  const { conversationId, body: messageBody, mediaUrl } = body;
 
-  if (!conversationId || !messageBody?.trim()) {
+  if (!conversationId || (!messageBody?.trim() && !mediaUrl)) {
     return NextResponse.json(
-      { error: "conversationId et body sont requis" },
+      { error: "conversationId et body ou mediaUrl sont requis" },
       { status: 400 }
     );
   }
-  if (messageBody.trim().length > 2000) {
+  if (messageBody && messageBody.trim().length > 2000) {
     return NextResponse.json(
       { error: "Message trop long (max 2000 caractères)" },
       { status: 400 }
@@ -105,7 +105,8 @@ export async function POST(req: NextRequest) {
         data: {
           conversationId,
           senderId: session.userId,
-          body: messageBody.trim(),
+          body: (messageBody || "Média partagé").trim(),
+          mediaUrl: mediaUrl || null,
           status: "SENT",
         },
       }),
