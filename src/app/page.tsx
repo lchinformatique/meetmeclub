@@ -232,11 +232,13 @@ export default function HomePage() {
                   gap: "10px",
                   background: "rgba(255, 255, 255, 0.95)",
                   backdropFilter: "blur(12px)",
-                  padding: "6px 16px 6px 6px",
+                  padding: "6px 14px 6px 6px",
                   borderRadius: "var(--radius-full)",
                   boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
                   marginBottom: "20px",
                   border: "1.5px solid rgba(255, 255, 255, 0.8)",
+                  maxWidth: "100%",
+                  flexWrap: "wrap",
                 }}
               >
                 <div

@@ -1528,8 +1528,20 @@ img, picture, [data-protected-image] {
    RESPONSIVE ENHANCEMENTS — SMARTPHONES, IPHONES & TABLETTES
    - Alignement parfait des textes et icônes
    - Contraste net : texte blanc sur fond bleu/rouge, jamais de noir sur bleu
-   - Pas de débordement de texte hors de son cadre
+   - Aucun débordement de texte hors de son cadre sur Android et iPhone
    ────────────────────────────────────────────────────────────── */
+
+/* Empêche tout défilement horizontal et débordement global */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+/* Règle universelle de césure et rupture de mot sur tous les conteneurs */
+p, span, h1, h2, h3, h4, h5, h6, a, label, button, li, div {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
 /* Assure un contraste net sur les fonds bleu foncé et rouge */
 [style*="background: #0B2559"],
@@ -1543,35 +1555,64 @@ img, picture, [data-protected-image] {
   color: #FFFFFF !important;
 }
 
-/* Évite les débordements de textes et recadre sur mobile */
+/* Évite les débordements de textes et recadre parfaitement sur mobile */
 @media (max-width: 640px) {
   h1 {
-    font-size: clamp(1.6rem, 6vw, 2.4rem) !important;
+    font-size: clamp(1.45rem, 5.5vw, 2.1rem) !important;
     line-height: 1.2 !important;
+    word-break: break-word !important;
   }
   h2 {
-    font-size: clamp(1.3rem, 5vw, 1.8rem) !important;
+    font-size: clamp(1.2rem, 4.5vw, 1.65rem) !important;
     line-height: 1.25 !important;
+    word-break: break-word !important;
   }
   h3 {
-    font-size: clamp(1.1rem, 4.5vw, 1.4rem) !important;
+    font-size: clamp(1.05rem, 4vw, 1.35rem) !important;
     line-height: 1.3 !important;
+    word-break: break-word !important;
   }
-  p, span, a {
-    word-break: normal;
-    overflow-wrap: break-word;
+  p, span, a, label, li {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
   }
-  .card, .pricing-card {
-    padding: 20px 16px !important;
+  .card, .pricing-card, .profile-card {
+    padding: 18px 14px !important;
     border-radius: 18px !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
   .btn {
-    max-width: 100%;
-    padding: 12px 18px !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    text-align: center !important;
+    padding: 11px 16px !important;
     font-size: 14px !important;
+    line-height: 1.3 !important;
   }
   .container {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    max-width: 100% !important;
+  }
+  .hero-grid, .home-packs-grid, .pricing-grid-container {
+    max-width: 100% !important;
+    overflow-x: hidden;
+  }
+  .hero-pillar-chip {
+    max-width: 100% !important;
+    font-size: 12px !important;
+    padding: 5px 10px !important;
+    white-space: normal !important;
+  }
+  /* Badges & Chips */
+  [style*="borderRadius: var(--radius-full)"],
+  [style*="border-radius: var(--radius-full)"],
+  [style*="border-radius: 9999px"],
+  [style*="borderRadius: 9999px"],
+  [style*="borderRadius: 100px"] {
+    max-width: 100% !important;
+    white-space: normal !important;
+    word-break: break-word !important;
   }
 }

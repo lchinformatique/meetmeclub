@@ -203,8 +203,8 @@ export default function TarifsPage() {
                 padding: "28px 22px",
               }}
             >
-              {/* Badge Row (Fixed Height) */}
-              <div style={{ height: "30px", display: "flex", alignItems: "center", marginBottom: "12px" }}>
+              {/* Badge Row (Flexible) */}
+              <div style={{ minHeight: "30px", display: "flex", alignItems: "center", marginBottom: "12px", flexWrap: "wrap" }}>
                 <span
                   style={{
                     display: "inline-block",
@@ -214,28 +214,30 @@ export default function TarifsPage() {
                     fontWeight: 700,
                     padding: "4px 12px",
                     borderRadius: "9999px",
+                    maxWidth: "100%",
+                    wordBreak: "break-word",
                   }}
                 >
                   {plan.badge}
                 </span>
               </div>
 
-              {/* Title (Fixed Height) */}
+              {/* Title (Flexible) */}
               <div style={{ minHeight: "32px", display: "flex", alignItems: "center", marginBottom: "6px" }}>
-                <h2 style={{ fontSize: "21px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+                <h2 style={{ fontSize: "21px", fontWeight: 800, color: "#0F172A", margin: 0, wordBreak: "break-word" }}>
                   {plan.name}
                 </h2>
               </div>
 
               {/* Description (minHeight to avoid text overflow/hiding) */}
-              <div style={{ minHeight: "68px", display: "flex", alignItems: "flex-start", marginBottom: "16px" }}>
-                <p style={{ fontSize: "13px", color: "#475569", margin: 0, lineHeight: 1.5 }}>
+              <div style={{ minHeight: "56px", display: "flex", alignItems: "flex-start", marginBottom: "16px" }}>
+                <p style={{ fontSize: "13px", color: "#475569", margin: 0, lineHeight: 1.5, wordBreak: "break-word" }}>
                   {plan.description}
                 </p>
               </div>
 
-              {/* Price (Fixed Height & Aligned Separator) */}
-              <div style={{ height: "66px", marginBottom: "20px", paddingBottom: "16px", borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "baseline", gap: "6px" }}>
+              {/* Price (Flexible & Aligned Separator) */}
+              <div style={{ minHeight: "56px", marginBottom: "20px", paddingBottom: "16px", borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "6px" }}>
                 <span style={{ fontSize: "34px", fontWeight: 900, color: plan.highlight ? "#0B2559" : "#0F172A", lineHeight: 1 }}>
                   {plan.price}
                 </span>

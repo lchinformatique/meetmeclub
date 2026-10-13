@@ -250,53 +250,53 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                 </div>
 
                 {/* ── Subscription Tier Badge ── */}
-                <div style={{ marginTop: "12px" }}>
+                <div style={{ marginTop: "12px", maxWidth: "100%" }}>
                   {profile.plan === "VIP" ? (
                     <div style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px",
+                      display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%",
                       background: "linear-gradient(135deg, #92400E 0%, #B8860B 50%, #D4A017 100%)",
-                      color: "white", padding: "8px 20px", borderRadius: "var(--radius-full)",
+                      color: "white", padding: "8px 16px", borderRadius: "var(--radius-full)",
                       fontWeight: 800, fontSize: "14px",
                       boxShadow: "0 4px 16px rgba(184, 134, 11, 0.35)",
                       border: "2px solid rgba(255,215,0,0.4)",
                     }}>
                       <span style={{ fontSize: "18px" }}>👑</span>
-                      Membre VIP — 15 000 F/mois
+                      <span>Membre VIP — 15 000 F/mois</span>
                     </div>
                   ) : profile.plan === "COMPLICE" ? (
                     <div style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px",
+                      display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%",
                       background: "linear-gradient(135deg, #7C2D12 0%, #9A3412 50%, #C2410C 100%)",
-                      color: "white", padding: "8px 20px", borderRadius: "var(--radius-full)",
+                      color: "white", padding: "8px 16px", borderRadius: "var(--radius-full)",
                       fontWeight: 800, fontSize: "14px",
                       boxShadow: "0 4px 16px rgba(194, 65, 12, 0.30)",
                       border: "2px solid rgba(255,255,255,0.2)",
                     }}>
                       <span style={{ fontSize: "18px" }}>🍷</span>
-                      Pass Complice — 6 000 F/mois
+                      <span>Pass Complice — 6 000 F/mois</span>
                     </div>
                   ) : profile.plan === "ESSENTIAL" ? (
                     <div style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px",
+                      display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%",
                       background: "linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)",
-                      color: "white", padding: "8px 20px", borderRadius: "var(--radius-full)",
+                      color: "white", padding: "8px 16px", borderRadius: "var(--radius-full)",
                       fontWeight: 800, fontSize: "14px",
                       boxShadow: "0 4px 16px rgba(37, 99, 235, 0.30)",
                       border: "2px solid rgba(255,255,255,0.15)",
                     }}>
                       <span style={{ fontSize: "18px" }}>⭐</span>
-                      Pass Essentiel — 3 000 F/mois
+                      <span>Pass Essentiel — 3 000 F/mois</span>
                     </div>
                   ) : (
                     <div style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px",
+                      display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%",
                       background: "#F1F5F9",
-                      color: "#475569", padding: "8px 20px", borderRadius: "var(--radius-full)",
+                      color: "#475569", padding: "8px 16px", borderRadius: "var(--radius-full)",
                       fontWeight: 700, fontSize: "13px",
                       border: "1px solid #CBD5E1",
                     }}>
                       <span style={{ fontSize: "16px" }}>⚡</span>
-                      Plan Gratuit (Essai 7 jours)
+                      <span>Plan Gratuit (Essai 7 jours)</span>
                     </div>
                   )}
                 </div>
