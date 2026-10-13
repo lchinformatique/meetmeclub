@@ -203,6 +203,7 @@ export default function HomePage() {
             fill
             priority
             quality={100}
+            className="hero-bg-img"
             style={{
               objectFit: "cover",
               objectPosition: "center right",
@@ -224,103 +225,26 @@ export default function HomePage() {
           <div className="hero-grid">
             {/* Left Column: All Core Information, CTAs & Value Props */}
             <div className="animate-fade-in" style={{ maxWidth: "620px" }}>
-              {/* Brand Signature Label / Étiquette */}
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  background: "rgba(255, 255, 255, 0.95)",
-                  backdropFilter: "blur(12px)",
-                  padding: "6px 14px 6px 6px",
-                  borderRadius: "var(--radius-full)",
-                  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
-                  marginBottom: "20px",
-                  border: "1.5px solid rgba(255, 255, 255, 0.8)",
-                  maxWidth: "100%",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    border: "2px solid var(--color-red)",
-                    background: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    boxShadow: "0 2px 8px rgba(225, 6, 0, 0.2)",
-                  }}
-                >
-                  <Image
-                    src="/logo.png"
-                    alt="Logo Meet Me Club"
-                    width={36}
-                    height={36}
-                    style={{ objectFit: "cover" }}
-                  />
+              {/* Animated Pillars Ticker */}
+              <div className="hero-pillars-ticker" style={{ marginBottom: "24px", overflow: "hidden" }}>
+                <div className="hero-pillars-track">
+                  {[
+                    { icon: "❤️", label: "Rencontrez" },
+                    { icon: "💬", label: "Échangez" },
+                    { icon: "👥", label: "Partagez" },
+                    { icon: "📅", label: "Rendez-vous" },
+                    { icon: "🔒", label: "Sécurisé" },
+                    { icon: "❤️", label: "Rencontrez" },
+                    { icon: "💬", label: "Échangez" },
+                    { icon: "👥", label: "Partagez" },
+                    { icon: "📅", label: "Rendez-vous" },
+                    { icon: "🔒", label: "Sécurisé" },
+                  ].map((p, i) => (
+                    <span key={i} className="hero-pillar-chip">
+                      {p.icon} {p.label}
+                    </span>
+                  ))}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-                  <span
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: 800,
-                      color: "var(--color-blue)",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    MEET <span style={{ color: "var(--color-red)" }}>ME</span> CLUB
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      color: "var(--color-gray-500)",
-                      letterSpacing: "1px",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Club Privé International · Sorties Togo
-                  </span>
-                </div>
-                <span
-                  style={{
-                    marginLeft: "6px",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    background: "var(--color-red)",
-                    color: "white",
-                    padding: "3px 8px",
-                    borderRadius: "var(--radius-full)",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  18+
-                </span>
-              </div>
-
-              {/* Pillars */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  marginBottom: "24px",
-                  flexWrap: "wrap",
-                }}
-              >
-                {[
-                  { icon: "❤️", label: "Rencontrez" },
-                  { icon: "💬", label: "Échangez" },
-                  { icon: "👥", label: "Partagez" },
-                ].map((p) => (
-                  <span key={p.label} className="hero-pillar-chip">
-                    {p.icon} {p.label}
-                  </span>
-                ))}
               </div>
 
               <h1
@@ -369,12 +293,12 @@ export default function HomePage() {
                   textShadow: "0 2px 10px rgba(0,0,0,0.4)",
                 }}
               >
-                Votre histoire commence ici ❤️
+                Votre histoire commence ici
               </p>
 
-              <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
+              <div className="hero-cta-group">
                 <Link
-                  href="/inscription"
+                  href="/connexion"
                   className="btn btn-lg"
                   style={{
                     background: "var(--color-red)",
@@ -384,7 +308,7 @@ export default function HomePage() {
                     border: "2px solid rgba(255,255,255,0.2)",
                   }}
                 >
-                  ❤️ Rejoindre gratuitement
+                  Rejoindre gratuitement
                 </Link>
                 <Link
                   href="/tarifs"
@@ -523,10 +447,10 @@ export default function HomePage() {
                   }}
                 >
                   {[
-                    { value: "500+", label: "Membres actifs" },
-                    { value: "50+", label: "Lieux partenaires" },
-                    { value: "200+", label: "Rendez-vous réussis" },
-                    { value: "4.8★", label: "Note moyenne" },
+                    { value: "1 200+", label: "Membres inscrits" },
+                    { value: "12", label: "Lieux partenaires" },
+                    { value: "340+", label: "Rendez-vous réussis" },
+                    { value: "4.7★", label: "Note moyenne" },
                   ].map((s) => (
                     <div
                       key={s.label}
@@ -1015,14 +939,14 @@ export default function HomePage() {
             Votre histoire commence ici
           </h2>
           <p style={{ fontSize: "18px", color: "rgba(255,255,255,0.85)", marginBottom: "32px" }}>
-            Rejoignez des centaines de membres qui ont déjà trouvé leur rendez-vous à Lomé.
+            Rejoignez plus de 1 200 célibataires qui ont déjà trouvé leur rendez-vous à Lomé.
           </p>
           <Link
-            href="/inscription"
+            href="/connexion"
             className="btn btn-lg"
             style={{ background: "white", color: "var(--color-red)", fontWeight: 700, boxShadow: "0 8px 30px rgba(0,0,0,0.25)" }}
           >
-            Créer mon profil gratuitement
+            Rejoindre gratuitement
           </Link>
         </div>
       </section>
@@ -1037,83 +961,64 @@ export default function HomePage() {
 
 function Footer() {
   return (
-    <footer style={{ background: "var(--color-blue-dark)", color: "rgba(255,255,255,0.75)", padding: "48px 16px 24px" }}>
+    <footer style={{ background: "var(--color-blue-dark)", color: "rgba(255,255,255,0.75)", padding: "40px 16px 20px" }}>
       <div className="container">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "32px", marginBottom: "48px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "28px", marginBottom: "32px" }}>
           {/* Brand */}
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  border: "2px solid var(--color-red)",
-                  background: "white",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  boxShadow: "0 0 16px rgba(225, 6, 0, 0.35)",
-                  padding: "3px",
-                }}
-              >
-                <Image src="/logo.png" alt="Meet Me Club" width={42} height={42} style={{ objectFit: "contain" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+              <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", border: "2px solid var(--color-red)", background: "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "3px" }}>
+                <Image src="/logo.png" alt="Meet Me Club" width={34} height={34} style={{ objectFit: "contain" }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-                <span style={{ fontWeight: 800, fontSize: "18px", color: "white", letterSpacing: "0.2px" }}>
+                <span style={{ fontWeight: 800, fontSize: "16px", color: "white" }}>
                   meet <span style={{ color: "var(--color-red)" }}>me</span> club
                 </span>
-                <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)", fontStyle: "italic" }}>
-                  « Plus qu&apos;une rencontre, un rendez-vous ! »
+                <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)", fontStyle: "italic" }}>
+                  Plus qu&apos;une rencontre, un rendez-vous !
                 </span>
               </div>
             </div>
-            <p style={{ fontSize: "14px", lineHeight: 1.7 }}>
-              Plus qu&apos;une rencontre, un rendez-vous. La première plateforme de rencontres avec réservation au Togo.
+            <p style={{ fontSize: "13px", lineHeight: 1.6, color: "rgba(255,255,255,0.65)" }}>
+              La 1ère plateforme de rencontres avec réservation de rendez-vous au Togo.
             </p>
           </div>
-          {/* Links */}
+          {/* Navigation */}
           <div>
-            <h4 style={{ color: "white", marginBottom: "16px", fontSize: "15px" }}>Plateforme</h4>
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "10px" }}>
-              {[["Le Concept", "/concept"], ["Nos tarifs", "/tarifs"], ["À propos", "/a-propos"], ["FAQ", "/faq"], ["Devenir partenaire", "/partenaires"]].map(([label, href]) => (
-                <li key={href}><Link href={href} style={{ color: "inherit", textDecoration: "none", fontSize: "14px" }}>{label}</Link></li>
+            <h4 style={{ color: "white", marginBottom: "12px", fontSize: "13px", letterSpacing: "0.8px", textTransform: "uppercase" }}>Navigation</h4>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
+              {[["Découvrir", "/decouverte"], ["Nos tarifs", "/tarifs"], ["À propos", "/a-propos"], ["Partenaires", "/partenaires"]].map(([label, href]) => (
+                <li key={href}><Link href={href} style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "13px" }}>{label}</Link></li>
               ))}
             </ul>
           </div>
+          {/* Légal */}
           <div>
-            <h4 style={{ color: "white", marginBottom: "16px", fontSize: "15px" }}>Sécurité & Légal</h4>
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "10px" }}>
-              {[["Sécurité & Confiance", "/securite"], ["CGU", "/legal/cgu"], ["Confidentialité", "/legal/confidentialite"], ["Mentions légales", "/legal/mentions"], ["Charte de conduite", "/legal/charte"]].map(([label, href]) => (
-                <li key={href}><Link href={href} style={{ color: "inherit", textDecoration: "none", fontSize: "14px" }}>{label}</Link></li>
+            <h4 style={{ color: "white", marginBottom: "12px", fontSize: "13px", letterSpacing: "0.8px", textTransform: "uppercase" }}>Légal</h4>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
+              {[["CGU", "/legal/cgu"], ["Confidentialité", "/legal/confidentialite"], ["Mentions légales", "/legal/mentions"]].map(([label, href]) => (
+                <li key={href}><Link href={href} style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "13px" }}>{label}</Link></li>
               ))}
             </ul>
           </div>
+          {/* Contact */}
           <div>
-            <h4 style={{ color: "white", marginBottom: "16px", fontSize: "15px" }}>Contact & Assistance</h4>
-            <div style={{ fontSize: "14px", lineHeight: 1.8, display: "flex", flexDirection: "column", gap: "6px" }}>
-              <Link href="/contact" style={{ color: "white", fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <Headphones size={15} />
-                <span>Assistance & Support</span>
-              </Link>
+            <h4 style={{ color: "white", marginBottom: "12px", fontSize: "13px", letterSpacing: "0.8px", textTransform: "uppercase" }}>Contact</h4>
+            <div style={{ fontSize: "13px", lineHeight: 1.8, display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <Mail size={15} />
-                <span>contact@meetmeclub.tg</span>
+                <Mail size={13} /><span>contact@meetmeclub.tg</span>
               </span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <MapPin size={15} />
-                <span>Lomé, Togo</span>
+                <MapPin size={13} /><span>Lomé, Togo</span>
               </span>
             </div>
           </div>
         </div>
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-          <p style={{ fontSize: "13px" }}>© {new Date().getFullYear()} Meet Me Club. Tous droits réservés.</p>
-          <p style={{ fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <ShieldCheck size={14} className="text-emerald-400" />
-            <span>Réservé aux adultes de 18 ans et plus · Lomé, Togo</span>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>© {new Date().getFullYear()} Meet Me Club · Lomé, Togo · Tous droits réservés.</p>
+          <p style={{ fontSize: "12px", display: "flex", alignItems: "center", gap: "5px", color: "rgba(255,255,255,0.5)" }}>
+            <ShieldCheck size={13} className="text-emerald-400" />
+            <span>Réservé aux 18 ans et plus</span>
           </p>
         </div>
       </div>

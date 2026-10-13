@@ -434,7 +434,7 @@ export default function Header() {
                 </Link>
 
                 <Link
-                  href="/inscription"
+                  href="/connexion"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -593,10 +593,150 @@ export default function Header() {
           </button>
         </div>
 
+        {/* Drawer Auth Zone (En premier sur mobile) */}
+        <div style={{ padding: "16px 14px 12px", borderBottom: "1px solid #EEF2FB", background: "#FAFBFD" }}>
+          {!loadingUser && sessionUser ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <Link
+                href="/profil"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "10px 14px",
+                  borderRadius: "12px",
+                  border: "1.5px solid #D8E1EF",
+                  background: "white",
+                  textDecoration: "none",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  boxShadow: "0 1px 4px rgba(11,37,89,0.04)",
+                }}
+              >
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: "#EEF2FB",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                  }}
+                >
+                  {sessionUser.avatarUrl ? (
+                    <Image src={sessionUser.avatarUrl} alt={sessionUser.firstName} width={36} height={36} style={{ objectFit: "cover" }} />
+                  ) : (
+                    <User size={16} style={{ color: "#0B2559" }} />
+                  )}
+                </div>
+                <div style={{ flex: 1, overflow: "hidden" }}>
+                  <div style={{ fontWeight: 700, fontSize: "14px", color: "#0B2559", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {sessionUser.firstName}
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#8B99B5", fontWeight: 500 }}>Mon profil · Tableau de bord</div>
+                </div>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  width: "100%",
+                  minHeight: "42px",
+                  padding: "10px 14px",
+                  borderRadius: "12px",
+                  border: "1.5px solid #FECACA",
+                  background: "#FFF5F5",
+                  color: "#DC2626",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  cursor: loggingOut ? "not-allowed" : "pointer",
+                  opacity: loggingOut ? 0.6 : 1,
+                  boxSizing: "border-box",
+                }}
+              >
+                <LogOut size={15} />
+                <span>{loggingOut ? "Déconnexion..." : "Se déconnecter"}</span>
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {/* Créer un compte en haut */}
+              <Link
+                href="/inscription"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  width: "100%",
+                  minHeight: "46px",
+                  padding: "11px 16px",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  textDecoration: "none",
+                  boxShadow: "0 4px 14px rgba(225,6,0,0.25)",
+                  boxSizing: "border-box",
+                  textAlign: "center",
+                }}
+              >
+                <UserPlus size={17} strokeWidth={2.4} />
+                <span>Créer un compte</span>
+              </Link>
+
+              {/* Connexion en bas */}
+              <Link
+                href="/connexion"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  width: "100%",
+                  minHeight: "46px",
+                  padding: "11px 16px",
+                  borderRadius: "12px",
+                  border: "1.5px solid #0B2559",
+                  background: "#FFFFFF",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  textDecoration: "none",
+                  boxSizing: "border-box",
+                  textAlign: "center",
+                }}
+              >
+                <LogIn size={17} strokeWidth={2.4} />
+                <span>Connexion</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
         {/* Drawer Nav Links */}
+        <div style={{ padding: "12px 14px 4px" }}>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#8B99B5", textTransform: "uppercase", letterSpacing: "0.8px" }}>
+            Navigation
+          </span>
+        </div>
         <nav
           aria-label="Navigation mobile"
-          style={{ flex: 1, padding: "12px 12px 0" }}
+          style={{ flex: 1, padding: "4px 12px 12px" }}
         >
           {navLinks.map((item) => {
             const active = isActive(item.href);
@@ -622,14 +762,14 @@ export default function Header() {
                   display: "flex",
                   alignItems: "center",
                   gap: "14px",
-                  padding: "14px 16px",
-                  borderRadius: "14px",
+                  padding: "12px 14px",
+                  borderRadius: "12px",
                   textDecoration: "none",
                   marginBottom: "4px",
                   color: active ? "white" : "#1E2E4A",
                   background: active ? "#0B2559" : "transparent",
                   fontWeight: active ? 700 : 600,
-                  fontSize: "15px",
+                  fontSize: "14px",
                   transition: "all 0.18s ease",
                   position: "relative",
                 }}
@@ -638,8 +778,8 @@ export default function Header() {
                 <div
                   className="mob-icon"
                   style={{
-                    width: "38px",
-                    height: "38px",
+                    width: "36px",
+                    height: "36px",
                     borderRadius: "10px",
                     background: active ? "rgba(255,255,255,0.15)" : "#F0F4FB",
                     display: "flex",
@@ -650,7 +790,7 @@ export default function Header() {
                   }}
                 >
                   <Icon
-                    size={18}
+                    size={17}
                     strokeWidth={active ? 2.5 : 2}
                     style={{ color: active ? "white" : "#0B2559", transition: "color 0.18s ease" }}
                   />
@@ -677,149 +817,6 @@ export default function Header() {
             );
           })}
         </nav>
-
-        {/* Drawer Auth Zone */}
-        <div style={{ padding: "16px 12px", borderTop: "1px solid #EEF2FB", marginTop: "8px" }}>
-          {!loadingUser && sessionUser ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <Link
-                href="/profil"
-                onClick={() => setMobileOpen(false)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "12px 16px",
-                  borderRadius: "12px",
-                  border: "1.5px solid #D8E1EF",
-                  background: "#F7F9FD",
-                  textDecoration: "none",
-                  color: "#0B2559",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    background: "#EEF2FB",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    flexShrink: 0,
-                  }}
-                >
-                  {sessionUser.avatarUrl ? (
-                    <Image src={sessionUser.avatarUrl} alt={sessionUser.firstName} width={36} height={36} style={{ objectFit: "cover" }} />
-                  ) : (
-                    <User size={16} style={{ color: "#0B2559" }} />
-                  )}
-                </div>
-                <div style={{ flex: 1, overflow: "hidden" }}>
-                  <div style={{ fontWeight: 700, fontSize: "14px", color: "#0B2559", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {sessionUser.firstName}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#8B99B5", fontWeight: 500 }}>Mon profil</div>
-                </div>
-              </Link>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "10px",
-                  width: "100%",
-                  minHeight: "48px",
-                  padding: "12px 16px",
-                  borderRadius: "14px",
-                  border: "1.5px solid #FECACA",
-                  background: "#FFF5F5",
-                  color: "#DC2626",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                  cursor: loggingOut ? "not-allowed" : "pointer",
-                  opacity: loggingOut ? 0.6 : 1,
-                  boxSizing: "border-box",
-                  lineHeight: "normal",
-                }}
-              >
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <LogOut size={17} />
-                </span>
-                <span>{loggingOut ? "Déconnexion..." : "Se déconnecter"}</span>
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {/* Créer un compte en haut */}
-              <Link
-                href="/inscription"
-                onClick={() => setMobileOpen(false)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "10px",
-                  width: "100%",
-                  minHeight: "48px",
-                  padding: "12px 18px",
-                  borderRadius: "14px",
-                  background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
-                  color: "#FFFFFF",
-                  fontWeight: 700,
-                  fontSize: "15px",
-                  textDecoration: "none",
-                  boxShadow: "0 4px 14px rgba(225,6,0,0.30)",
-                  boxSizing: "border-box",
-                  lineHeight: "normal",
-                  textAlign: "center",
-                }}
-              >
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#FFFFFF" }}>
-                  <UserPlus size={18} strokeWidth={2.4} />
-                </span>
-                <span>Créer un compte</span>
-              </Link>
-
-              {/* Connexion en bas */}
-              <Link
-                href="/connexion"
-                onClick={() => setMobileOpen(false)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "10px",
-                  width: "100%",
-                  minHeight: "48px",
-                  padding: "12px 18px",
-                  borderRadius: "14px",
-                  border: "1.5px solid #0B2559",
-                  background: "#FFFFFF",
-                  color: "#0B2559",
-                  fontWeight: 700,
-                  fontSize: "15px",
-                  textDecoration: "none",
-                  boxSizing: "border-box",
-                  lineHeight: "normal",
-                  textAlign: "center",
-                }}
-              >
-                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#0B2559" }}>
-                  <LogIn size={18} strokeWidth={2.4} />
-                </span>
-                <span>Connexion</span>
-              </Link>
-            </div>
-          )}
-        </div>
 
         {/* Drawer Footer */}
         <div

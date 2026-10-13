@@ -92,6 +92,7 @@ function MessagesContent() {
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
   const [quotaModalOpen, setQuotaModalOpen] = useState(false);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
+  const [vipModalOpen, setVipModalOpen] = useState(false);
 
   // Video call state
   const [videoCallOpen, setVideoCallOpen] = useState(false);
@@ -279,10 +280,15 @@ function MessagesContent() {
     return () => clearInterval(timer);
   }, [videoCallOpen]);
 
-  // Start Video Call
+  // Start Video Call - Réservé exclusivement au Pack VIP
+  const isVip = myProfile?.plan === "VIP" || myProfile?.subscriptionTier === "VIP";
   const startVideoCall = async () => {
     if (!isVerifiedForChat) {
       setSecurityModalOpen(true);
+      return;
+    }
+    if (!isVip) {
+      setVipModalOpen(true);
       return;
     }
     setVideoCallOpen(true);
@@ -992,13 +998,13 @@ function MessagesContent() {
                   📜 Règles du Chat
                 </button>
 
-                {/* 📹 Video Call Button */}
+                {/* 📹 Video Call Button (VIP exclusif) */}
                 <button
                   type="button"
                   onClick={startVideoCall}
                   className="btn btn-sm"
                   style={{
-                    background: "#059669",
+                    background: isVip ? "#059669" : "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
                     color: "white",
                     fontWeight: 800,
                     fontSize: "13px",
@@ -1007,13 +1013,13 @@ function MessagesContent() {
                     gap: "6px",
                     padding: "8px 14px",
                     borderRadius: "10px",
-                    boxShadow: "0 2px 8px rgba(5, 150, 105, 0.3)",
+                    boxShadow: isVip ? "0 2px 8px rgba(5, 150, 105, 0.3)" : "0 2px 8px rgba(217, 119, 6, 0.3)",
                     border: "none",
                     cursor: "pointer",
                   }}
-                  title="Vérifier en direct avec un appel vidéo sécurisé"
+                  title={isVip ? "Lancer un appel vidéo sécurisé" : "Appel vidéo réservé au Pack VIP"}
                 >
-                  📹 Appel Vidéo
+                  📹 Appel Vidéo {!isVip && <span style={{ fontSize: "10px", background: "rgba(0,0,0,0.25)", padding: "2px 6px", borderRadius: "9999px" }}>👑 VIP</span>}
                 </button>
 
                 {/* 📅 Sortie / Rendez-vous */}
@@ -2034,6 +2040,114 @@ function MessagesContent() {
                 style={{ color: "#64748B", fontSize: "13px", padding: "10px" }}
               >
                 Plus tard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Pack VIP Requis pour Appel Vidéo ── */}
+      {vipModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10, 20, 45, 0.75)",
+            backdropFilter: "blur(6px)",
+            zIndex: 1100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "24px",
+              padding: "32px",
+              maxWidth: "460px",
+              width: "100%",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.25)",
+              textAlign: "center",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                width: "64px",
+                height: "64px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+                border: "2px solid #F59E0B",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+                fontSize: "28px",
+              }}
+            >
+              👑
+            </div>
+
+            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
+              Appel vidéo réservé au Pack VIP
+            </h3>
+
+            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "20px" }}>
+              Les appels vidéo en direct sont une fonctionnalité exclusive réservée aux membres du <strong>Pack VIP Premium</strong>.
+            </p>
+
+            <div
+              style={{
+                padding: "14px",
+                borderRadius: "14px",
+                background: "#F8FAFC",
+                border: "1.5px solid #E2E8F0",
+                textAlign: "left",
+                marginBottom: "20px",
+                fontSize: "13px",
+                color: "#334155",
+                lineHeight: 1.6,
+              }}
+            >
+              <div style={{ fontWeight: 700, color: "#0B2559", marginBottom: "6px" }}>
+                ✓ Vos fonctionnalités incluses dans votre pack :
+              </div>
+              <div>💬 Messages écrits illimités</div>
+              <div>📸 Partage de photos sécurisées</div>
+              <div>🎙️ Notes vocales audio haute fidélité</div>
+              <div style={{ marginTop: "8px", color: "#B45309", fontWeight: 600 }}>
+                👑 Pour débloquer l&apos;appel vidéo en direct, passez au Pack VIP.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <Link
+                href="/tarifs"
+                className="btn btn-primary"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  padding: "14px",
+                  fontSize: "15px",
+                  background: "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
+                  color: "white",
+                  textDecoration: "none",
+                  borderRadius: "14px",
+                  boxShadow: "0 4px 14px rgba(217, 119, 6, 0.35)",
+                }}
+              >
+                Découvrir le Pack VIP 👑
+              </Link>
+              <button
+                type="button"
+                onClick={() => setVipModalOpen(false)}
+                className="btn btn-ghost"
+                style={{ color: "#64748B", fontSize: "13px", padding: "10px" }}
+              >
+                Continuer avec messages, photos & audio
               </button>
             </div>
           </div>

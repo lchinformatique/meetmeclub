@@ -56,6 +56,7 @@ export default function DecouvertePage() {
 
   // User subscription & quota state
   const [myProfile, setMyProfile] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; targetName?: string }>({ open: false });
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
@@ -94,9 +95,11 @@ export default function DecouvertePage() {
       try {
         const res = await fetch("/api/profiles");
         if (res.status === 401) {
-          router.push("/connexion");
+          setIsAuthenticated(false);
+          setLoading(false);
           return;
         }
+        setIsAuthenticated(true);
         const data = await res.json();
         if (data.profiles && data.profiles.length > 0) {
           setProfiles(data.profiles);
@@ -104,13 +107,14 @@ export default function DecouvertePage() {
           setProfiles(SAMPLE_PROFILES);
         }
       } catch {
+        setIsAuthenticated(false);
         setProfiles(SAMPLE_PROFILES);
       } finally {
         setLoading(false);
       }
     }
     fetchProfiles();
-  }, [router]);
+  }, []);
 
   // Handle contact attempt with mandatory identity verification and quota enforcement
   const handleInitiateExchange = async (profile: ProfileItem, action: "CHAT" | "RDV") => {
@@ -235,7 +239,93 @@ export default function DecouvertePage() {
       {/* Standardized Member Header */}
       <Header />
 
-      {/* Main Container */}
+      {/* ── Landing publique si non-connecté ───────────────────── */}
+      {isAuthenticated === false && (
+        <main>
+          {/* Section présentation */}
+          <section style={{ background: "linear-gradient(160deg, #071530 0%, #0B2559 60%, #1a0a3c 100%)", padding: "72px 20px 80px", textAlign: "center" }}>
+            <div className="container" style={{ maxWidth: "820px" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "9999px", padding: "6px 16px", marginBottom: "24px" }}>
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 8px #10B981" }} />
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>Club Privé International · Lomé, Togo</span>
+              </div>
+              <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 3rem)", fontWeight: 800, color: "white", marginBottom: "16px", lineHeight: 1.15 }}>
+                Découvrez <span style={{ color: "#FFD700" }}>Meet Me Club</span>
+              </h1>
+              <p style={{ fontSize: "clamp(1rem, 2.5vw, 1.2rem)", color: "rgba(255,255,255,0.85)", marginBottom: "12px", lineHeight: 1.7 }}>
+                La première plateforme de rencontres avec réservation de rendez-vous au Togo. Chattez librement avec des célibataires vérifiés du monde entier et vivez de vraies rencontres dans nos cadres partenaires exclusifs.
+              </p>
+              <p style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.7)", marginBottom: "40px", fontStyle: "italic" }}>
+                Plus qu&apos;une rencontre — un seul rendez-vous suffit.
+              </p>
+              {/* Stats rapides */}
+              <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "24px", marginBottom: "48px" }}>
+                {[{v:"1 200+",l:"Membres inscrits"},{v:"12",l:"Lieux partenaires"},{v:"340+",l:"Rendez-vous réussis"},{v:"4.7★",l:"Note moyenne"}].map(s => (
+                  <div key={s.l} style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "white" }}>{s.v}</div>
+                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", marginTop: "2px" }}>{s.l}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Plans */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "48px", maxWidth: "760px", margin: "0 auto 48px" }}>
+                {[
+                  {name:"Découverte",price:"2 000",desc:"Rencontre simple en lieu public",color:"#64748B",badge:""},
+                  {name:"Complice",price:"5 000",desc:"Table réservée + boisson",color:"#3B82F6",badge:""},
+                  {name:"Dîner",price:"12 000",desc:"Menu complet — le plus populaire",color:"#E10600",badge:"⭐ Populaire"},
+                  {name:"VIP",price:"30 000",desc:"Espace privatif + appel vidéo",color:"#D97706",badge:"👑 VIP"},
+                ].map(pack => (
+                  <div key={pack.name} style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${pack.color}55`, borderRadius: "16px", padding: "20px 16px", textAlign: "center", position: "relative" }}>
+                    {pack.badge && <div style={{ position: "absolute", top: "-10px", left: "50%", transform: "translateX(-50%)", background: pack.color, color: "white", fontSize: "10px", fontWeight: 700, padding: "2px 10px", borderRadius: "9999px", whiteSpace: "nowrap" }}>{pack.badge}</div>}
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: "white", marginBottom: "4px" }}>{pack.name}</div>
+                    <div style={{ fontSize: "20px", fontWeight: 800, color: pack.color, marginBottom: "4px" }}>{pack.price} <span style={{ fontSize: "11px", opacity: 0.8 }}>FCFA</span></div>
+                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)" }}>{pack.desc}</div>
+                  </div>
+                ))}
+              </div>
+              {/* CTAs */}
+              <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap", marginBottom: "24px" }}>
+                <Link href="/connexion" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "15px 32px", borderRadius: "9999px", background: "linear-gradient(135deg, #E10600, #B30500)", color: "white", fontWeight: 700, fontSize: "16px", textDecoration: "none", boxShadow: "0 8px 25px rgba(225,6,0,0.4)" }}>
+                  ❤️ Rejoindre gratuitement
+                </Link>
+                <Link href="/connexion" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "15px 28px", borderRadius: "9999px", background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.3)", color: "white", fontWeight: 600, fontSize: "15px", textDecoration: "none" }}>
+                  Se connecter
+                </Link>
+              </div>
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)" }}>Ou connectez-vous avec Google sur la page de connexion • Accès gratuit immédiat</p>
+            </div>
+          </section>
+          {/* Section fonctionnement */}
+          <section style={{ background: "white", padding: "64px 20px" }}>
+            <div className="container" style={{ maxWidth: "900px" }}>
+              <h2 style={{ textAlign: "center", fontSize: "clamp(1.4rem, 4vw, 2.2rem)", marginBottom: "48px", color: "#0B2559" }}>Comment ça marche ?</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "32px", textAlign: "center" }}>
+                {[
+                  {num:"01",icon:"👤",t:"Créez votre profil",d:"Inscription gratuite en quelques minutes avec votre email, pseudo ou compte Google."},
+                  {num:"02",icon:"🔍",t:"Découvrez des profils",d:"Parcourez des profils vérifiés et échangez librement par messagerie."},
+                  {num:"03",icon:"📅",t:"Proposez un rendez-vous",d:"Choisissez un pack, un lieu partenaire et une date. L’autre accepte ou contre-propose."},
+                  {num:"04",icon:"✨",t:"Vivez le moment",d:"Table réservée, repas commandé, accueil soigné — tout est prêt à votre arrivée."},
+                ].map(s => (
+                  <div key={s.num}>
+                    <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>{s.icon}</div>
+                    <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#E10600", color: "white", fontSize: "11px", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>{s.num}</div>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, color: "#0B2559", marginBottom: "8px" }}>{s.t}</h3>
+                    <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: 1.6 }}>{s.d}</p>
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: "center", marginTop: "48px" }}>
+                <Link href="/connexion" style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "14px 32px", borderRadius: "9999px", background: "linear-gradient(135deg, #0B2559, #163B8A)", color: "white", fontWeight: 700, fontSize: "15px", textDecoration: "none", boxShadow: "0 6px 20px rgba(11,37,89,0.3)" }}>
+                  Commencer maintenant →
+                </Link>
+              </div>
+            </div>
+          </section>
+        </main>
+      )}
+
+      {/* ── Contenu membres connectés ───────────────────────────── */}
+      {isAuthenticated !== false && (
       <main className="container" style={{ paddingBlock: "28px" }}>
         {/* Subscription Quota Status Banner */}
         <div
@@ -662,6 +752,7 @@ export default function DecouvertePage() {
           </div>
         )}
       </main>
+      )}
 
       {/* ── Quota Upgrade Modal ─────────────────────────────── */}
       {upgradeModal.open && (
