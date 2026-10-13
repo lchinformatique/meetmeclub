@@ -22,19 +22,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, login, identifier, password, dateOfBirth, firstName, pseudo, gender } = body;
 
-    const rawInput = (login || identifier || pseudo || email || "").toString().trim();
+    const rawInput = (email || login || identifier || pseudo || firstName || "").toString().trim();
     if (!rawInput) {
       return NextResponse.json(
-        { error: "Veuillez entrer votre pseudo ou votre adresse e-mail." },
+        { error: "Veuillez renseigner votre pseudo, votre email ou votre nom." },
         { status: 400 }
       );
     }
 
     const isEmail = rawInput.includes("@");
-    const cleanPseudo = (pseudo || (isEmail ? rawInput.split("@")[0] : rawInput)).toString().trim();
+    const cleanPseudo = (pseudo || firstName || (isEmail ? rawInput.split("@")[0] : rawInput)).toString().trim();
     const cleanEmail = isEmail
       ? rawInput.toLowerCase()
-      : `${cleanPseudo.toLowerCase().replace(/[^a-z0-9_]/gi, "")}@meetmeclub.tg`;
+      : (email ? (email as string).toLowerCase().trim() : `${cleanPseudo.toLowerCase().replace(/[^a-z0-9_]/gi, "")}@meetmeclub.tg`);
 
     // 2. Date de naissance (par défaut 2000-01-01 pour 18+ si non fournie)
     let dob = new Date("2000-01-01");
@@ -79,8 +79,25 @@ export async function POST(req: NextRequest) {
       });
 
       if (existing) {
+        // Si le compte existe déjà avec le bon mot de passe, connecter directement !
+        if (existing.passwordHash) {
+          const isMatch = await bcrypt.compare(password, existing.passwordHash);
+          if (isMatch) {
+            await setSessionCookie({
+              userId: existing.id,
+              role: existing.role,
+              status: existing.status,
+              email: existing.email,
+            });
+            return NextResponse.json({
+              success: true,
+              message: "Connexion réussie ! Bon retour sur votre profil.",
+              redirect: "/profil",
+            });
+          }
+        }
         return NextResponse.json(
-          { error: "Un compte existe déjà avec ce pseudo ou cet e-mail. Veuillez vous connecter." },
+          { error: "Ce compte ou pseudo existe déjà. Veuillez vous connecter avec votre mot de passe." },
           { status: 409 }
         );
       }
