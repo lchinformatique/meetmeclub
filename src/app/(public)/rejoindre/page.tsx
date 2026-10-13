@@ -49,7 +49,17 @@ export default function RejoindrePage() {
   const [regGender, setRegGender] = useState("OTHER");
   const [regAdultConsent, setRegAdultConsent] = useState(true);
 
-  // Vérifier si l'utilisateur est déjà connecté
+  // Vérifier si l'utilisateur est déjà connecté & lire l'onglet demandé
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") || params.get("action");
+      if (tabParam === "register" || tabParam === "inscription") {
+        setActiveTab("register");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
     async function checkAuth() {
@@ -551,6 +561,19 @@ export default function RejoindrePage() {
                   >
                     {loading ? "Vérification..." : "S'identifier et accéder au Club →"}
                   </button>
+
+                  {/* Séparateur Google */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "14px 0 10px" }}>
+                    <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
+                    <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>OU</span>
+                    <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
+                  </div>
+
+                  {/* Google Login */}
+                  <GoogleAuthButton
+                    label="Continuer avec Google"
+                    onError={(msg) => setErrorMsg(msg)}
+                  />
                 </form>
               )}
 
@@ -708,6 +731,19 @@ export default function RejoindrePage() {
                   >
                     {loading ? "Création en cours..." : "Créer mon compte & Activer le Plan Gratuit →"}
                   </button>
+
+                  {/* Séparateur Google */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "14px 0 10px" }}>
+                    <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
+                    <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>OU</span>
+                    <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
+                  </div>
+
+                  {/* Google Register */}
+                  <GoogleAuthButton
+                    label="Créer mon compte avec Google"
+                    onError={(msg) => setErrorMsg(msg)}
+                  />
                 </form>
               )}
             </div>
@@ -723,7 +759,7 @@ export default function RejoindrePage() {
                 Les 4 Plans disponibles sur Meet Me Club
               </h3>
               <p style={{ fontSize: "13px", color: "#64748B", maxWidth: "480px", margin: "8px auto 0" }}>
-                Chaque nouvel inscrit commence automatiquement avec le <strong>Plan Gratuit</strong>, puis peut évoluer librement vers un pass illimité.
+                Chaque nouvel inscrit commence automatiquement avec le <strong>Plan Gratuit</strong>, puis peut évoluer librement vers un pass illimité avec paiement sécurisé.
               </p>
             </div>
 
@@ -747,6 +783,9 @@ export default function RejoindrePage() {
                   ],
                   highlight: false,
                   borderColor: "#CBD5E1",
+                  actionLabel: "Inclus à l'inscription ✓",
+                  actionHref: "#",
+                  isFree: true,
                 },
                 {
                   id: "ESSENTIAL",
@@ -766,6 +805,9 @@ export default function RejoindrePage() {
                   ],
                   highlight: true,
                   borderColor: "var(--color-blue)",
+                  actionLabel: "Choisir ce plan (3 000 F)",
+                  actionHref: "https://link.saspay.me/dtpycov9i-k",
+                  isFree: false,
                 },
                 {
                   id: "COMPLICE",
@@ -785,6 +827,9 @@ export default function RejoindrePage() {
                   ],
                   highlight: false,
                   borderColor: "#CBD5E1",
+                  actionLabel: "Choisir ce plan (6 000 F)",
+                  actionHref: "https://link.saspay.me/dtpycov9i-k",
+                  isFree: false,
                 },
                 {
                   id: "VIP",
@@ -804,6 +849,9 @@ export default function RejoindrePage() {
                   ],
                   highlight: false,
                   borderColor: "#D97706",
+                  actionLabel: "Choisir ce plan (15 000 F)",
+                  actionHref: "https://link.saspay.me/dtpycov9i-k",
+                  isFree: false,
                 },
               ].map((plan) => (
                 <div
@@ -849,7 +897,7 @@ export default function RejoindrePage() {
                     {plan.desc}
                   </p>
 
-                  <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
+                  <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "8px", flex: 1, marginBottom: "16px" }}>
                     {plan.features.map((f, i) => (
                       <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "7px", fontSize: "12px", color: "#334155" }}>
                         <span style={{ color: "#10B981", fontWeight: 800 }}>✓</span>
@@ -857,8 +905,71 @@ export default function RejoindrePage() {
                       </div>
                     ))}
                   </div>
+
+                  {/* Bouton disponibilité paiement */}
+                  {plan.isFree ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                        setActiveTab("register");
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "10px",
+                        background: "#EEF2FB",
+                        color: "#0B2559",
+                        fontWeight: 700,
+                        fontSize: "12px",
+                        border: "1px solid #CBD5E1",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <CheckCircle2 size={15} style={{ color: "#059669" }} />
+                      <span>{plan.actionLabel}</span>
+                    </button>
+                  ) : (
+                    <a
+                      href={plan.actionHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        width: "100%",
+                        padding: "11px 14px",
+                        borderRadius: "10px",
+                        background: plan.highlight
+                          ? "linear-gradient(135deg, #E10600 0%, #B30500 100%)"
+                          : "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: "12px",
+                        textDecoration: "none",
+                        boxShadow: plan.highlight ? "0 4px 12px rgba(225,6,0,0.25)" : "0 4px 12px rgba(11,37,89,0.15)",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <span>💳 {plan.actionLabel}</span>
+                    </a>
+                  )}
                 </div>
               ))}
+            </div>
+
+            <div style={{ marginTop: "24px", fontSize: "12px", color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+              <span>🔒 Paiement sécurisé par Saspay</span>
+              <span>•</span>
+              <span>📱 T-Money, Moov Money, Mixx by yas</span>
+              <span>•</span>
+              <span>💳 Carte Bancaire</span>
             </div>
           </div>
         </div>

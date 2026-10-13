@@ -924,6 +924,250 @@ export default function DecouvertePage() {
             })}
           </div>
         )}
+
+        {/* ── EN BAS DE LA RUBRIQUE DES COMPTES : PROPOSITION DES 4 PACKS DE RENDEZ-VOUS ── */}
+        <section
+          style={{
+            marginTop: "56px",
+            background: "var(--gradient-blue)",
+            borderRadius: "28px",
+            padding: "48px 24px",
+            position: "relative",
+            overflow: "hidden",
+            boxShadow: "0 20px 50px rgba(11, 37, 89, 0.25)",
+          }}
+        >
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "44px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              maxWidth: "760px",
+              marginInline: "auto",
+              paddingInline: "12px",
+            }}
+          >
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "6px 16px",
+                borderRadius: "9999px",
+                background: "rgba(255, 255, 255, 0.15)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                color: "white",
+                fontSize: "12px",
+                fontWeight: 700,
+                marginBottom: "14px",
+              }}
+            >
+              <span>☕ Rendez-vous & Sorties Clé en Main à Lomé</span>
+            </div>
+            <h2
+              style={{
+                fontSize: "clamp(1.65rem, 5vw, 2.4rem)",
+                fontWeight: 800,
+                color: "#FFFFFF",
+                marginBottom: "12px",
+                textAlign: "center",
+                lineHeight: 1.25,
+                textShadow: "0 2px 10px rgba(0, 0, 0, 0.35)",
+              }}
+            >
+              Envie de concrétiser une belle rencontre ?
+            </h2>
+            <p
+              style={{
+                fontSize: "clamp(14px, 3.8vw, 16px)",
+                color: "rgba(255,255,255,0.9)",
+                textAlign: "center",
+                maxWidth: "600px",
+                marginInline: "auto",
+                lineHeight: 1.5,
+                textShadow: "0 1px 6px rgba(0, 0, 0, 0.25)",
+              }}
+            >
+              Proposez un vrai rendez-vous à votre partenaire dans les plus beaux cadres de Lomé avec nos 4 packs clé en main.
+            </p>
+          </div>
+
+          <div className="home-packs-grid">
+            {[
+              {
+                name: "Découverte",
+                price: "2 000",
+                description: "Rencontre simple en lieu public",
+                features: ["Lieu public vérifié", "Chat sécurisé inclus", "Rappels automatiques"],
+                color: "var(--color-gray-500)",
+                popular: false,
+              },
+              {
+                name: "Complice",
+                price: "5 000",
+                description: "Table réservée + 1 boisson par personne",
+                features: ["Table réservée à votre nom", "1 boisson incluse / pers.", "Chat dédié & suivi"],
+                color: "var(--color-blue)",
+                popular: false,
+              },
+              {
+                name: "Dîner",
+                price: "12 000",
+                description: "Menu complet dans un lieu partenaire",
+                features: [
+                  "Table réservée soignée",
+                  "Menu complet (Entrée/Plat/Boisson)",
+                  "Ambiance tamisée intime",
+                  "Rappels automatiques",
+                ],
+                color: "var(--color-red)",
+                popular: true,
+              },
+              {
+                name: "VIP Premium",
+                price: "30 000",
+                description: "Espace privatif, menu complet, accueil dédié",
+                features: [
+                  "Espace privatif exclusif",
+                  "Repas gastronomique + Champagne",
+                  "Accueil dédié haut de gamme",
+                  "Appels vidéo live illimités",
+                ],
+                color: "#B8860B",
+                popular: false,
+              },
+            ].map((pack) => (
+              <div
+                key={pack.name}
+                style={{
+                  background: pack.popular ? "white" : "rgba(255,255,255,0.08)",
+                  border: pack.popular ? `3px solid var(--color-red)` : "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: "var(--radius-xl)",
+                  padding: "26px 18px",
+                  position: "relative",
+                  backdropFilter: pack.popular ? "none" : "blur(8px)",
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  justifyContent: "space-between",
+                }}
+              >
+                <div>
+                  {pack.popular && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "-14px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        background: "var(--gradient-red)",
+                        color: "white",
+                        padding: "4px 16px",
+                        borderRadius: "var(--radius-full)",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      ⭐ Le plus populaire
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "6px",
+                      background: pack.color,
+                      borderRadius: "var(--radius-full)",
+                      marginBottom: "16px",
+                    }}
+                  />
+                  <h3
+                    style={{
+                      fontSize: "19px",
+                      fontWeight: 800,
+                      color: pack.popular ? "var(--color-blue)" : "white",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {pack.name}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: pack.popular ? "var(--color-gray-500)" : "rgba(255,255,255,0.7)",
+                      marginBottom: "18px",
+                      minHeight: "36px",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {pack.description}
+                  </p>
+                  <div
+                    style={{
+                      fontSize: "26px",
+                      fontWeight: 800,
+                      color: pack.popular ? pack.color : "white",
+                      marginBottom: "18px",
+                    }}
+                  >
+                    {pack.price}{" "}
+                    <span style={{ fontSize: "13px", fontWeight: 400, opacity: 0.75 }}>
+                      FCFA
+                    </span>
+                  </div>
+                  <ul style={{ listStyle: "none", marginBottom: "22px", padding: 0 }}>
+                    {pack.features.map((f) => (
+                      <li
+                        key={f}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "13px",
+                          color: pack.popular ? "var(--color-gray-600)" : "rgba(255,255,255,0.85)",
+                          marginBottom: "8px",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        <span style={{ color: pack.popular ? "var(--color-red)" : "#FFD700", fontWeight: "bold" }}>✓</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <Link
+                  href="/rendez-vous/nouveau"
+                  className={`btn ${pack.popular ? "btn-primary" : "btn-outline-red"}`}
+                  style={{
+                    width: "100%",
+                    marginTop: "auto",
+                    justifyContent: "center",
+                    textDecoration: "none",
+                    ...(pack.popular ? {} : { borderColor: "rgba(255,255,255,0.4)", color: "white" }),
+                  }}
+                >
+                  Choisir ce pack →
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          <p
+            style={{
+              textAlign: "center",
+              marginTop: "32px",
+              fontSize: "13px",
+              color: "rgba(255,255,255,0.65)",
+            }}
+          >
+            * Tarifs en FCFA. Paiement sécurisé T-Money · Flooz · Carte bancaire
+          </p>
+        </section>
       </main>
       )}
 

@@ -1,6 +1,8 @@
 "use client";
 // src/app/(auth)/inscription/page.tsx
-// Page d'inscription simplifiée & rapide — Plan Gratuit direct avec Pseudo ou Email + Mot de passe
+// Page d'inscription officielle Meet Me Club
+// 1ère position : Formulaire de création de compte & Google Auth
+// En suite : Proposition des 4 Plans de paiement d'adhésion (Gratuit, Essentiel, Complice, VIP) avec disponibilité de paiement
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,8 +20,100 @@ import {
   LogIn,
   ChevronLeft,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
+
+const MEMBERSHIP_PLANS = [
+  {
+    id: "FREE",
+    name: "Plan Gratuit",
+    badge: "🎁 Inclus à l'inscription",
+    badgeBg: "rgba(16, 185, 129, 0.12)",
+    badgeColor: "#059669",
+    price: "0",
+    period: "Essai 7 jours offert",
+    desc: "Votre premier accès direct au club avec les fonctionnalités essentielles incluses.",
+    features: [
+      "7 jours d'essai sans engagement",
+      "Échanger avec jusqu'à 3 partenaires",
+      "Messages écrits, photos & vocaux",
+      "Profil visible sur le réseau Lomé",
+      "Réservation de rendez-vous disponible",
+    ],
+    highlight: false,
+    borderColor: "#CBD5E1",
+    actionLabel: "Inclus à la création ✓",
+    actionHref: "#register-form",
+    isFree: true,
+  },
+  {
+    id: "ESSENTIAL",
+    name: "Pass Essentiel",
+    badge: "⭐ Le Plus Choisi",
+    badgeBg: "rgba(11, 37, 89, 0.1)",
+    badgeColor: "#0B2559",
+    price: "3 000",
+    period: "FCFA / mois",
+    desc: "Discussions illimitées sans restriction, liberté totale de contact et d'amitié.",
+    features: [
+      "Tous les avantages du Plan Gratuit",
+      "Partenaires & discussions 100% ILLIMITÉS",
+      "Messages, photos et vocaux en continu",
+      "Voir qui a liké et visité votre profil",
+      "Badge officiel membre certifié ✓",
+    ],
+    highlight: true,
+    borderColor: "var(--color-blue)",
+    actionLabel: "Choisir ce plan (3 000 F)",
+    actionHref: "https://link.saspay.me/dtpycov9i-k",
+    isFree: false,
+  },
+  {
+    id: "COMPLICE",
+    name: "Pass Complice",
+    badge: "🥂 Sorties & Boissons",
+    badgeBg: "rgba(5, 150, 105, 0.12)",
+    badgeColor: "#059669",
+    price: "6 000",
+    period: "FCFA / mois",
+    desc: "Échanges illimités avec avantages sorties, tables réservées et consommations offertes.",
+    features: [
+      "Tout le Pass Essentiel en illimité",
+      "Réservations de tables prioritaires",
+      "1 consommation offerte / pers. au RDV",
+      "Validation rapide par QR code",
+      "Rappels automatiques de rendez-vous",
+    ],
+    highlight: false,
+    borderColor: "#CBD5E1",
+    actionLabel: "Choisir ce plan (6 000 F)",
+    actionHref: "https://link.saspay.me/dtpycov9i-k",
+    isFree: false,
+  },
+  {
+    id: "VIP",
+    name: "Pass VIP Club",
+    badge: "👑 Prestige & Visio Live",
+    badgeBg: "rgba(217, 119, 6, 0.15)",
+    badgeColor: "#B45309",
+    price: "15 000",
+    period: "FCFA / mois",
+    desc: "Prestige maximal, appels vidéo live débloqués, salons privés et conciergerie dédiée.",
+    features: [
+      "Tout le Pass Complice en illimité",
+      "Appels vidéo live directs réservés VIP",
+      "Accès aux salons privés & rooftops",
+      "Dîner gastronomique mensuel inclus",
+      "Conciergerie privée 24/7 à Lomé",
+    ],
+    highlight: false,
+    borderColor: "#D97706",
+    actionLabel: "Choisir ce plan (15 000 F)",
+    actionHref: "https://link.saspay.me/dtpycov9i-k",
+    isFree: false,
+  },
+];
 
 export default function InscriptionPage() {
   const router = useRouter();
@@ -91,6 +185,7 @@ export default function InscriptionPage() {
     transition: "border-color 0.18s ease, box-shadow 0.18s ease",
     WebkitAppearance: "none",
     appearance: "none",
+    boxSizing: "border-box",
   };
 
   const fieldFocused: React.CSSProperties = {
@@ -107,11 +202,11 @@ export default function InscriptionPage() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "32px 16px",
+        padding: "32px 16px 64px",
       }}
     >
       {/* ── Bouton Retour ── */}
-      <div style={{ width: "100%", maxWidth: "460px", marginBottom: "14px", display: "flex", justifyContent: "flex-start" }}>
+      <div style={{ width: "100%", maxWidth: "860px", marginBottom: "14px", display: "flex", justifyContent: "flex-start" }}>
         <button
           type="button"
           onClick={() => {
@@ -143,16 +238,20 @@ export default function InscriptionPage() {
         </button>
       </div>
 
-      {/* ── CARD CONTAINER ── */}
+      {/* ══════════════════════════════════════════════════════════
+          1ÈRE POSITION : CRÉATION DE COMPTE & AUTHENTIFICATION GOOGLE
+      ══════════════════════════════════════════════════════════ */}
       <div
+        id="register-form"
         style={{
           width: "100%",
-          maxWidth: "680px",
+          maxWidth: "560px",
           background: "white",
           borderRadius: "24px",
           boxShadow: "0 4px 6px rgba(11,37,89,0.04), 0 20px 60px rgba(11,37,89,0.10)",
           border: "1px solid #E8EDF5",
           overflow: "hidden",
+          marginBottom: "44px",
         }}
       >
         {/* Accent Bar */}
@@ -163,9 +262,9 @@ export default function InscriptionPage() {
           }}
         />
 
-        <div style={{ padding: "32px 28px" }}>
+        <div style={{ padding: "32px 26px" }}>
           {/* ── Brand Header ── */}
-          <div style={{ textAlign: "center", marginBottom: "22px" }}>
+          <div style={{ textAlign: "center", marginBottom: "20px" }}>
             <Link
               href="/"
               style={{
@@ -173,7 +272,7 @@ export default function InscriptionPage() {
                 alignItems: "center",
                 gap: "10px",
                 textDecoration: "none",
-                marginBottom: "14px",
+                marginBottom: "12px",
               }}
             >
               <div
@@ -234,46 +333,11 @@ export default function InscriptionPage() {
                 letterSpacing: "-0.4px",
               }}
             >
-              Rejoignez Meet Me Club
+              Créer mon compte Meet Me Club
             </h1>
-            <p style={{ fontSize: "14px", color: "#475569", margin: "0 auto 16px", maxWidth: "520px", lineHeight: 1.6 }}>
-              La première plateforme de rencontres avec réservation de rendez-vous réels au Togo. Discutez avec des célibataires vérifiés (+18) et vivez de vrais moments dans nos cadres partenaires exclusifs.
+            <p style={{ fontSize: "14px", color: "#475569", margin: "0 auto 14px", maxWidth: "440px", lineHeight: 1.5 }}>
+              Rejoignez le club privé de rencontres & sorties réelles à Lomé. Votre premier accès inclut le <strong>Plan Gratuit (7 jours offerts)</strong> pour tester la messagerie.
             </p>
-
-            {/* ── Plans de rendez-vous disponibles ── */}
-            <div style={{ marginBottom: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#8B99B5", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "10px" }}>
-                Formules de sorties & rendez-vous disponibles
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px", textAlign: "center" }}>
-                {[
-                  { name: "Découverte", price: "2 000 F", desc: "Lieu public & chat", color: "#64748B" },
-                  { name: "Complice", price: "5 000 F", desc: "Table + 1 boisson", color: "#2563EB" },
-                  { name: "Dîner", price: "12 000 F", desc: "Menu complet", color: "#E10600", popular: true },
-                  { name: "VIP Club", price: "30 000 F", desc: "Salons & appel vidéo", color: "#D97706" },
-                ].map((plan) => (
-                  <div
-                    key={plan.name}
-                    style={{
-                      background: "#F8FAFC",
-                      borderRadius: "12px",
-                      padding: "10px 8px",
-                      border: plan.popular ? "1.5px solid #E10600" : "1px solid #E2E8F0",
-                      position: "relative",
-                    }}
-                  >
-                    {plan.popular && (
-                      <span style={{ position: "absolute", top: "-8px", left: "50%", transform: "translateX(-50%)", background: "#E10600", color: "white", fontSize: "9px", fontWeight: 800, padding: "1px 6px", borderRadius: "9999px" }}>
-                        Top
-                      </span>
-                    )}
-                    <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559" }}>{plan.name}</div>
-                    <div style={{ fontSize: "14px", fontWeight: 800, color: plan.color, margin: "2px 0" }}>{plan.price}</div>
-                    <div style={{ fontSize: "10px", color: "#64748B" }}>{plan.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Badge Plan Gratuit */}
             <div style={{ display: "flex", justifyContent: "center" }}>
@@ -292,7 +356,7 @@ export default function InscriptionPage() {
                 }}
               >
                 <Sparkles size={14} style={{ color: "#D97706" }} />
-                Essai Gratuit 7 jours inclus · 3 partenaires de chat offerts
+                Plan Gratuit activé automatiquement à l&apos;inscription
               </span>
             </div>
           </div>
@@ -327,7 +391,7 @@ export default function InscriptionPage() {
             </div>
           )}
 
-          {/* ── FORM EN HAUT ── */}
+          {/* ── FORMULAIRE DE CRÉATION DE COMPTE (1ÈRE POSITION) ── */}
           <form onSubmit={handleSubmit} noValidate>
             {/* Pseudo ou Email */}
             <div style={{ marginBottom: "16px" }}>
@@ -343,7 +407,7 @@ export default function InscriptionPage() {
                   textTransform: "uppercase",
                 }}
               >
-                Pseudo ou Adresse e-mail
+                Pseudo ou Adresse e-mail *
               </label>
               <div style={{ position: "relative" }}>
                 <div
@@ -391,7 +455,7 @@ export default function InscriptionPage() {
                   textTransform: "uppercase",
                 }}
               >
-                Mot de passe (min. 6 caractères)
+                Mot de passe (min. 6 caractères) *
               </label>
               <div style={{ position: "relative" }}>
                 <div
@@ -415,7 +479,7 @@ export default function InscriptionPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusField("pwd")}
                   onBlur={() => setFocusField("")}
-                  placeholder="Entrez votre mot de passe"
+                  placeholder="Entrez votre mot de passe sécurisé"
                   autoComplete="new-password"
                   style={{
                     ...fieldBase,
@@ -447,7 +511,7 @@ export default function InscriptionPage() {
               </div>
             </div>
 
-            {/* Submit */}
+            {/* Bouton Création de Compte */}
             <button
               type="submit"
               disabled={loading}
@@ -475,54 +539,16 @@ export default function InscriptionPage() {
               {loading ? (
                 <>
                   <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
-                  <span>Création de votre accès...</span>
+                  <span>Création de votre compte...</span>
                 </>
               ) : (
                 <>
-                  <span>Accéder à mon Profil (Plan Gratuit)</span>
+                  <span>Créer mon compte (Accès Plan Gratuit)</span>
                   <ArrowRight size={18} />
                 </>
               )}
             </button>
           </form>
-
-          {/* ── Lien Déjà inscrit au-dessus de Google ── */}
-          <div
-            style={{
-              marginTop: "20px",
-              padding: "16px 14px",
-              background: "#F8FAFC",
-              border: "1.5px solid #E2E8F0",
-              borderRadius: "16px",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "14px", color: "#475569", fontWeight: 600, marginBottom: "8px" }}>
-              Vous avez déjà un compte ?
-            </div>
-            <Link
-              href="/connexion"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                width: "100%",
-                padding: "12px 18px",
-                borderRadius: "12px",
-                background: "white",
-                border: "1.5px solid #0B2559",
-                color: "#0B2559",
-                fontWeight: 700,
-                fontSize: "14px",
-                textDecoration: "none",
-                boxShadow: "0 2px 8px rgba(11,37,89,0.06)",
-              }}
-            >
-              <LogIn size={16} />
-              <span>Se connecter à mon compte</span>
-            </Link>
-          </div>
 
           {/* ── Séparateur Google ── */}
           <div
@@ -530,7 +556,7 @@ export default function InscriptionPage() {
               display: "flex",
               alignItems: "center",
               gap: "12px",
-              margin: "22px 0 16px",
+              margin: "20px 0 16px",
             }}
           >
             <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
@@ -543,26 +569,53 @@ export default function InscriptionPage() {
                 letterSpacing: "0.3px",
               }}
             >
-              Ou rejoindre avec Google
+              Ou créer avec Google
             </span>
             <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
           </div>
 
-          {/* ── Bouton Google OAuth en Bas ── */}
+          {/* ── Bouton Google OAuth ── */}
           <div>
             <GoogleAuthButton
-              label="Rejoindre avec Google"
+              label="Créer mon compte avec Google"
               onError={(msg) => setError(msg)}
             />
           </div>
+
+          {/* ── Lien Déjà inscrit ── */}
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "14px",
+              background: "#F8FAFC",
+              border: "1.5px solid #E2E8F0",
+              borderRadius: "14px",
+              textAlign: "center",
+            }}
+          >
+            <span style={{ fontSize: "13px", color: "#475569", fontWeight: 600, marginRight: "8px" }}>
+              Vous avez déjà un compte ?
+            </span>
+            <Link
+              href="/connexion"
+              style={{
+                color: "#0B2559",
+                fontWeight: 800,
+                fontSize: "13px",
+                textDecoration: "underline",
+              }}
+            >
+              Se connecter
+            </Link>
+          </div>
         </div>
 
-        {/* Footer info */}
+        {/* Footer info card */}
         <div
           style={{
             background: "#F7F9FD",
             borderTop: "1px solid #EEF2FB",
-            padding: "14px 36px",
+            padding: "12px 24px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -572,14 +625,156 @@ export default function InscriptionPage() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7A99", fontSize: "12px", fontWeight: 600 }}>
             <ShieldCheck size={14} style={{ color: "#059669" }} />
-            <span>Accès sécurisé 18+ · Membres du monde entier</span>
+            <span>Accès sécurisé réservé aux membres 18+</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7A99", fontSize: "12px", fontWeight: 600 }}>
             <Sparkles size={14} style={{ color: "#D97706" }} />
-            <span>Essai gratuit inclus</span>
+            <span>Plan Gratuit inclus</span>
           </div>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════════════════════════
+          EN SUITE (2ÈME POSITION) : PROPOSITION DES 4 PLANS DE PAIEMENT DU SITE
+          AVEC LEUR DISPONIBILITÉ DE PAYER
+      ══════════════════════════════════════════════════════════ */}
+      <section style={{ width: "100%", maxWidth: "980px", textAlign: "center" }}>
+        <div style={{ marginBottom: "26px" }}>
+          <span style={{ fontSize: "12px", fontWeight: 800, color: "#E10600", textTransform: "uppercase", letterSpacing: "1px" }}>
+            Adhésion & Formules du Club
+          </span>
+          <h2 style={{ fontSize: "clamp(1.5rem, 4.5vw, 2.1rem)", fontWeight: 800, color: "#0B2559", marginTop: "6px", marginBottom: "8px" }}>
+            Les 4 Plans de Paiement disponibles sur Meet Me Club
+          </h2>
+          <p style={{ fontSize: "14px", color: "#64748B", maxWidth: "620px", margin: "0 auto", lineHeight: 1.6 }}>
+            Démarrez librement avec le Plan Gratuit inclus à l&apos;inscription, ou souscrivez immédiatement à un pass illimité avec disponibilité de paiement sécurisé (Saspay, Carte, T-Money, Moov Money).
+          </p>
+        </div>
+
+        {/* Grille des 4 Plans de Paiement */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "18px", textAlign: "left" }}>
+          {MEMBERSHIP_PLANS.map((plan) => (
+            <div
+              key={plan.id}
+              style={{
+                background: "white",
+                borderRadius: "20px",
+                padding: "24px 20px",
+                border: plan.highlight ? "2px solid #0B2559" : `1.5px solid ${plan.borderColor}`,
+                boxShadow: plan.highlight ? "0 12px 32px rgba(11, 37, 89, 0.14)" : "0 4px 16px rgba(0,0,0,0.05)",
+                display: "flex",
+                flexDirection: "column",
+                position: "relative",
+              }}
+            >
+              {/* Badge du Plan */}
+              <div
+                style={{
+                  display: "inline-block",
+                  alignSelf: "flex-start",
+                  background: plan.badgeBg,
+                  color: plan.badgeColor,
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  padding: "4px 10px",
+                  borderRadius: "9999px",
+                  marginBottom: "12px",
+                }}
+              >
+                {plan.badge}
+              </div>
+
+              <div style={{ fontSize: "19px", fontWeight: 800, color: "#0B2559" }}>{plan.name}</div>
+
+              <div style={{ fontSize: "26px", fontWeight: 800, color: "#E10600", margin: "8px 0 2px" }}>
+                {plan.price}{" "}
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#64748B" }}>
+                  {plan.id === "FREE" ? "FCFA" : "FCFA / mois"}
+                </span>
+              </div>
+
+              <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "14px", fontStyle: "italic" }}>
+                {plan.period}
+              </div>
+
+              <p style={{ fontSize: "13px", color: "#475569", lineHeight: 1.45, marginBottom: "16px", minHeight: "38px" }}>
+                {plan.desc}
+              </p>
+
+              {/* Liste des fonctionnalités incluses */}
+              <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "14px", display: "flex", flexDirection: "column", gap: "8px", flex: 1, marginBottom: "20px" }}>
+                {plan.features.map((f, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "7px", fontSize: "12px", color: "#334155" }}>
+                    <span style={{ color: "#10B981", fontWeight: 800 }}>✓</span>
+                    <span style={{ lineHeight: 1.35 }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bouton de disponibilité de paiement / souscription */}
+              {plan.isFree ? (
+                <a
+                  href="#register-form"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    width: "100%",
+                    padding: "11px 14px",
+                    borderRadius: "12px",
+                    background: "#EEF2FB",
+                    color: "#0B2559",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    border: "1.5px solid #CBD5E1",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <CheckCircle2 size={16} style={{ color: "#059669" }} />
+                  <span>{plan.actionLabel}</span>
+                </a>
+              ) : (
+                <a
+                  href={plan.actionHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: "12px",
+                    background: plan.highlight
+                      ? "linear-gradient(135deg, #E10600 0%, #B30500 100%)"
+                      : "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    boxShadow: plan.highlight ? "0 4px 14px rgba(225,6,0,0.3)" : "0 4px 14px rgba(11,37,89,0.2)",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <span>💳 {plan.actionLabel}</span>
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Moyens de paiement acceptés */}
+        <div style={{ marginTop: "24px", fontSize: "12px", color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+          <span>🔒 Paiement sécurisé par Saspay</span>
+          <span>•</span>
+          <span>📱 T-Money & Moov Money acceptés</span>
+          <span>•</span>
+          <span>💳 Cartes Bancaires (Visa / Mastercard)</span>
+        </div>
+      </section>
     </div>
   );
 }
