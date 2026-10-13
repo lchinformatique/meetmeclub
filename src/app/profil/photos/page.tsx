@@ -41,6 +41,7 @@ export default function ProfilPhotosPage() {
       const data = await res.json();
       if (data.photos) {
         setPhotos(data.photos);
+        router.refresh();
       }
     } catch {
       setError("Impossible de charger les photos.");

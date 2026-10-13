@@ -57,6 +57,15 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
     }
   }
 
+  try {
+    const { getProfileByUserId, saveProfile } = await import("@/lib/db-store");
+    const current = getProfileByUserId(session.userId);
+    if (current && current.photos) {
+      const remaining = current.photos.filter((p: any) => p.id !== id);
+      saveProfile({ userId: session.userId, photos: remaining });
+    }
+  } catch {}
+
   await prisma.auditLog.create({
     data: {
       userId: session.userId,

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // Also persist subscription to Prisma/Supabase if available
     try {
       const { prisma } = await import("@/lib/prisma");
-      await prisma.subscription.create({
+      await (prisma as any).subscription?.create({
         data: {
           userId: session.userId,
           plan: plan as any,

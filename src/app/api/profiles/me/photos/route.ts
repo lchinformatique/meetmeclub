@@ -6,6 +6,7 @@ import { NextRequest } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { uploadProfilePhoto } from "@/lib/cloudinary";
+import { getProfileByUserId, saveProfile } from "@/lib/db-store";
 
 const MAX_PHOTOS = 8;
 
@@ -87,6 +88,14 @@ export async function POST(request: NextRequest) {
         status: "PENDING",
       },
     });
+
+    try {
+      const current = getProfileByUserId(session.userId);
+      if (current) {
+        const updatedPhotos = [...(current.photos || []), { id: photo.id, url: photo.url, isMain: photo.isMain }];
+        saveProfile({ userId: session.userId, photos: updatedPhotos });
+      }
+    } catch {}
 
     await prisma.auditLog.create({
       data: { userId: session.userId, action: "PHOTO_UPLOADED", entity: "profile_photos", entityId: photo.id },
