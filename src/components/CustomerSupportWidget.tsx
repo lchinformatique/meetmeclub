@@ -3,6 +3,7 @@
 // Double Support : Assistant WhatsApp Direct (0022890283580) + Assistant Robot Virtuel Interactif 24/7
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 
 const WHATSAPP_PHONE = "22890283580";
@@ -66,12 +67,19 @@ const INITIAL_BOT_MESSAGES: BotMessage[] = [
 ];
 
 export default function CustomerSupportWidget() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<BotMessage[]>(INITIAL_BOT_MESSAGES);
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [hoveredButton, setHoveredButton] = useState<"whatsapp" | "robot" | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Masquer complètement les 2 supports pendant le chat / la messagerie privée pour libérer l'écran
+  const isChatPage = pathname?.startsWith("/messages");
+  if (isChatPage) {
+    return null;
+  }
 
   useEffect(() => {
     if (isOpen) {
