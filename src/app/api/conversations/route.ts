@@ -127,21 +127,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Security check: ID + selfie verification
+  // Tout utilisateur authentifie avec son Plan Gratuit ou superieur peut initier une conversation
   const senderProfile = getProfileByUserId(session.userId);
   const isIdVerified = Boolean(senderProfile?.idDocumentSubmitted || senderProfile?.idDocumentVerified);
-  const isSelfieVerified = Boolean(senderProfile?.selfieSubmitted || senderProfile?.selfieVerified);
-
-  if (!isIdVerified || !isSelfieVerified) {
-    return NextResponse.json(
-      {
-        error: "Vérification requise",
-        message: "Veuillez soumettre votre pièce d'identité et votre selfie avant de pouvoir chatter.",
-        redirectUrl: "/profil/securite",
-      },
-      { status: 403 }
-    );
-  }
 
   try {
     // Check if conversation already exists (in either direction)

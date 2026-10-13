@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import CommunityStatsWidget from "@/components/CommunityStatsWidget";
 import {
   ShieldCheck,
@@ -961,71 +962,4 @@ export default function HomePage() {
   );
 }
 
-// ── Footer Component ───────────────────────────────────────────
 
-function Footer() {
-  return (
-    <footer style={{ background: "var(--color-blue-dark)", color: "rgba(255,255,255,0.75)", padding: "40px 16px 20px" }}>
-      <div className="container">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "28px", marginBottom: "32px" }}>
-          {/* Brand */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-              <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", border: "2px solid var(--color-red)", background: "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: "3px" }}>
-                <Image src="/logo.png" alt="Meet Me Club" width={34} height={34} style={{ objectFit: "contain" }} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-                <span style={{ fontWeight: 800, fontSize: "16px", color: "white" }}>
-                  meet <span style={{ color: "var(--color-red)" }}>me</span> club
-                </span>
-                <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)", fontStyle: "italic" }}>
-                  Plus qu&apos;une rencontre, un rendez-vous !
-                </span>
-              </div>
-            </div>
-            <p style={{ fontSize: "13px", lineHeight: 1.6, color: "rgba(255,255,255,0.65)" }}>
-              La 1ère plateforme de rencontres avec réservation de rendez-vous au Togo.
-            </p>
-          </div>
-          {/* Navigation */}
-          <div>
-            <h4 style={{ color: "white", marginBottom: "12px", fontSize: "13px", letterSpacing: "0.8px", textTransform: "uppercase" }}>Navigation</h4>
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
-              {[["Découvrir", "/decouverte"], ["Nos tarifs", "/tarifs"], ["À propos", "/a-propos"], ["Partenaires", "/partenaires"]].map(([label, href]) => (
-                <li key={href}><Link href={href} style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "13px" }}>{label}</Link></li>
-              ))}
-            </ul>
-          </div>
-          {/* Légal */}
-          <div>
-            <h4 style={{ color: "white", marginBottom: "12px", fontSize: "13px", letterSpacing: "0.8px", textTransform: "uppercase" }}>Légal</h4>
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
-              {[["CGU", "/legal/cgu"], ["Confidentialité", "/legal/confidentialite"], ["Mentions légales", "/legal/mentions"]].map(([label, href]) => (
-                <li key={href}><Link href={href} style={{ color: "rgba(255,255,255,0.7)", textDecoration: "none", fontSize: "13px" }}>{label}</Link></li>
-              ))}
-            </ul>
-          </div>
-          {/* Contact */}
-          <div>
-            <h4 style={{ color: "white", marginBottom: "12px", fontSize: "13px", letterSpacing: "0.8px", textTransform: "uppercase" }}>Contact</h4>
-            <div style={{ fontSize: "13px", lineHeight: 1.8, display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <Mail size={13} /><span>contact@meetmeclub.tg</span>
-              </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <MapPin size={13} /><span>Lomé, Togo</span>
-              </span>
-            </div>
-          </div>
-        </div>
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>© {new Date().getFullYear()} Meet Me Club · Lomé, Togo · Tous droits réservés.</p>
-          <p style={{ fontSize: "12px", display: "flex", alignItems: "center", gap: "5px", color: "rgba(255,255,255,0.5)" }}>
-            <ShieldCheck size={13} className="text-emerald-400" />
-            <span>Réservé aux 18 ans et plus</span>
-          </p>
-        </div>
-      </div>
-    </footer>
-  );
-}

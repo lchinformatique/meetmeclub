@@ -30,10 +30,17 @@ interface UserSession {
   subscriptionTier: string;
 }
 
-const navLinks = [
+interface NavLinkItem {
+  href: string;
+  label: string;
+  Icon: any;
+  badge?: number;
+}
+
+const navLinks: NavLinkItem[] = [
   { href: "/", label: "Accueil", Icon: Home },
   { href: "/decouverte", label: "Découvrir", Icon: Compass },
-  { href: "/messages", label: "Messages", Icon: MessageSquare, badge: 1 },
+  { href: "/messages", label: "Messages", Icon: MessageSquare },
   { href: "/rendez-vous", label: "Sorties", Icon: CalendarDays },
   { href: "/tarifs", label: "Tarifs", Icon: Gem },
 ];

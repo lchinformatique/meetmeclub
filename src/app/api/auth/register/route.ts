@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // 5. Sauvegarde dans le store local pour compatibilité absolue
+    // 5. Sauvegarde dans le store local avec profil neutre et sans fausse photo
     saveProfile({
       userId: user.id,
       firstName: resolvedName,
@@ -146,22 +146,14 @@ export async function POST(req: NextRequest) {
       city: "Lomé",
       age: new Date().getFullYear() - dob.getFullYear(),
       dateOfBirth: dob.toISOString(),
-      bio: "Nouveau membre sur Meet Me Club à Lomé.",
+      bio: "Nouveau membre sur Meet Me Club.",
       relationshipGoal: "SERIOUS",
       plan: "FREE",
       partnersContacted: [],
-      photos: [
-        {
-          id: `p_${user.id}`,
-          url: resolvedGender === "FEMALE"
-            ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80"
-            : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
-          isMain: true,
-        },
-      ],
-      interests: ["Discussions", "Sorties Lomé", "Cafés"],
+      photos: [],
+      interests: [],
       availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
-      isVerified: true,
+      isVerified: false,
       isVisible: true,
     });
 

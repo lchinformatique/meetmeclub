@@ -44,12 +44,10 @@ export async function GET() {
       relationshipGoal: (dbUser?.profile?.relationshipGoal as any) || "SERIOUS",
       plan: "FREE",
       partnersContacted: [],
-      photos: [
-        { id: "p_init", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }
-      ],
-      interests: ["Discussions", "Sorties"],
+      photos: [],
+      interests: [],
       availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
-      isVerified: true,
+      isVerified: false,
       isVisible: true,
     });
   }

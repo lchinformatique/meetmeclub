@@ -713,31 +713,150 @@ export default function RejoindrePage() {
             </div>
           )}
 
-          {/* ── Rappel des Packs de Rendez-vous du Club ── */}
-          <div style={{ marginTop: "40px", textAlign: "center" }}>
-            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0B2559", marginBottom: "16px" }}>
-              Les 4 Packs de Rendez-vous organisés
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "10px" }}>
+          {/* ── Présentation des 4 Plans d'Adhésion du Club ── */}
+          <div style={{ marginTop: "48px", textAlign: "center" }}>
+            <div style={{ marginBottom: "20px" }}>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#E10600", textTransform: "uppercase", letterSpacing: "1px" }}>
+                Formules d&apos;adhésion au Club
+              </span>
+              <h3 style={{ fontSize: "clamp(1.4rem, 4vw, 1.9rem)", fontWeight: 800, color: "#0B2559", marginTop: "6px" }}>
+                Les 4 Plans disponibles sur Meet Me Club
+              </h3>
+              <p style={{ fontSize: "13px", color: "#64748B", maxWidth: "480px", margin: "8px auto 0" }}>
+                Chaque nouvel inscrit commence automatiquement avec le <strong>Plan Gratuit</strong>, puis peut évoluer librement vers un pass illimité.
+              </p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", textAlign: "left" }}>
               {[
-                { name: "Découverte", price: "2 000 F", desc: "Lieu public" },
-                { name: "Complice", price: "5 000 F", desc: "Table + boisson" },
-                { name: "Dîner", price: "12 000 F", desc: "Menu complet" },
-                { name: "VIP", price: "30 000 F", desc: "Espace privatif" },
-              ].map((p) => (
+                {
+                  id: "FREE",
+                  name: "Plan Gratuit",
+                  badge: "🎁 Inclus à l'inscription",
+                  badgeBg: "rgba(16, 185, 129, 0.12)",
+                  badgeColor: "#059669",
+                  price: "0",
+                  period: "Essai 7 jours offert",
+                  desc: "Votre premier accès au club avec toutes les fonctionnalités essentielles pour tester.",
+                  features: [
+                    "7 jours d'essai sans engagement",
+                    "Échanger avec jusqu'à 3 partenaires",
+                    "Messages écrits, photos & vocaux",
+                    "Visibilité dans l'espace Découverte",
+                    "Réservation de rendez-vous disponible",
+                  ],
+                  highlight: false,
+                  borderColor: "#CBD5E1",
+                },
+                {
+                  id: "ESSENTIAL",
+                  name: "Pass Essentiel",
+                  badge: "⭐ Populaire · Échange Libre",
+                  badgeBg: "rgba(11, 37, 89, 0.1)",
+                  badgeColor: "#0B2559",
+                  price: "3 000",
+                  period: "FCFA / mois",
+                  desc: "Discussions sans compter, liberté totale de discussion et amitié sans limite.",
+                  features: [
+                    "Tous les avantages du Plan Gratuit",
+                    "Partenaires & discussions 100% ILLIMITÉS",
+                    "Messages, photos et vocaux illimités",
+                    "Voir qui a visité et liké votre profil",
+                    "Badge officiel membre certifié",
+                  ],
+                  highlight: true,
+                  borderColor: "var(--color-blue)",
+                },
+                {
+                  id: "COMPLICE",
+                  name: "Pass Complice",
+                  badge: "🥂 Sorties & Boissons",
+                  badgeBg: "rgba(5, 150, 105, 0.12)",
+                  badgeColor: "#059669",
+                  price: "6 000",
+                  period: "FCFA / mois",
+                  desc: "Échanges illimités + tables réservées et consommations offertes en lieux partenaires.",
+                  features: [
+                    "Tout le Pass Essentiel en illimité",
+                    "Réservations de tables prioritaires",
+                    "1 consommation offerte / pers. au RDV",
+                    "QR code de validation au comptoir",
+                    "Rappels automatiques SMS / WhatsApp",
+                  ],
+                  highlight: false,
+                  borderColor: "#CBD5E1",
+                },
+                {
+                  id: "VIP",
+                  name: "Pass VIP Club",
+                  badge: "👑 Prestige & Visio Live",
+                  badgeBg: "rgba(217, 119, 6, 0.15)",
+                  badgeColor: "#B45309",
+                  price: "15 000",
+                  period: "FCFA / mois",
+                  desc: "Salons privés, appels vidéo en direct, dîners gastronomiques et conciergerie dédiée.",
+                  features: [
+                    "Tout le Pass Complice en illimité",
+                    "Appels vidéo en direct débloqués (VIP)",
+                    "Salons VIP et rooftops réservés",
+                    "Dîner gastronomique complet mensuel",
+                    "Conciergerie privée Meet Me Club 24/7",
+                  ],
+                  highlight: false,
+                  borderColor: "#D97706",
+                },
+              ].map((plan) => (
                 <div
-                  key={p.name}
+                  key={plan.id}
                   style={{
                     background: "white",
-                    borderRadius: "12px",
-                    padding: "12px 8px",
-                    border: "1px solid #E2E8F0",
-                    textAlign: "center",
+                    borderRadius: "18px",
+                    padding: "20px 18px",
+                    border: plan.highlight ? "2px solid #0B2559" : `1.5px solid ${plan.borderColor}`,
+                    boxShadow: plan.highlight ? "0 10px 28px rgba(11, 37, 89, 0.12)" : "0 4px 14px rgba(0,0,0,0.04)",
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
                   }}
                 >
-                  <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559" }}>{p.name}</div>
-                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#E10600", margin: "2px 0" }}>{p.price}</div>
-                  <div style={{ fontSize: "10px", color: "#64748B" }}>{p.desc}</div>
+                  <div
+                    style={{
+                      display: "inline-block",
+                      alignSelf: "flex-start",
+                      background: plan.badgeBg,
+                      color: plan.badgeColor,
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      padding: "4px 10px",
+                      borderRadius: "9999px",
+                      marginBottom: "10px",
+                    }}
+                  >
+                    {plan.badge}
+                  </div>
+
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#0B2559" }}>{plan.name}</div>
+
+                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#E10600", margin: "6px 0 2px" }}>
+                    {plan.price} <span style={{ fontSize: "13px", fontWeight: 700, color: "#64748B" }}>{plan.id === "FREE" ? "FCFA" : "FCFA / mois"}</span>
+                  </div>
+
+                  <div style={{ fontSize: "11px", color: "#64748B", marginBottom: "12px", fontStyle: "italic" }}>
+                    {plan.period}
+                  </div>
+
+                  <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.45, marginBottom: "14px", minHeight: "34px" }}>
+                    {plan.desc}
+                  </p>
+
+                  <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
+                    {plan.features.map((f, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "7px", fontSize: "12px", color: "#334155" }}>
+                        <span style={{ color: "#10B981", fontWeight: 800 }}>✓</span>
+                        <span style={{ lineHeight: 1.35 }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

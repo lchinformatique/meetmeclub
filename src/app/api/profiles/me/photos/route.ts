@@ -92,6 +92,16 @@ export async function POST(request: NextRequest) {
       data: { userId: session.userId, action: "PHOTO_UPLOADED", entity: "profile_photos", entityId: photo.id },
     });
 
+    // Mettre a jour aussi le profil local immediatement
+    try {
+      const { getProfileByUserId, saveProfile } = await import("@/lib/db-store");
+      const local = getProfileByUserId(session.userId);
+      if (local) {
+        const updatedPhotos = [...(local.photos || []), { id: photo.id, url: result.url, isMain: isFirst }];
+        saveProfile({ ...local, photos: updatedPhotos });
+      }
+    } catch {}
+
     return Response.json({ photo }, { status: 201 });
   } catch (error) {
     console.error("[photos POST]", error);

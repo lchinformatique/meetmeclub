@@ -294,10 +294,6 @@ function MessagesContent() {
   // Start Video Call - Réservé exclusivement au Pack VIP
   const isVip = myProfile?.plan === "VIP" || myProfile?.subscriptionTier === "VIP";
   const startVideoCall = async () => {
-    if (!isVerifiedForChat) {
-      setSecurityModalOpen(true);
-      return;
-    }
     if (!isVip) {
       setVipModalOpen(true);
       return;
@@ -353,10 +349,6 @@ function MessagesContent() {
 
   // ── Voice Message Recording ──────────────────────────────────
   const startVoiceRecording = async () => {
-    if (!isVerifiedForChat) {
-      setSecurityModalOpen(true);
-      return;
-    }
     const convIndex = conversations.findIndex((c) => c.id === activeConvId);
     if (isFreePlan && convIndex >= 3) {
       setQuotaModalOpen(true);
@@ -547,11 +539,6 @@ function MessagesContent() {
   const handleSend = useCallback(async () => {
     if (!draft.trim()) return;
 
-    if (!isVerifiedForChat) {
-      setSecurityModalOpen(true);
-      return;
-    }
-
     const convIndex = conversations.findIndex((c) => c.id === activeConvId);
     if (isFreePlan && convIndex >= 3) {
       setQuotaModalOpen(true);
@@ -598,17 +585,12 @@ function MessagesContent() {
     } catch (e) {
       console.warn("Message send error (optimistic UI preserved):", e);
     }
-  }, [draft, activeConvId, isVerifiedForChat, isFreePlan, conversations]);
+  }, [draft, activeConvId, isFreePlan, conversations]);
 
   // Send Photo or Video from Device
   const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!isVerifiedForChat) {
-      setSecurityModalOpen(true);
-      return;
-    }
 
     const convIndex = conversations.findIndex((c) => c.id === activeConvId);
     if (isFreePlan && convIndex >= 3) {
@@ -1387,9 +1369,9 @@ function MessagesContent() {
               <div
                 style={{
                   margin: "10px 24px 0",
-                  padding: "12px 16px",
-                  background: "#FFFBEB",
-                  border: "1.5px solid #FDE68A",
+                  padding: "10px 16px",
+                  background: "#F0FDF4",
+                  border: "1.5px solid #BBF7D0",
                   borderRadius: "14px",
                   display: "flex",
                   alignItems: "center",
@@ -1399,22 +1381,31 @@ function MessagesContent() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "22px" }}>🔒</span>
+                  <span style={{ fontSize: "20px" }}>🛡️</span>
                   <div>
-                    <div style={{ fontSize: "13px", fontWeight: 800, color: "#92400E" }}>
-                      Pièce d&apos;identité & Selfie obligatoires pour chatter
+                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#166534" }}>
+                      Obtenez le badge Membre Vérifié ✓
                     </div>
-                    <div style={{ fontSize: "12px", color: "#78350F" }}>
-                      Pour la sécurité des membres 18+ à Lomé, soumettez votre pièce et un selfie pour débloquer vos envois.
+                    <div style={{ fontSize: "12px", color: "#15803D" }}>
+                      Rassurez vos correspondants à Lomé en certifiant votre profil avec un selfie sécurisé.
                     </div>
                   </div>
                 </div>
                 <Link
                   href="/profil/securite"
-                  className="btn btn-sm btn-outline-blue"
-                  style={{ fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap" }}
+                  className="btn btn-sm"
+                  style={{
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                    background: "#16A34A",
+                    color: "white",
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                  }}
                 >
-                  Soumettre mes pièces 🪪
+                  Vérifier mon profil
                 </Link>
               </div>
             )}
