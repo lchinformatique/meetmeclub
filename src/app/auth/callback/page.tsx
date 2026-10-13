@@ -126,42 +126,6 @@ function AuthCallbackHandler() {
     handleCallback();
   }, [params, router]);
 
-  const [manualEmail, setManualEmail] = useState("");
-  const [manualLoading, setManualLoading] = useState(false);
-  const [manualErr, setManualErr] = useState("");
-
-  async function handleManualSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const clean = manualEmail.trim().toLowerCase();
-    if (!clean || !clean.includes("@")) {
-      setManualErr("Veuillez renseigner une adresse e-mail valide.");
-      return;
-    }
-    setManualLoading(true);
-    setManualErr("");
-    try {
-      const res = await fetch("/api/auth/google-callback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          supabaseId: `google_${Date.now()}`,
-          email: clean,
-          name: clean.split("@")[0],
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setManualErr(data.error || "Erreur de validation");
-        return;
-      }
-      window.location.href = data.redirect || "/profil?welcome=1";
-    } catch {
-      setManualErr("Erreur de connexion.");
-    } finally {
-      setManualLoading(false);
-    }
-  }
-
   if (status === "error") {
     return (
       <div
@@ -179,91 +143,36 @@ function AuthCallbackHandler() {
           style={{
             background: "white",
             borderRadius: "24px",
-            padding: "36px 28px",
-            maxWidth: "440px",
+            padding: "40px 32px",
+            maxWidth: "420px",
             width: "100%",
             textAlign: "center",
             boxShadow: "0 20px 60px rgba(11,37,89,0.12)",
             border: "1px solid #E8EDF5",
           }}
         >
-          <div style={{ fontSize: "40px", marginBottom: "12px" }}>🔐</div>
-          <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
-            Finaliser votre accès Google
+          <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+          <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "12px" }}>
+            Connexion impossible
           </h1>
-          <p style={{ fontSize: "13px", color: "#6B7A99", lineHeight: 1.5, marginBottom: "20px" }}>
-            La redirection automatique a été restreinte par votre navigateur mobile. Confirmez simplement votre adresse pour accéder immédiatement à votre compte.
+          <p style={{ fontSize: "14px", color: "#6B7A99", lineHeight: 1.6, marginBottom: "24px" }}>
+            {errorMsg}
           </p>
-
-          {manualErr && (
-            <div
-              style={{
-                background: "#FFF5F5",
-                border: "1px solid #FECACA",
-                borderRadius: "10px",
-                padding: "10px",
-                fontSize: "13px",
-                color: "#B91C1C",
-                marginBottom: "16px",
-                fontWeight: 600,
-              }}
-            >
-              {manualErr}
-            </div>
-          )}
-
-          <form onSubmit={handleManualSubmit} style={{ marginBottom: "16px" }}>
-            <input
-              type="email"
-              required
-              value={manualEmail}
-              onChange={(e) => setManualEmail(e.target.value)}
-              placeholder="votre-adresse@gmail.com"
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: "12px",
-                border: "1.5px solid #CBD5E1",
-                fontSize: "15px",
-                marginBottom: "12px",
-                outline: "none",
-                textAlign: "center",
-              }}
-            />
-            <button
-              type="submit"
-              disabled={manualLoading}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "12px",
-                border: "none",
-                background: "linear-gradient(135deg, #0B2559, #163B8A)",
-                color: "white",
-                fontWeight: 700,
-                fontSize: "15px",
-                cursor: manualLoading ? "not-allowed" : "pointer",
-                boxShadow: "0 4px 14px rgba(11,37,89,0.25)",
-              }}
-            >
-              {manualLoading ? "Connexion en cours..." : "Accéder à mon Profil"}
-            </button>
-          </form>
-
           <button
-            type="button"
             onClick={() => router.replace("/connexion")}
             style={{
-              background: "none",
+              width: "100%",
+              padding: "14px",
+              borderRadius: "12px",
               border: "none",
-              color: "#64748B",
-              fontSize: "13px",
-              fontWeight: 600,
+              background: "linear-gradient(135deg, #0B2559, #163B8A)",
+              color: "white",
+              fontWeight: 700,
+              fontSize: "15px",
               cursor: "pointer",
-              textDecoration: "underline",
             }}
           >
-            Retourner à la page de connexion
+            Retour à la connexion
           </button>
         </div>
       </div>

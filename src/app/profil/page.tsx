@@ -11,8 +11,6 @@ import Header from "@/components/Header";
 import LogoutButton from "@/components/LogoutButton";
 import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "Mon Profil",
   robots: { index: false },
@@ -25,57 +23,25 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   if (!session?.userId) redirect("/connexion");
 
   let profile = getProfileByUserId(session.userId);
-  let dbUser: any = null;
-
-  try {
-    const { prisma } = await import("@/lib/prisma");
-    dbUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { id: session.userId },
-          ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
-        ],
-      },
-      include: {
-        profile: {
-          include: {
-            photos: true,
-          },
+  if (!profile) {
+    let dbUser: any = null;
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      dbUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: session.userId },
+            ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
+          ],
         },
-      },
-    });
-  } catch (e) {
-    console.warn("Prisma user lookup warning:", e);
-  }
+        include: { profile: true },
+      });
+    } catch (e) {
+      console.warn("Prisma user lookup warning:", e);
+    }
 
-  // Si trouvé en base de données, synchroniser immédiatement les valeurs modifiées
-  if (dbUser?.profile) {
-    const p = dbUser.profile;
-    profile = saveProfile({
-      ...(profile || {}),
-      userId: session.userId,
-      firstName: p.firstName || profile?.firstName || "Membre",
-      lastName: p.lastName || profile?.lastName || "",
-      pseudo: p.pseudo || profile?.pseudo || p.firstName || "Membre",
-      gender: (p.gender as any) || profile?.gender || "OTHER",
-      city: p.city || profile?.city || "Lomé",
-      neighborhood: p.neighborhood || profile?.neighborhood || "Centre-ville",
-      profession: p.profession || profile?.profession || "Membre actif",
-      bio: p.bio || profile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
-      relationshipGoal: (p.relationshipGoal as any) || profile?.relationshipGoal || "SERIOUS",
-      plan: profile?.plan || "FREE",
-      partnersContacted: profile?.partnersContacted || [],
-      photos: (p.photos && p.photos.length > 0)
-        ? p.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
-        : (profile?.photos || [{ id: "p1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }]),
-      interests: profile?.interests || ["Discussions", "Sorties Lomé", "Cafés"],
-      availabilities: profile?.availabilities || [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
-      isVerified: true,
-      isVisible: true,
-    });
-  } else if (!profile) {
-    const fallbackFirstName = session.email?.split("@")[0] || "Membre";
-    const fallbackPseudo = fallbackFirstName;
+    const fallbackFirstName = dbUser?.profile?.firstName || session.email?.split("@")[0] || "Membre";
+    const fallbackPseudo = dbUser?.profile?.pseudo || fallbackFirstName;
 
     try {
       profile = saveProfile({

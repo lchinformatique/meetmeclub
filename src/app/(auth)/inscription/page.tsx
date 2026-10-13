@@ -1,6 +1,6 @@
 "use client";
 // src/app/(auth)/inscription/page.tsx
-// Page d'inscription officielle Meet Me Club — Plan Gratuit direct avec profil complet & option Google
+// Page d'inscription simplifiée & rapide — Plan Gratuit direct avec Pseudo ou Email + Mot de passe
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,8 +8,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   User,
-  Mail,
-  Calendar,
   Lock,
   Eye,
   EyeOff,
@@ -18,7 +16,6 @@ import {
   Loader2,
   AlertCircle,
   LogIn,
-  CheckCircle2,
   ChevronLeft,
   Sparkles,
 } from "lucide-react";
@@ -28,65 +25,27 @@ export default function InscriptionPage() {
   const router = useRouter();
 
   // Form states
-  const [firstName, setFirstName] = useState("");
-  const [gender, setGender] = useState<"FEMALE" | "MALE" | "OTHER">("FEMALE");
-  const [email, setEmail] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Status
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focusField, setFocusField] = useState("");
 
-  // Password strength
-  const pwStrength =
-    password.length === 0
-      ? 0
-      : password.length < 6
-      ? 1
-      : password.length < 10
-      ? 2
-      : 3;
-
-  const strengthLabel = ["", "Faible", "Moyen", "Fort"];
-  const strengthColor = ["", "#EF4444", "#F59E0B", "#10B981"];
-
-  function isAdultFront(dob: string): boolean {
-    if (!dob) return false;
-    const eighteenAgo = new Date();
-    eighteenAgo.setFullYear(eighteenAgo.getFullYear() - 18);
-    return new Date(dob) <= eighteenAgo;
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    if (!firstName.trim()) {
-      setError("Veuillez renseigner votre prénom ou pseudo.");
+    const cleanInput = identifier.trim();
+    if (!cleanInput) {
+      setError("Veuillez renseigner votre pseudo ou votre adresse e-mail.");
       return;
     }
-    if (!email.trim() || !email.includes("@")) {
-      setError("Veuillez saisir une adresse e-mail valide.");
-      return;
-    }
-    if (!dateOfBirth) {
-      setError("Veuillez indiquer votre date de naissance.");
-      return;
-    }
-    if (!isAdultFront(dateOfBirth)) {
-      setError("Meet Me Club est réservé exclusivement aux personnes majeures (18 ans et plus).");
-      return;
-    }
+
     if (!password || password.length < 6) {
       setError("Votre mot de passe doit comporter au moins 6 caractères.");
-      return;
-    }
-    if (!termsAccepted) {
-      setError("Veuillez accepter les Conditions Générales et attester avoir au moins 18 ans.");
       return;
     }
 
@@ -97,11 +56,7 @@ export default function InscriptionPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: firstName.trim(),
-          pseudo: firstName.trim(),
-          gender,
-          email: email.trim(),
-          dateOfBirth,
+          login: cleanInput,
           password,
         }),
       });
@@ -109,7 +64,7 @@ export default function InscriptionPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Une erreur est survenue lors de l'inscription.");
+        setError(data.error || "Une erreur est survenue lors de l'accès. Veuillez réessayer.");
         return;
       }
 
@@ -152,11 +107,11 @@ export default function InscriptionPage() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "24px 16px",
+        padding: "32px 16px",
       }}
     >
-      {/* ── Bouton Retour Mobile & Desktop ── */}
-      <div style={{ width: "100%", maxWidth: "520px", marginBottom: "14px", display: "flex", justifyContent: "flex-start" }}>
+      {/* ── Bouton Retour ── */}
+      <div style={{ width: "100%", maxWidth: "460px", marginBottom: "14px", display: "flex", justifyContent: "flex-start" }}>
         <button
           type="button"
           onClick={() => {
@@ -188,13 +143,11 @@ export default function InscriptionPage() {
         </button>
       </div>
 
-      {/* ══════════════════════════════════════
-          CARD CONTAINER
-      ══════════════════════════════════════ */}
+      {/* ── CARD CONTAINER ── */}
       <div
         style={{
           width: "100%",
-          maxWidth: "520px",
+          maxWidth: "460px",
           background: "white",
           borderRadius: "24px",
           boxShadow: "0 4px 6px rgba(11,37,89,0.04), 0 20px 60px rgba(11,37,89,0.10)",
@@ -210,7 +163,7 @@ export default function InscriptionPage() {
           }}
         />
 
-        <div style={{ padding: "32px 30px" }} className="inscription-inner-pad">
+        <div style={{ padding: "36px 36px 32px" }}>
           {/* ── Brand Header ── */}
           <div style={{ textAlign: "center", marginBottom: "24px" }}>
             <Link
@@ -220,7 +173,7 @@ export default function InscriptionPage() {
                 alignItems: "center",
                 gap: "10px",
                 textDecoration: "none",
-                marginBottom: "14px",
+                marginBottom: "16px",
               }}
             >
               <div
@@ -267,7 +220,7 @@ export default function InscriptionPage() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Club Privé International · Lomé, Togo
+                  Club Privé International · Sorties Togo
                 </span>
               </div>
             </Link>
@@ -281,14 +234,14 @@ export default function InscriptionPage() {
                 letterSpacing: "-0.4px",
               }}
             >
-              Créer mon compte membre
+              Rejoindre Meet Me Club
             </h1>
             <p style={{ fontSize: "14px", color: "#6B7A99", margin: 0, fontWeight: 500 }}>
-              Rejoignez la communauté et profitez immédiatement de votre accès gratuit
+              Accès immédiat et gratuit à votre profil membre
             </p>
 
-            {/* Badges d'information */}
-            <div style={{ marginTop: "12px", display: "flex", justifyContent: "center", gap: "8px", flexWrap: "wrap" }}>
+            {/* Badge Plan Gratuit */}
+            <div style={{ marginTop: "12px", display: "flex", justifyContent: "center" }}>
               <span
                 style={{
                   display: "inline-flex",
@@ -305,23 +258,6 @@ export default function InscriptionPage() {
               >
                 <Sparkles size={13} style={{ color: "#D97706" }} />
                 Plan Gratuit Inclus (3 partenaires de chat)
-              </span>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "5px 12px",
-                  borderRadius: "100px",
-                  background: "#F0FDF4",
-                  border: "1px solid #A7F3D0",
-                  color: "#047857",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                }}
-              >
-                <ShieldCheck size={13} style={{ color: "#059669" }} />
-                18 ans et plus
               </span>
             </div>
           </div>
@@ -356,110 +292,12 @@ export default function InscriptionPage() {
             </div>
           )}
 
-          {/* ── FORMULAIRE COMPLET ── */}
+          {/* ── FORM EN HAUT ── */}
           <form onSubmit={handleSubmit} noValidate>
-            {/* Row 1: Prénom / Pseudo & Genre */}
-            <div
-              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}
-              className="inscription-row"
-            >
-              {/* Prénom ou Pseudo */}
-              <div>
-                <label
-                  htmlFor="firstName"
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#4B5C7A",
-                    marginBottom: "6px",
-                    letterSpacing: "0.4px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Prénom ou Pseudo
-                </label>
-                <div style={{ position: "relative" }}>
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: "14px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      pointerEvents: "none",
-                      color: focusField === "firstName" ? "#0B2559" : "#A0AABF",
-                      transition: "color 0.18s ease",
-                    }}
-                  >
-                    <User size={17} />
-                  </div>
-                  <input
-                    id="firstName"
-                    type="text"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    onFocus={() => setFocusField("firstName")}
-                    onBlur={() => setFocusField("")}
-                    placeholder="Ex : Koffi ou Afi"
-                    autoComplete="given-name"
-                    style={{
-                      ...fieldBase,
-                      ...(focusField === "firstName" ? fieldFocused : {}),
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Genre */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#4B5C7A",
-                    marginBottom: "6px",
-                    letterSpacing: "0.4px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Genre
-                </label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px" }}>
-                  {[
-                    { val: "FEMALE", label: "Femme" },
-                    { val: "MALE", label: "Homme" },
-                    { val: "OTHER", label: "Autre" },
-                  ].map((item) => (
-                    <button
-                      key={item.val}
-                      type="button"
-                      onClick={() => setGender(item.val as typeof gender)}
-                      style={{
-                        padding: "11px 4px",
-                        borderRadius: "10px",
-                        border: gender === item.val ? "2px solid #0B2559" : "1.5px solid #D8E1EF",
-                        background: gender === item.val ? "#0B2559" : "white",
-                        color: gender === item.val ? "white" : "#4B5C7A",
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        transition: "all 0.18s ease",
-                        fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Email */}
+            {/* Pseudo ou Email */}
             <div style={{ marginBottom: "16px" }}>
               <label
-                htmlFor="email"
+                htmlFor="identifier"
                 style={{
                   display: "block",
                   fontSize: "12px",
@@ -470,7 +308,7 @@ export default function InscriptionPage() {
                   textTransform: "uppercase",
                 }}
               >
-                Adresse e-mail
+                Pseudo ou Adresse e-mail
               </label>
               <div style={{ position: "relative" }}>
                 <div
@@ -480,88 +318,32 @@ export default function InscriptionPage() {
                     top: "50%",
                     transform: "translateY(-50%)",
                     pointerEvents: "none",
-                    color: focusField === "email" ? "#0B2559" : "#A0AABF",
+                    color: focusField === "identifier" ? "#0B2559" : "#A0AABF",
                     transition: "color 0.18s ease",
                   }}
                 >
-                  <Mail size={17} />
+                  <User size={17} />
                 </div>
                 <input
-                  id="email"
-                  type="email"
+                  id="identifier"
+                  type="text"
                   required
-                  inputMode="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onFocus={() => setFocusField("email")}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  onFocus={() => setFocusField("identifier")}
                   onBlur={() => setFocusField("")}
-                  placeholder="votre-email@exemple.com"
-                  autoComplete="email"
+                  placeholder="Ex : Koffi_Pro ou email@exemple.com"
+                  autoComplete="username"
                   style={{
                     ...fieldBase,
-                    ...(focusField === "email" ? fieldFocused : {}),
+                    ...(focusField === "identifier" ? fieldFocused : {}),
                   }}
                 />
               </div>
-            </div>
-
-            {/* Date de naissance */}
-            <div style={{ marginBottom: "16px" }}>
-              <label
-                htmlFor="dateOfBirth"
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#4B5C7A",
-                  marginBottom: "6px",
-                  letterSpacing: "0.4px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Date de naissance (18+ ans)
-              </label>
-              <div style={{ position: "relative" }}>
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "14px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none",
-                    color: focusField === "dob" ? "#0B2559" : "#A0AABF",
-                    transition: "color 0.18s ease",
-                  }}
-                >
-                  <Calendar size={17} />
-                </div>
-                <input
-                  id="dateOfBirth"
-                  type="date"
-                  required
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                  onFocus={() => setFocusField("dob")}
-                  onBlur={() => setFocusField("")}
-                  max={(() => {
-                    const d = new Date();
-                    d.setFullYear(d.getFullYear() - 18);
-                    return d.toISOString().split("T")[0];
-                  })()}
-                  style={{
-                    ...fieldBase,
-                    ...(focusField === "dob" ? fieldFocused : {}),
-                    colorScheme: "light",
-                  }}
-                />
-              </div>
-              <p style={{ fontSize: "11px", color: "#8B99B5", marginTop: "5px", fontWeight: 500, margin: "5px 0 0" }}>
-                Réservé aux 18 ans et plus · Vos données restent strictement confidentielles
-              </p>
             </div>
 
             {/* Mot de passe */}
-            <div style={{ marginBottom: "20px" }}>
+            <div style={{ marginBottom: "22px" }}>
               <label
                 htmlFor="password"
                 style={{
@@ -598,7 +380,7 @@ export default function InscriptionPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setFocusField("pwd")}
                   onBlur={() => setFocusField("")}
-                  placeholder="Choisissez un mot de passe sécurisé"
+                  placeholder="Entrez votre mot de passe"
                   autoComplete="new-password"
                   style={{
                     ...fieldBase,
@@ -621,7 +403,6 @@ export default function InscriptionPage() {
                     color: "#A0AABF",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
                     padding: "4px",
                     borderRadius: "6px",
                   }}
@@ -629,89 +410,6 @@ export default function InscriptionPage() {
                   {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
-
-              {/* Password strength bar */}
-              {password.length > 0 && (
-                <div style={{ marginTop: "8px" }}>
-                  <div style={{ display: "flex", gap: "4px", marginBottom: "4px" }}>
-                    {[1, 2, 3].map((level) => (
-                      <div
-                        key={level}
-                        style={{
-                          flex: 1,
-                          height: "3px",
-                          borderRadius: "99px",
-                          background: pwStrength >= level ? strengthColor[pwStrength] : "#E8EDF5",
-                          transition: "background 0.3s ease",
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: strengthColor[pwStrength] }}>
-                    Mot de passe {strengthLabel[pwStrength]}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Checkbox CGU */}
-            <div
-              style={{
-                background: "#F7F9FD",
-                border: "1.5px solid #E8EDF5",
-                borderRadius: "12px",
-                padding: "14px 16px",
-                marginBottom: "20px",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "12px",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ position: "relative", flexShrink: 0, marginTop: "2px" }}>
-                  <input
-                    type="checkbox"
-                    required
-                    checked={termsAccepted}
-                    onChange={(e) => setTermsAccepted(e.target.checked)}
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      cursor: "pointer",
-                      accentColor: "#0B2559",
-                    }}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: "13px",
-                    color: "#4B5C7A",
-                    fontWeight: 500,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  J&apos;atteste avoir <strong style={{ color: "#0B2559" }}>au moins 18 ans</strong> et
-                  j&apos;accepte les{" "}
-                  <Link
-                    href="/legal/cgu"
-                    style={{ color: "#E10600", fontWeight: 700, textDecoration: "underline" }}
-                  >
-                    Conditions Générales
-                  </Link>{" "}
-                  et la{" "}
-                  <Link
-                    href="/legal/charte"
-                    style={{ color: "#E10600", fontWeight: 700, textDecoration: "underline" }}
-                  >
-                    Charte de Respect
-                  </Link>
-                  .
-                </span>
-              </label>
             </div>
 
             {/* Submit */}
@@ -738,7 +436,6 @@ export default function InscriptionPage() {
                 boxShadow: loading ? "none" : "0 6px 20px rgba(11,37,89,0.30)",
                 transition: "all 0.22s ease",
               }}
-              className="submit-btn"
             >
               {loading ? (
                 <>
@@ -747,7 +444,7 @@ export default function InscriptionPage() {
                 </>
               ) : (
                 <>
-                  <span>Créer mon compte (Accès Gratuit)</span>
+                  <span>Accéder à mon Profil (Plan Gratuit)</span>
                   <ArrowRight size={18} />
                 </>
               )}
@@ -830,63 +527,24 @@ export default function InscriptionPage() {
           style={{
             background: "#F7F9FD",
             borderTop: "1px solid #EEF2FB",
-            padding: "14px 24px",
+            padding: "14px 36px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "16px",
+            gap: "18px",
             flexWrap: "wrap",
           }}
-          className="inscription-footer-pad"
         >
           <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7A99", fontSize: "12px", fontWeight: 600 }}>
             <ShieldCheck size={14} style={{ color: "#059669" }} />
             <span>Accès sécurisé 18+ · Membres du monde entier</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7A99", fontSize: "12px", fontWeight: 600 }}>
-            <CheckCircle2 size={14} style={{ color: "#0B2559" }} />
-            <span>Données protégées et confidentielles</span>
+            <Sparkles size={14} style={{ color: "#D97706" }} />
+            <span>Essai gratuit inclus</span>
           </div>
         </div>
       </div>
-
-      {/* Global styles for this page */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        .submit-btn:hover:not(:disabled) {
-          background: linear-gradient(135deg, #163B8A 0%, #0B2559 100%) !important;
-          box-shadow: 0 8px 28px rgba(11,37,89,0.38) !important;
-          transform: translateY(-1px);
-        }
-        .submit-btn:active:not(:disabled) {
-          transform: scale(0.98) !important;
-        }
-
-        input:focus {
-          border-color: #0B2559 !important;
-          box-shadow: 0 0 0 3px rgba(11,37,89,0.09) !important;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-          opacity: 0.5;
-          cursor: pointer;
-        }
-
-        @media (max-width: 540px) {
-          .inscription-inner-pad {
-            padding: 24px 18px 20px !important;
-          }
-          .inscription-footer-pad {
-            padding: 12px 16px !important;
-          }
-          .inscription-row {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -145,11 +145,9 @@ export default function ProfilEditPage() {
       }
 
       setMessage({ type: "success", text: "Profil mis à jour avec succès !" });
-      router.refresh();
       setTimeout(() => {
         router.push("/profil");
-        router.refresh();
-      }, 900);
+      }, 1200);
     } catch {
       setMessage({ type: "error", text: "Erreur réseau. Veuillez réessayer." });
     } finally {
