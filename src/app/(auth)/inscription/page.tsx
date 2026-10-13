@@ -147,7 +147,7 @@ export default function InscriptionPage() {
       <div
         style={{
           width: "100%",
-          maxWidth: "460px",
+          maxWidth: "680px",
           background: "white",
           borderRadius: "24px",
           boxShadow: "0 4px 6px rgba(11,37,89,0.04), 0 20px 60px rgba(11,37,89,0.10)",
@@ -163,9 +163,9 @@ export default function InscriptionPage() {
           }}
         />
 
-        <div style={{ padding: "36px 36px 32px" }}>
+        <div style={{ padding: "32px 28px" }}>
           {/* ── Brand Header ── */}
-          <div style={{ textAlign: "center", marginBottom: "24px" }}>
+          <div style={{ textAlign: "center", marginBottom: "22px" }}>
             <Link
               href="/"
               style={{
@@ -173,7 +173,7 @@ export default function InscriptionPage() {
                 alignItems: "center",
                 gap: "10px",
                 textDecoration: "none",
-                marginBottom: "16px",
+                marginBottom: "14px",
               }}
             >
               <div
@@ -227,27 +227,62 @@ export default function InscriptionPage() {
 
             <h1
               style={{
-                fontSize: "22px",
+                fontSize: "24px",
                 fontWeight: 800,
                 color: "#0B2559",
                 margin: "0 0 6px",
                 letterSpacing: "-0.4px",
               }}
             >
-              Rejoindre Meet Me Club
+              Rejoignez Meet Me Club
             </h1>
-            <p style={{ fontSize: "14px", color: "#6B7A99", margin: 0, fontWeight: 500 }}>
-              Accès immédiat et gratuit à votre profil membre
+            <p style={{ fontSize: "14px", color: "#475569", margin: "0 auto 16px", maxWidth: "520px", lineHeight: 1.6 }}>
+              La première plateforme de rencontres avec réservation de rendez-vous réels au Togo. Discutez avec des célibataires vérifiés (+18) et vivez de vrais moments dans nos cadres partenaires exclusifs.
             </p>
 
+            {/* ── Plans de rendez-vous disponibles ── */}
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "#8B99B5", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "10px" }}>
+                Formules de sorties & rendez-vous disponibles
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px", textAlign: "center" }}>
+                {[
+                  { name: "Découverte", price: "2 000 F", desc: "Lieu public & chat", color: "#64748B" },
+                  { name: "Complice", price: "5 000 F", desc: "Table + 1 boisson", color: "#2563EB" },
+                  { name: "Dîner", price: "12 000 F", desc: "Menu complet", color: "#E10600", popular: true },
+                  { name: "VIP Club", price: "30 000 F", desc: "Salons & appel vidéo", color: "#D97706" },
+                ].map((plan) => (
+                  <div
+                    key={plan.name}
+                    style={{
+                      background: "#F8FAFC",
+                      borderRadius: "12px",
+                      padding: "10px 8px",
+                      border: plan.popular ? "1.5px solid #E10600" : "1px solid #E2E8F0",
+                      position: "relative",
+                    }}
+                  >
+                    {plan.popular && (
+                      <span style={{ position: "absolute", top: "-8px", left: "50%", transform: "translateX(-50%)", background: "#E10600", color: "white", fontSize: "9px", fontWeight: 800, padding: "1px 6px", borderRadius: "9999px" }}>
+                        Top
+                      </span>
+                    )}
+                    <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559" }}>{plan.name}</div>
+                    <div style={{ fontSize: "14px", fontWeight: 800, color: plan.color, margin: "2px 0" }}>{plan.price}</div>
+                    <div style={{ fontSize: "10px", color: "#64748B" }}>{plan.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Badge Plan Gratuit */}
-            <div style={{ marginTop: "12px", display: "flex", justifyContent: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center" }}>
               <span
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
-                  padding: "5px 12px",
+                  padding: "6px 14px",
                   borderRadius: "100px",
                   background: "#FEF3C7",
                   border: "1px solid #FDE68A",
@@ -256,8 +291,8 @@ export default function InscriptionPage() {
                   fontWeight: 700,
                 }}
               >
-                <Sparkles size={13} style={{ color: "#D97706" }} />
-                Plan Gratuit Inclus (3 partenaires de chat)
+                <Sparkles size={14} style={{ color: "#D97706" }} />
+                Essai Gratuit 7 jours inclus · 3 partenaires de chat offerts
               </span>
             </div>
           </div>

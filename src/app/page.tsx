@@ -206,7 +206,7 @@ export default function HomePage() {
             className="hero-bg-img"
             style={{
               objectFit: "cover",
-              objectPosition: "center right",
+              objectPosition: "center",
             }}
           />
           {/* Dual-layer intelligent scrim */}
@@ -224,7 +224,7 @@ export default function HomePage() {
         <div className="container" style={{ position: "relative", zIndex: 1, width: "100%" }}>
           <div className="hero-grid">
             {/* Left Column: All Core Information, CTAs & Value Props */}
-            <div className="animate-fade-in" style={{ maxWidth: "620px" }}>
+            <div className="animate-fade-in hero-content-column" style={{ maxWidth: "620px" }}>
               {/* Animated Pillars Ticker */}
               <div className="hero-pillars-ticker" style={{ marginBottom: "24px", overflow: "hidden" }}>
                 <div className="hero-pillars-track">
@@ -298,7 +298,7 @@ export default function HomePage() {
 
               <div className="hero-cta-group">
                 <Link
-                  href="/connexion"
+                  href="/inscription"
                   className="btn btn-lg"
                   style={{
                     background: "var(--color-red)",
@@ -327,6 +327,7 @@ export default function HomePage() {
               </div>
 
               <div
+                className="hero-trust-badges"
                 style={{
                   marginTop: "24px",
                   display: "flex",
@@ -358,6 +359,7 @@ export default function HomePage() {
 
             {/* Right Column: Floating Live Trust Card (Positioned to highlight the couple) */}
             <div
+              className="hero-right-column"
               style={{
                 display: "flex",
                 flexDirection: "column",

@@ -93,6 +93,7 @@ function MessagesContent() {
   const [quotaModalOpen, setQuotaModalOpen] = useState(false);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [vipModalOpen, setVipModalOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   // Video call state
   const [videoCallOpen, setVideoCallOpen] = useState(false);
@@ -125,9 +126,14 @@ function MessagesContent() {
     async function loadMe() {
       try {
         const res = await fetch("/api/profiles/me");
+        if (res.status === 401) {
+          setIsAuthenticated(false);
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           setMyProfile(data.profile);
+          setIsAuthenticated(true);
         }
       } catch (e) {
         console.warn("Could not load my profile in messages:", e);
@@ -141,7 +147,12 @@ function MessagesContent() {
     async function loadConversations() {
       try {
         const res = await fetch("/api/conversations");
+        if (res.status === 401) {
+          setIsAuthenticated(false);
+          return;
+        }
         if (res.ok) {
+          setIsAuthenticated(true);
           const data = await res.json();
           if (data.conversations && data.conversations.length > 0) {
             setConversations(data.conversations);
@@ -155,7 +166,7 @@ function MessagesContent() {
       }
     }
     loadConversations();
-  }, []);
+  }, [contactParam]);
 
   // Load messages for active conversation from API
   useEffect(() => {
@@ -729,7 +740,41 @@ function MessagesContent() {
       {/* ── Top Standardized Header ── */}
       <Header />
 
-      {/* ── Main Split View ──────────────────────────────────── */}
+      {/* ── État non-connecté ── */}
+      {isAuthenticated === false && (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+          <div style={{ maxWidth: "480px", width: "100%", background: "white", borderRadius: "24px", padding: "36px 28px", textAlign: "center", boxShadow: "0 10px 40px rgba(11,37,89,0.08)", border: "1px solid #E2E8F0" }}>
+            <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#EEF2FB", color: "#0B2559", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: "28px" }}>
+              💬
+            </div>
+            <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
+              Messagerie & Espace de Chat
+            </h2>
+            <p style={{ fontSize: "14px", color: "#64748B", lineHeight: 1.6, marginBottom: "24px" }}>
+              Connectez-vous à votre compte pour lire vos messages reçus, discuter avec vos partenaires et accéder à vos échanges privés.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <Link
+                href="/connexion?callbackUrl=/messages"
+                className="btn btn-primary"
+                style={{ width: "100%", justifyContent: "center", fontWeight: 700, padding: "14px", borderRadius: "12px", background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)", color: "white", textDecoration: "none" }}
+              >
+                Se connecter à mon compte
+              </Link>
+              <Link
+                href="/inscription"
+                className="btn"
+                style={{ width: "100%", justifyContent: "center", fontWeight: 700, padding: "14px", borderRadius: "12px", background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)", color: "white", textDecoration: "none", boxShadow: "0 4px 14px rgba(225,6,0,0.25)" }}
+              >
+                Créer un compte gratuit
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main Split View (Utilisateur connecté) ───────────── */}
+      {isAuthenticated !== false && (
       <div
         className="messages-split-view"
         style={{
@@ -852,17 +897,37 @@ function MessagesContent() {
                   }}
                 >
                   <div style={{ position: "relative", flexShrink: 0 }}>
-                    <Image
-                      src={conv.photoUrl}
-                      alt={conv.firstName}
-                      width={48}
-                      height={48}
-                      style={{
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        border: "2px solid #CBD5E1",
-                      }}
-                    />
+                    {conv.photoUrl && (conv.photoUrl.startsWith("http") || conv.photoUrl.startsWith("/")) ? (
+                      <Image
+                        src={conv.photoUrl}
+                        alt={conv.firstName}
+                        width={48}
+                        height={48}
+                        style={{
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          border: "2px solid #CBD5E1",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "48px",
+                          height: "48px",
+                          borderRadius: "50%",
+                          background: "#EEF2FB",
+                          color: "#0B2559",
+                          fontWeight: 800,
+                          fontSize: "17px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "2px solid #CBD5E1",
+                        }}
+                      >
+                        {conv.firstName ? conv.firstName.charAt(0).toUpperCase() : "M"}
+                      </div>
+                    )}
                     {conv.isOnline && (
                       <span
                         style={{
@@ -951,17 +1016,37 @@ function MessagesContent() {
                 >
                   ←
                 </button>
-                <Image
-                  src={activeConv.photoUrl}
-                  alt={activeConv.firstName}
-                  width={46}
-                  height={46}
-                  style={{
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    border: "2px solid #CBD5E1",
-                  }}
-                />
+                {activeConv.photoUrl && (activeConv.photoUrl.startsWith("http") || activeConv.photoUrl.startsWith("/")) ? (
+                  <Image
+                    src={activeConv.photoUrl}
+                    alt={activeConv.firstName}
+                    width={46}
+                    height={46}
+                    style={{
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "2px solid #CBD5E1",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "46px",
+                      height: "46px",
+                      borderRadius: "50%",
+                      background: "#EEF2FB",
+                      color: "#0B2559",
+                      fontWeight: 800,
+                      fontSize: "17px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "2px solid #CBD5E1",
+                    }}
+                  >
+                    {activeConv.firstName ? activeConv.firstName.charAt(0).toUpperCase() : "M"}
+                  </div>
+                )}
                 <div>
                   <div style={{ fontWeight: 800, fontSize: "17px", color: "#0F172A", display: "flex", alignItems: "center", gap: "6px" }}>
                     {activeConv.firstName}
@@ -1552,11 +1637,31 @@ function MessagesContent() {
             </div>
           </main>
         ) : (
-          <main style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", padding: "32px", textAlign: "center" }}>
-            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A" }}>Sélectionnez une discussion</h3>
+          <main style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", padding: "48px 24px", textAlign: "center", flex: 1 }}>
+            <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#EEF2FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px" }}>
+              💌
+            </div>
+            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>
+              {conversations.length === 0 ? "Aucun échange en cours" : "Sélectionnez une discussion"}
+            </h3>
+            <p style={{ fontSize: "14px", color: "#64748B", maxWidth: "400px", lineHeight: 1.6, marginBottom: "20px" }}>
+              {conversations.length === 0
+                ? "Vous n'avez pas encore de message. Découvrez les membres vérifiés du club pour engager une première conversation !"
+                : "Choisissez un contact dans la liste à gauche pour voir vos messages et échanger."}
+            </p>
+            {conversations.length === 0 && (
+              <Link
+                href="/decouverte"
+                className="btn btn-primary"
+                style={{ padding: "12px 24px", fontWeight: 700, borderRadius: "12px", background: "var(--color-red)", color: "white", textDecoration: "none" }}
+              >
+                🔍 Découvrir les profils
+              </Link>
+            )}
           </main>
         )}
       </div>
+      )}
 
       {/* ── Location Picker Modal ─────────────────────────────── */}
       {locationModalOpen && (
