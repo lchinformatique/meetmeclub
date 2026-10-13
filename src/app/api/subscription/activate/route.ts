@@ -1,5 +1,6 @@
 // src/app/api/subscription/activate/route.ts
-// Activate subscription after Saspay payment via T-Money or Flooz
+// Activate subscription after Saspay payment via T-Money, Moov, or Carte Bancaire
+// Persists to both local store and Prisma/Supabase
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
@@ -19,11 +20,48 @@ export async function POST(req: NextRequest) {
     const userId = session?.userId || "demo_user_lome";
     const existing = getProfileByUserId(userId);
 
+    // 1. Save to local store
     const updated = saveProfile({
       userId,
       phone: phone || existing?.phone,
       plan: plan as any,
     });
+
+    // 2. Persist subscription to Prisma/Supabase
+    try {
+      const { prisma } = await import("@/lib/prisma");
+
+      // Create subscription record
+      await prisma.subscription.create({
+        data: {
+          userId,
+          plan: plan as any,
+          status: "ACTIVE",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 days
+          priceFcfa: PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS].price,
+          paymentRef: transactionRef || `ACT_${Date.now()}`,
+          paymentMethod: phone?.includes("@") ? "CARD" : "MOBILE_MONEY",
+          paymentPhone: phone || null,
+        },
+      }).catch((e: any) => {
+        // Subscription model might not exist yet in DB schema
+        console.warn("[activate] Subscription table write skipped:", e.message);
+      });
+
+      // Also update the profile audit log
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          action: "SUBSCRIPTION_ACTIVATED",
+          entity: "subscriptions",
+          entityId: plan,
+          metadata: { plan, phone, transactionRef } as any,
+        },
+      }).catch(() => {});
+    } catch (dbErr) {
+      console.warn("[POST /api/subscription/activate] Prisma sync:", dbErr);
+    }
 
     return NextResponse.json({
       success: true,

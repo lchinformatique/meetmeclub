@@ -88,10 +88,56 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
+
+    // 1. Save to local store (cache / dev fallback)
     const saved = saveProfile({
       ...body,
       userId: session.userId,
     });
+
+    // 2. Also persist to Prisma/Supabase for production durability
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      const updateData: Record<string, unknown> = {};
+      if (body.firstName !== undefined) updateData.firstName = body.firstName;
+      if (body.pseudo !== undefined) updateData.pseudo = body.pseudo || null;
+      if (body.gender !== undefined) updateData.gender = body.gender;
+      if (body.city !== undefined) updateData.city = body.city;
+      if (body.neighborhood !== undefined) updateData.neighborhood = body.neighborhood;
+      if (body.profession !== undefined) updateData.profession = body.profession;
+      if (body.bio !== undefined) updateData.bio = body.bio;
+      if (body.relationshipGoal !== undefined) updateData.relationshipGoal = body.relationshipGoal;
+      if (body.height !== undefined) updateData.height = body.height;
+      if (body.religion !== undefined) updateData.religion = body.religion;
+      if (body.relationshipStatus !== undefined) updateData.relationshipStatus = body.relationshipStatus;
+      if (body.hasChildren !== undefined) updateData.hasChildren = body.hasChildren;
+      if (body.languages !== undefined) updateData.languages = body.languages;
+      if (body.educationLevel !== undefined) updateData.educationLevel = body.educationLevel;
+      if (body.isVisible !== undefined) updateData.isVisible = body.isVisible;
+
+      if (Object.keys(updateData).length > 0) {
+        await prisma.profile.upsert({
+          where: { userId: session.userId },
+          update: updateData,
+          create: {
+            userId: session.userId,
+            firstName: body.firstName || saved.firstName || "Membre",
+            gender: body.gender || saved.gender || "OTHER",
+            city: body.city || saved.city || "Lomé",
+            bio: body.bio || saved.bio || "Membre actif de Meet Me Club.",
+            relationshipGoal: body.relationshipGoal || saved.relationshipGoal || "SERIOUS",
+            pseudo: body.pseudo || saved.pseudo || null,
+            neighborhood: body.neighborhood || saved.neighborhood || null,
+            profession: body.profession || saved.profession || null,
+            isVisible: true,
+            profileCompleteness: 75,
+            ...updateData,
+          },
+        });
+      }
+    } catch (dbErr) {
+      console.warn("[PATCH /api/profiles/me] Prisma sync warning:", dbErr);
+    }
 
     return NextResponse.json({ profile: saved });
   } catch (error) {

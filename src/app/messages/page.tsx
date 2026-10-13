@@ -41,104 +41,11 @@ interface Conversation {
 
 const ME_ID = "me";
 
-const INITIAL_CONVERSATIONS: Conversation[] = [
-  {
-    id: "conv-1",
-    participantId: "prof_1",
-    firstName: "Ama",
-    pseudo: "Ama_Lomé",
-    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80",
-    lastMessage: "🎙️ Note vocale (0:08)",
-    lastMessageAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    unreadCount: 1,
-    isOnline: true,
-    isVerified: true,
-  },
-  {
-    id: "conv-2",
-    participantId: "prof_2",
-    firstName: "Koffi",
-    pseudo: "Koffi_Pro",
-    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
-    lastMessage: "Ravi de faire ta connaissance Armand ! Tu es dans quel quartier ?",
-    lastMessageAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-    unreadCount: 0,
-    isOnline: false,
-    isVerified: true,
-  },
-  {
-    id: "conv-3",
-    participantId: "prof_3",
-    firstName: "Farida",
-    pseudo: "Farida_B",
-    photoUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80",
-    lastMessage: "La plage de Lomé le dimanche c'est le meilleur endroit pour décompresser 🌊",
-    lastMessageAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-    unreadCount: 0,
-    isOnline: true,
-    isVerified: true,
-  },
-];
+// Conversations loaded from API — no hardcoded fake data
+const INITIAL_CONVERSATIONS: Conversation[] = [];
 
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
-  "conv-1": [
-    {
-      id: "m1",
-      senderId: "prof_1",
-      body: "Bonjour ! J'ai vu ton profil et je trouve qu'on a beaucoup de centres d'intérêt en commun 😊",
-      createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
-      status: "READ",
-    },
-    {
-      id: "m2",
-      senderId: ME_ID,
-      body: "Bonjour Ama ! Oui en effet, j'adore aussi la bonne cuisine et les sorties conviviales à Lomé !",
-      createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      status: "READ",
-    },
-    {
-      id: "m3",
-      senderId: "prof_1",
-      body: "Avec grand plaisir ! On peut échanger sur nos passions 😊",
-      createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-      status: "READ",
-    },
-    {
-      id: "m_voice_ama",
-      senderId: "prof_1",
-      body: "🎙️ Note vocale",
-      audioUrl: "demo_voice_ama",
-      audioDuration: 8,
-      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-      status: "DELIVERED",
-    },
-  ],
-  "conv-2": [
-    {
-      id: "m4",
-      senderId: "prof_2",
-      body: "Salut ! Heureux d'échanger avec toi via Meet Me Club.",
-      createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-      status: "READ",
-    },
-    {
-      id: "m5",
-      senderId: "prof_2",
-      body: "Ravi de faire ta connaissance Armand ! Tu es dans quel quartier ?",
-      createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-      status: "READ",
-    },
-  ],
-  "conv-3": [
-    {
-      id: "m6",
-      senderId: "prof_3",
-      body: "La plage de Lomé le dimanche c'est le meilleur endroit pour décompresser 🌊",
-      createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-      status: "READ",
-    },
-  ],
-};
+// Messages loaded from API — no hardcoded fake data
+const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {};
 
 const LOME_SPOTS = [
   { name: "🏖️ Plage de Lomé (Boulevard du Mono)", lat: 6.1264, lng: 1.2255 },
@@ -227,6 +134,56 @@ function MessagesContent() {
     loadMe();
   }, []);
 
+  // Load real conversations from API on mount
+  useEffect(() => {
+    async function loadConversations() {
+      try {
+        const res = await fetch("/api/conversations");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.conversations && data.conversations.length > 0) {
+            setConversations(data.conversations);
+            if (!contactParam && data.conversations.length > 0) {
+              setActiveConvId(data.conversations[0].id);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load conversations:", e);
+      }
+    }
+    loadConversations();
+  }, []);
+
+  // Load messages for active conversation from API
+  useEffect(() => {
+    if (!activeConvId || activeConvId.startsWith("local_")) return;
+    async function loadMessages() {
+      try {
+        const res = await fetch(`/api/messages/${activeConvId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.messages) {
+            setMessages((prev) => ({
+              ...prev,
+              [activeConvId]: data.messages.map((m: any) => ({
+                id: m.id,
+                senderId: m.senderId,
+                body: m.body,
+                imageUrl: m.mediaUrl || undefined,
+                createdAt: m.createdAt,
+                status: m.status,
+              })),
+            }));
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load messages:", e);
+      }
+    }
+    loadMessages();
+  }, [activeConvId]);
+
   // Handle auto-selection or creation from ?contact=...
   useEffect(() => {
     if (!contactParam) return;
@@ -239,35 +196,50 @@ function MessagesContent() {
       setActiveConvId(existing.id);
       setMobileView("chat");
     } else {
-      const newConv: Conversation = {
-        id: `conv_${contactParam}`,
-        participantId: contactParam,
-        firstName: contactParam === "prof_4" || contactParam === "usr_4" ? "Edem" : "Partenaire",
-        pseudo: "@membre",
-        photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80",
-        lastMessage: "Nouvel échange démarré sur Meet Me Club 👋",
-        lastMessageAt: new Date().toISOString(),
-        unreadCount: 0,
-        isOnline: true,
-        isVerified: true,
-      };
-      setConversations((prev) => [newConv, ...prev]);
-      setActiveConvId(newConv.id);
-      setMobileView("chat");
-      setMessages((prev) => ({
-        ...prev,
-        [newConv.id]: [
-          {
-            id: `init_${Date.now()}`,
-            senderId: contactParam,
-            body: "Bonjour ! Ravi(e) d'échanger avec toi sur Meet Me Club. Discutons en toute franchise !",
-            createdAt: new Date().toISOString(),
-            status: "READ",
-          },
-        ],
-      }));
+      // Create a real conversation via API
+      async function createConversation() {
+        try {
+          const res = await fetch("/api/conversations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetUserId: contactParam }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.conversation) {
+              setConversations((prev) => {
+                if (prev.find((c) => c.id === data.conversation.id)) return prev;
+                return [data.conversation, ...prev];
+              });
+              setActiveConvId(data.conversation.id);
+              setMobileView("chat");
+            }
+          } else if (res.status === 403) {
+            setSecurityModalOpen(true);
+          }
+        } catch (e) {
+          console.warn("Could not create conversation:", e);
+          const targetId = contactParam || "contact";
+          const newConv: Conversation = {
+            id: `local_${targetId}`,
+            participantId: targetId,
+            firstName: "Partenaire",
+            pseudo: "@membre",
+            photoUrl: "",
+            lastMessage: "Nouvel échange 👋",
+            lastMessageAt: new Date().toISOString(),
+            unreadCount: 0,
+            isOnline: false,
+            isVerified: true,
+          };
+          setConversations((prev) => [newConv, ...prev]);
+          setActiveConvId(newConv.id);
+          setMobileView("chat");
+        }
+      }
+      createConversation();
     }
-  }, [contactParam, conversations]);
+  }, [contactParam]);
 
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const currentMessages = messages[activeConvId] ?? [];
@@ -526,8 +498,8 @@ function MessagesContent() {
     }, intervalTimeMs);
   };
 
-  // Send Text Message
-  const handleSend = useCallback(() => {
+  // Send Text Message — posts to real API
+  const handleSend = useCallback(async () => {
     if (!draft.trim()) return;
 
     if (!isVerifiedForChat) {
@@ -541,28 +513,46 @@ function MessagesContent() {
       return;
     }
 
-    const msg: ChatMessage = {
+    const msgBody = draft.trim();
+    const optimisticMsg: ChatMessage = {
       id: `m-${Date.now()}`,
       senderId: ME_ID,
-      body: draft.trim(),
+      body: msgBody,
       createdAt: new Date().toISOString(),
       status: "SENT",
     };
+
+    // Optimistic UI update
     setMessages((prev) => ({
       ...prev,
-      [activeConvId]: [...(prev[activeConvId] ?? []), msg],
+      [activeConvId]: [...(prev[activeConvId] ?? []), optimisticMsg],
     }));
-
     setConversations((prev) =>
       prev.map((c) =>
         c.id === activeConvId
-          ? { ...c, lastMessage: draft.trim(), lastMessageAt: new Date().toISOString() }
+          ? { ...c, lastMessage: msgBody, lastMessageAt: new Date().toISOString() }
           : c
       )
     );
-
     setDraft("");
     inputRef.current?.focus();
+
+    // POST to real API (non-blocking)
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: activeConvId, body: msgBody }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        if (res.status === 403 && data.redirectUrl) {
+          setSecurityModalOpen(true);
+        }
+      }
+    } catch (e) {
+      console.warn("Message send error (optimistic UI preserved):", e);
+    }
   }, [draft, activeConvId, isVerifiedForChat, isFreePlan, conversations]);
 
   // Send Photo from Device

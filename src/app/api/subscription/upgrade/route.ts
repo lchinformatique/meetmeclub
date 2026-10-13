@@ -24,6 +24,25 @@ export async function POST(req: NextRequest) {
       plan: plan as any,
     });
 
+    // Also persist subscription to Prisma/Supabase if available
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.subscription.create({
+        data: {
+          userId: session.userId,
+          plan: plan as any,
+          status: "ACTIVE",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          priceFcfa: PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]?.price || 0,
+          paymentRef: `UPGRADE_${Date.now()}`,
+          paymentMethod: "UPGRADE",
+        },
+      }).catch(() => {});
+    } catch (err) {
+      console.warn("[POST /api/subscription/upgrade] Prisma sync:", err);
+    }
+
     return NextResponse.json({
       success: true,
       profile: updated,

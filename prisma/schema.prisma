@@ -433,6 +433,42 @@ model Appointment {
 }
 
 // ──────────────────────────────────────────────────────────────
+// SUBSCRIPTIONS — Plan tracking & payment history
+// ──────────────────────────────────────────────────────────────
+
+enum SubscriptionPlan {
+  FREE
+  ESSENTIAL
+  COMPLICE
+  VIP
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model Subscription {
+  id            String             @id @default(cuid())
+  userId        String
+  plan          SubscriptionPlan   @default(FREE)
+  status        SubscriptionStatus @default(ACTIVE)
+  startDate     DateTime           @default(now())
+  endDate       DateTime           // when the subscription expires
+  priceFcfa     Int                @default(0)
+  paymentRef    String?            // Saspay or bank reference
+  paymentMethod String?            // MOBILE_MONEY, CARD, etc.
+  paymentPhone  String?            // phone or email used for payment
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// ──────────────────────────────────────────────────────────────
 // ADMIN SETTINGS (key-value store)
 // ──────────────────────────────────────────────────────────────
 
