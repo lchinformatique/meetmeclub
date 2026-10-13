@@ -238,7 +238,7 @@ export default function Header() {
                   textTransform: "uppercase",
                 }}
               >
-                Lomé · Togo
+                International · Sorties Togo
               </span>
             </div>
           </Link>
@@ -566,7 +566,7 @@ export default function Header() {
                 meet <span style={{ color: "#E10600" }}>me</span> club
               </span>
               <span style={{ fontSize: "9px", color: "#8B99B5", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>
-                Lomé · Togo
+                Club Privé International
               </span>
             </div>
           </Link>
@@ -734,10 +734,11 @@ export default function Header() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "8px",
+                  gap: "10px",
                   width: "100%",
-                  padding: "12px",
-                  borderRadius: "12px",
+                  minHeight: "48px",
+                  padding: "12px 16px",
+                  borderRadius: "14px",
                   border: "1.5px solid #FECACA",
                   background: "#FFF5F5",
                   color: "#DC2626",
@@ -745,36 +746,19 @@ export default function Header() {
                   fontSize: "14px",
                   cursor: loggingOut ? "not-allowed" : "pointer",
                   opacity: loggingOut ? 0.6 : 1,
+                  boxSizing: "border-box",
+                  lineHeight: "normal",
                 }}
               >
-                <LogOut size={16} />
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <LogOut size={17} />
+                </span>
                 <span>{loggingOut ? "Déconnexion..." : "Se déconnecter"}</span>
               </button>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <Link
-                href="/connexion"
-                onClick={() => setMobileOpen(false)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  padding: "13px",
-                  borderRadius: "12px",
-                  border: "1.5px solid #D8E1EF",
-                  background: "white",
-                  color: "#0B2559",
-                  fontWeight: 700,
-                  fontSize: "15px",
-                  textDecoration: "none",
-                }}
-              >
-                <LogIn size={16} style={{ color: "#7B8FAD" }} />
-                <span>Connexion</span>
-              </Link>
-
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {/* Créer un compte en haut */}
               <Link
                 href="/inscription"
                 onClick={() => setMobileOpen(false)}
@@ -782,19 +766,56 @@ export default function Header() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "8px",
-                  padding: "14px",
-                  borderRadius: "12px",
+                  gap: "10px",
+                  width: "100%",
+                  minHeight: "48px",
+                  padding: "12px 18px",
+                  borderRadius: "14px",
                   background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
-                  color: "white",
+                  color: "#FFFFFF",
                   fontWeight: 700,
                   fontSize: "15px",
                   textDecoration: "none",
-                  boxShadow: "0 4px 14px rgba(225,6,0,0.28)",
+                  boxShadow: "0 4px 14px rgba(225,6,0,0.30)",
+                  boxSizing: "border-box",
+                  lineHeight: "normal",
+                  textAlign: "center",
                 }}
               >
-                <UserPlus size={16} />
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#FFFFFF" }}>
+                  <UserPlus size={18} strokeWidth={2.4} />
+                </span>
                 <span>Créer un compte</span>
+              </Link>
+
+              {/* Connexion en bas */}
+              <Link
+                href="/connexion"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  width: "100%",
+                  minHeight: "48px",
+                  padding: "12px 18px",
+                  borderRadius: "14px",
+                  border: "1.5px solid #0B2559",
+                  background: "#FFFFFF",
+                  color: "#0B2559",
+                  fontWeight: 700,
+                  fontSize: "15px",
+                  textDecoration: "none",
+                  boxSizing: "border-box",
+                  lineHeight: "normal",
+                  textAlign: "center",
+                }}
+              >
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#0B2559" }}>
+                  <LogIn size={18} strokeWidth={2.4} />
+                </span>
+                <span>Connexion</span>
               </Link>
             </div>
           )}
@@ -811,7 +832,7 @@ export default function Header() {
             paddingBottom: "max(12px, env(safe-area-inset-bottom))",
           }}
         >
-          © 2026 Meet Me Club · Lomé, Togo
+          © 2026 Meet Me Club · Tous droits réservés
         </div>
       </div>
 

@@ -220,7 +220,7 @@ export default function InscriptionPage() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Lomé · Togo
+                  Club Privé International · Sorties Togo
                 </span>
               </div>
             </Link>
@@ -292,39 +292,7 @@ export default function InscriptionPage() {
             </div>
           )}
 
-          {/* ── Bouton Google OAuth ── */}
-          <div style={{ marginBottom: "20px" }}>
-            <GoogleAuthButton
-              label="Rejoindre avec Google"
-              onError={(msg) => setError(msg)}
-            />
-          </div>
-
-          {/* ── Séparateur ── */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginBottom: "20px",
-            }}
-          >
-            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
-            <span
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#A0AABF",
-                whiteSpace: "nowrap",
-                letterSpacing: "0.3px",
-              }}
-            >
-              Ou créer avec Pseudo / E-mail
-            </span>
-            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
-          </div>
-
-          {/* ── FORM ── */}
+          {/* ── FORM EN HAUT ── */}
           <form onSubmit={handleSubmit} noValidate>
             {/* Pseudo ou Email */}
             <div style={{ marginBottom: "16px" }}>
@@ -364,7 +332,7 @@ export default function InscriptionPage() {
                   onChange={(e) => setIdentifier(e.target.value)}
                   onFocus={() => setFocusField("identifier")}
                   onBlur={() => setFocusField("")}
-                  placeholder="Ex : Koffi_Lome ou email@exemple.com"
+                  placeholder="Ex : Koffi_Pro ou email@exemple.com"
                   autoComplete="username"
                   style={{
                     ...fieldBase,
@@ -483,38 +451,74 @@ export default function InscriptionPage() {
             </button>
           </form>
 
-          {/* Déjà inscrit */}
-          <div style={{ marginTop: "22px", paddingTop: "18px", borderTop: "1px solid #EEF2FB", textAlign: "center" }}>
-            <p
+          {/* ── Lien Déjà inscrit au-dessus de Google ── */}
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "16px 14px",
+              background: "#F8FAFC",
+              border: "1.5px solid #E2E8F0",
+              borderRadius: "16px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "14px", color: "#475569", fontWeight: 600, marginBottom: "8px" }}>
+              Vous avez déjà un compte ?
+            </div>
+            <Link
+              href="/connexion"
               style={{
-                fontSize: "14px",
-                color: "#6B7A99",
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "6px",
-                flexWrap: "wrap",
-                margin: 0,
+                gap: "8px",
+                width: "100%",
+                padding: "12px 18px",
+                borderRadius: "12px",
+                background: "white",
+                border: "1.5px solid #0B2559",
+                color: "#0B2559",
+                fontWeight: 700,
+                fontSize: "14px",
+                textDecoration: "none",
+                boxShadow: "0 2px 8px rgba(11,37,89,0.06)",
               }}
             >
-              <span>Vous avez déjà un compte ?</span>
-              <Link
-                href="/connexion"
-                style={{
-                  fontWeight: 700,
-                  color: "#0B2559",
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  borderBottom: "1.5px solid rgba(11,37,89,0.25)",
-                  paddingBottom: "1px",
-                }}
-              >
-                <LogIn size={14} />
-                Se connecter
-              </Link>
-            </p>
+              <LogIn size={16} />
+              <span>Se connecter à mon compte</span>
+            </Link>
+          </div>
+
+          {/* ── Séparateur Google ── */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              margin: "22px 0 16px",
+            }}
+          >
+            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#A0AABF",
+                whiteSpace: "nowrap",
+                letterSpacing: "0.3px",
+              }}
+            >
+              Ou rejoindre avec Google
+            </span>
+            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
+          </div>
+
+          {/* ── Bouton Google OAuth en Bas ── */}
+          <div>
+            <GoogleAuthButton
+              label="Rejoindre avec Google"
+              onError={(msg) => setError(msg)}
+            />
           </div>
         </div>
 
@@ -533,7 +537,7 @@ export default function InscriptionPage() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7A99", fontSize: "12px", fontWeight: 600 }}>
             <ShieldCheck size={14} style={{ color: "#059669" }} />
-            <span>Accès sécurisé 18+ Lomé</span>
+            <span>Accès sécurisé 18+ · Membres du monde entier</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7A99", fontSize: "12px", fontWeight: 600 }}>
             <Sparkles size={14} style={{ color: "#D97706" }} />

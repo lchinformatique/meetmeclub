@@ -55,7 +55,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               meet <span style={{ color: "var(--color-red)" }}>me</span> club
             </span>
             <span style={{ fontSize: "9px", fontWeight: 700, color: "var(--color-gray-400)", letterSpacing: "1px", textTransform: "uppercase" }}>
-              Lomé · Togo
+              Club Privé International
             </span>
           </div>
         </Link>

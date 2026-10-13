@@ -874,16 +874,19 @@ export default function DecouvertePage() {
                 style={{
                   width: "100%",
                   justifyContent: "center",
-                  padding: "11px",
+                  padding: "12px",
                   borderRadius: "12px",
                   fontWeight: 700,
                   fontSize: "13px",
                   background: "#E10600",
                   borderColor: "#E10600",
                   color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                Activer via T-Money / Moov Money
+                <span>💳 Activer via Carte Bancaire ou Mobile Money</span>
               </Link>
 
               <button

@@ -151,7 +151,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
             }}
           />
           <span style={{ fontSize: "13px", fontWeight: 800, color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            Statistiques Communauté Lomé · En direct
+            Statistiques Communauté · En direct
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -328,7 +328,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
               {stats.organizedDates.toLocaleString("fr-FR")}
             </div>
             <div style={{ fontSize: "12px", fontWeight: 700, color: "#991B1B", marginTop: "3px" }}>
-              Rencontres Réelles à Lomé
+              Rencontres Réelles au Togo
             </div>
           </div>
         </div>

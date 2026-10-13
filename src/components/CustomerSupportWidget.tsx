@@ -22,14 +22,14 @@ const FAQ_KNOWLEDGE_BASE = [
   {
     keywords: ["gratuit", "free", "limite", "3 partenaire", "partenaire", "quota"],
     response:
-      "Le Plan Gratuit (0 FCFA) vous donne un accès opérationnel de 7 jours pour créer votre profil complet, être visible à Lomé et échanger avec jusqu'à 3 partenaires, ainsi que commander des packs de rendez-vous réels. Pour un accès illimité, activez le Pass Essentiel à 3 000 FCFA/mois.",
+      "Le Plan Gratuit (0 FCFA) vous donne un accès opérationnel de 7 jours pour créer votre profil complet, être visible auprès des membres et échanger avec jusqu'à 3 partenaires, ainsi que commander des packs de rendez-vous réels. Pour un accès illimité, activez le Pass Essentiel à 3 000 FCFA/mois.",
     actionUrl: "/tarifs",
     actionText: "Voir les formules & tarifs",
   },
   {
-    keywords: ["payer", "paiement", "t-money", "tmoney", "flooz", "moov", "togocom", "prix", "cout"],
+    keywords: ["payer", "paiement", "cb", "carte", "visa", "mastercard", "t-money", "tmoney", "flooz", "moov", "togocom", "prix", "cout", "international"],
     response:
-      "Nous acceptons tous les moyens de paiement mobile locaux au Togo : T-Money (Togocom) et Flooz (Moov Africa), ainsi que les cartes bancaires Visa et Mastercard. Les transactions sont 100% sécurisées.",
+      "Nous acceptons les cartes bancaires internationales (Carte Bancaire CB, Visa, Mastercard) pour les membres du monde entier, ainsi que les paiements mobiles locaux au Togo : T-Money (Togocom) et Moov Money (Flooz). Les transactions sont 100% sécurisées.",
     actionUrl: "/tarifs",
     actionText: "Consulter les moyens de paiement",
   },
@@ -41,16 +41,16 @@ const FAQ_KNOWLEDGE_BASE = [
     actionText: "Tester la messagerie sécurisée",
   },
   {
-    keywords: ["rendez-vous", "rdv", "restaurant", "table", "lieu", "boisson", "sortie", "lome", "coco beach", "byblos"],
+    keywords: ["rendez-vous", "rdv", "restaurant", "table", "lieu", "boisson", "sortie", "lome", "togo", "coco beach", "byblos"],
     response:
-      "Vous pouvez organiser une rencontre dans nos établissements partenaires vérifiés à Lomé (Coco Beach Bè Plage, Byblos Tokoin, Café de la Paix, etc.). Avec les formules Complice et VIP, la table est réservée et les consommations sont incluses !",
+      "Pour les membres se trouvant ou voyageant au Togo, vous pouvez organiser une rencontre dans nos établissements partenaires vérifiés (Coco Beach Bè Plage, Byblos Tokoin, Café de la Paix, etc.). Avec les formules Complice et VIP, la table est réservée et les consommations sont incluses !",
     actionUrl: "/rendez-vous/nouveau",
     actionText: "Proposer un rendez-vous",
   },
   {
     keywords: ["contact", "humain", "conseiller", "numero", "telephone", "aide", "service", "whatsapp"],
     response:
-      "Notre équipe du service client à Lomé est joignable en direct sur WhatsApp du Lundi au Dimanche pour vous assister.",
+      "Notre équipe du service client est joignable en direct sur WhatsApp du Lundi au Dimanche pour vous assister.",
     actionUrl: WHATSAPP_URL,
     actionText: "Discuter sur WhatsApp (Opérationnel)",
   },
@@ -325,7 +325,7 @@ export default function CustomerSupportWidget() {
                   </span>
                 </div>
                 <div style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.75)" }}>
-                  Support Automatisé 24h/24 · Lomé, Togo
+                  Support Automatisé 24h/24 · Meet Me Club
                 </div>
               </div>
             </div>

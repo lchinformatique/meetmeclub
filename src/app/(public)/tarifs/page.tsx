@@ -458,12 +458,12 @@ export default function TarifsPage() {
 
       {/* Payment Methods */}
       <section style={{ background: "white", padding: "50px 20px", borderTop: "1px solid #E2E8F0", textAlign: "center" }}>
-        <div className="container" style={{ maxWidth: "800px" }}>
+        <div className="container" style={{ maxWidth: "880px" }}>
           <h3 style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", marginBottom: "10px" }}>
-            Paiement mobile sécurisé au Togo 🇹🇬
+            Paiements sécurisés : Mobile Money & Carte Bancaire 💳 🌍
           </h3>
           <p style={{ color: "#64748B", fontSize: "15px", marginBottom: "28px" }}>
-            Réglez instantanément via les deux services de transfert mobile officiels au Togo.
+            Réglez instantanément par Mobile Money (T-Money, Moov) ou par Carte Bancaire internationale (Visa, Mastercard) depuis n&apos;importe quel pays.
           </p>
 
           <div
@@ -472,7 +472,7 @@ export default function TarifsPage() {
               justifyContent: "center",
               gap: "20px",
               flexWrap: "wrap",
-              marginBottom: "30px",
+              marginBottom: "24px",
             }}
           >
             {/* Mixx by yas Card */}
@@ -547,6 +547,64 @@ export default function TarifsPage() {
                 <div style={{ fontSize: "16px", fontWeight: 800, color: "#E85E12" }}>Moov Money</div>
                 <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Flooz · Moov Africa</div>
               </div>
+            </div>
+
+            {/* Carte Bancaire (CB) Card */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                padding: "16px 22px",
+                borderRadius: "18px",
+                border: "2px solid #0B2559",
+                background: "white",
+                boxShadow: "0 6px 20px rgba(11, 37, 89, 0.12)",
+                textAlign: "left",
+                minWidth: "220px",
+              }}
+            >
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#EEF2FB",
+                  flexShrink: 0,
+                  fontSize: "24px",
+                  border: "1px solid #CBD5E1",
+                }}
+              >
+                💳
+              </div>
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: "#0B2559" }}>Carte Bancaire</div>
+                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Visa · Mastercard · CB</div>
+              </div>
+            </div>
+          </div>
+
+          {/* International note banner */}
+          <div
+            style={{
+              margin: "0 auto 28px",
+              padding: "16px 22px",
+              background: "#F0FDF4",
+              border: "1.5px solid #86EFAC",
+              borderRadius: "18px",
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              textAlign: "left",
+              maxWidth: "780px",
+            }}
+          >
+            <span style={{ fontSize: "28px", flexShrink: 0 }}>🌍</span>
+            <div style={{ fontSize: "13px", color: "#166534", lineHeight: 1.5 }}>
+              <strong>Adhésion ouverte au monde entier :</strong> Les membres de tous pays peuvent s&apos;inscrire, payer par <strong>Carte Bancaire (CB)</strong> ou <strong>Mobile Money</strong> pour échanger et chatter sans limite. Les rendez-vous physiques et sorties réelles se tiennent quant à eux sur place dans nos établissements partenaires au Togo.
             </div>
           </div>
 

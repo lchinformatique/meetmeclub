@@ -185,7 +185,7 @@ function ConnexionForm() {
                   meet <span style={{ color: "#E10600" }}>me</span> club
                 </span>
                 <span style={{ fontSize: "10px", fontWeight: 700, color: "#8B99B5", letterSpacing: "0.9px", textTransform: "uppercase" }}>
-                  Lomé · Togo
+                  Club Privé International · Sorties Togo
                 </span>
               </div>
             </Link>
@@ -213,7 +213,7 @@ function ConnexionForm() {
                 }}
               >
                 <ShieldCheck size={13} style={{ color: "#2563EB" }} />
-                Espace Membre Sécurisé
+                Espace Membre International Sécurisé
               </span>
             </div>
           </div>
@@ -240,39 +240,7 @@ function ConnexionForm() {
             </div>
           )}
 
-          {/* ── Bouton Google OAuth ── */}
-          <div style={{ marginBottom: "20px" }}>
-            <GoogleAuthButton
-              label="Continuer avec Google"
-              onError={(msg) => setError(msg)}
-            />
-          </div>
-
-          {/* ── Séparateur ── */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginBottom: "20px",
-            }}
-          >
-            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
-            <span
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#A0AABF",
-                whiteSpace: "nowrap",
-                letterSpacing: "0.3px",
-              }}
-            >
-              Ou continuer avec e-mail
-            </span>
-            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
-          </div>
-
-          {/* Form */}
+          {/* Form Direct en Haut */}
           <form onSubmit={handleEmailLogin} noValidate>
             {/* Email ou Pseudo */}
             <div style={{ marginBottom: "16px" }}>
@@ -399,38 +367,73 @@ function ConnexionForm() {
             </button>
           </form>
 
-          {/* Link to inscription */}
-          <div style={{ marginTop: "22px", paddingTop: "18px", borderTop: "1px solid #EEF2FB", textAlign: "center" }}>
-            <p
+          {/* ── Lien Créer un Compte en Haut avant Google ── */}
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "16px 14px",
+              background: "#F8FAFC",
+              border: "1.5px solid #E2E8F0",
+              borderRadius: "16px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "14px", color: "#475569", fontWeight: 600, marginBottom: "8px" }}>
+              Pas encore membre de Meet Me Club ?
+            </div>
+            <Link
+              href="/inscription"
               style={{
-                fontSize: "14px",
-                color: "#6B7A99",
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "6px",
-                flexWrap: "wrap",
-                margin: 0,
+                gap: "8px",
+                width: "100%",
+                padding: "12px 18px",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+                color: "white",
+                fontWeight: 700,
+                fontSize: "14px",
+                textDecoration: "none",
+                boxShadow: "0 4px 14px rgba(225,6,0,0.25)",
               }}
             >
-              <span>Pas encore membre ?</span>
-              <Link
-                href="/inscription"
-                style={{
-                  fontWeight: 700,
-                  color: "#E10600",
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  borderBottom: "1.5px solid rgba(225,6,0,0.25)",
-                  paddingBottom: "1px",
-                }}
-              >
-                <UserPlus size={14} />
-                Créer un compte
-              </Link>
-            </p>
+              <UserPlus size={16} />
+              <span>Créer un compte gratuitement</span>
+            </Link>
+          </div>
+
+          {/* ── Séparateur Google ── */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              margin: "22px 0 16px",
+            }}
+          >
+            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#A0AABF",
+                whiteSpace: "nowrap",
+                letterSpacing: "0.3px",
+              }}
+            >
+              Ou continuer avec Google
+            </span>
+            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
+          </div>
+
+          {/* ── Bouton Google OAuth en Bas ── */}
+          <div>
+            <GoogleAuthButton
+              label="Continuer avec Google"
+              onError={(msg) => setError(msg)}
+            />
           </div>
         </div>
 

@@ -24,7 +24,7 @@ import {
 export const metadata: Metadata = {
   title: "Meet Me Club — Votre histoire commence ici",
   description:
-    "Plus qu'une rencontre, un rendez-vous ! La première plateforme de rencontres avec réservation de lieu à Lomé, Togo.",
+    "Plus qu'une rencontre, un rendez-vous ! Le Club Privé de Rencontres International — Chats ouverts au monde entier et rendez-vous réels au Togo.",
 };
 
 // ── How it works steps ──────────────────────────────────────────
@@ -282,7 +282,7 @@ export default function HomePage() {
                       textTransform: "uppercase",
                     }}
                   >
-                    Signature Officielle · Lomé
+                    Club Privé International · Sorties Togo
                   </span>
                 </div>
                 <span
@@ -355,8 +355,7 @@ export default function HomePage() {
                   textShadow: "0 1px 8px rgba(0,0,0,0.4)",
                 }}
               >
-                Rencontrez des personnes sérieuses à Lomé. Discutez, choisissez
-                un lieu partenaire, et vivez un vrai rendez-vous.
+                Rejoignez des célibataires authentiques du monde entier. Échangez et chattez librement, et vivez vos vraies rencontres dans nos cadres partenaires exclusifs au Togo.
               </p>
 
               <p
@@ -422,7 +421,7 @@ export default function HomePage() {
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                   <MapPin size={16} className="text-red-400" />
-                  <span>Lieux certifiés à Lomé</span>
+                  <span>Sorties au Togo</span>
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                   <ShieldCheck size={16} className="text-amber-400" />

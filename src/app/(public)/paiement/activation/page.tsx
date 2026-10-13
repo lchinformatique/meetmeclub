@@ -71,7 +71,7 @@ function ActivationContent() {
             Activation de votre Abonnement
           </h1>
           <p style={{ color: "#64748B", fontSize: "15px" }}>
-            Vous venez de régler via <strong>Mixx by yas ou Moov Money</strong> ? Renseignez votre numéro pour activer vos accès instantanément.
+            Vous venez de régler via <strong>Mixx by yas, Moov Money ou Carte Bancaire (CB / Visa / Mastercard)</strong> ? Renseignez votre identifiant pour activer vos accès instantanément.
           </p>
         </div>
 
@@ -135,12 +135,12 @@ function ActivationContent() {
 
               <div>
                 <label style={{ display: "block", fontSize: "14px", fontWeight: 700, color: "#1E293B", marginBottom: "6px" }}>
-                  Numéro Mixx by yas ou Moov Money utilisé pour le paiement :
+                  Numéro de téléphone ou Email utilisé pour le paiement (Mobile Money ou Carte Bancaire) :
                 </label>
                 <input
-                  type="tel"
+                  type="text"
                   required
-                  placeholder="Ex: +228 90 XX XX XX"
+                  placeholder="Ex: +228 90 XX XX XX ou email@exemple.com"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   style={{ width: "100%", padding: "12px 14px", borderRadius: "10px", border: "1px solid #CBD5E1", fontSize: "15px" }}
