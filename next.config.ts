@@ -40,6 +40,32 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Standard legal redirects for Google Console verification
+  async redirects() {
+    return [
+      {
+        source: "/privacy",
+        destination: "/legal/confidentialite",
+        permanent: true,
+      },
+      {
+        source: "/confidentialite",
+        destination: "/legal/confidentialite",
+        permanent: true,
+      },
+      {
+        source: "/terms",
+        destination: "/legal/cgu",
+        permanent: true,
+      },
+      {
+        source: "/cgu",
+        destination: "/legal/cgu",
+        permanent: true,
+      },
+    ];
+  },
+
   // Experimental features for Next.js 16
   experimental: {
     // Cache components for better performance
