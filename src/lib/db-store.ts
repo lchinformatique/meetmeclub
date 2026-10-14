@@ -388,3 +388,147 @@ export function getCommunityStats(): CommunityStats {
   };
 }
 
+// ── Messages & Conversations Persistent Store ──────────────────
+export interface StoredMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  mediaUrl?: string | null;
+  createdAt: string;
+  status: "SENT" | "DELIVERED" | "READ";
+}
+
+export interface StoredConversation {
+  id: string;
+  participantA: string;
+  participantB: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const MESSAGES_FILE = path.join(DATA_DIR, "messages.json");
+const CONVERSATIONS_FILE = path.join(DATA_DIR, "conversations.json");
+
+export const DEFAULT_MESSAGES: StoredMessage[] = [
+  {
+    id: "msg_victoire_intro",
+    conversationId: "conv_victoire_welcome",
+    senderId: "user_victoire_lome",
+    body: "Coucou ! 👋 Bienvenue sur Meet Me Club Lomé. Je suis ravie de faire ta connaissance ! Comment s'est passée ta journée ? 😊",
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    status: "DELIVERED",
+  },
+];
+
+let memoryMessages: StoredMessage[] = [...DEFAULT_MESSAGES];
+let memoryConversations: StoredConversation[] = [];
+
+function ensureMessagesFile() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(MESSAGES_FILE)) {
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify(DEFAULT_MESSAGES, null, 2), "utf8");
+    }
+  } catch {}
+}
+
+export function getAllMessages(): StoredMessage[] {
+  ensureMessagesFile();
+  try {
+    if (fs.existsSync(MESSAGES_FILE)) {
+      const raw = fs.readFileSync(MESSAGES_FILE, "utf8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        memoryMessages = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return memoryMessages;
+}
+
+export function getMessagesByConversation(conversationId: string): StoredMessage[] {
+  const all = getAllMessages();
+  const list = all.filter((m) => m.conversationId === conversationId);
+  if (conversationId === "conv_victoire_welcome" && !list.some((m) => m.id === "msg_victoire_intro")) {
+    list.unshift(DEFAULT_MESSAGES[0]);
+  }
+  return list;
+}
+
+export function saveMessage(msg: StoredMessage): StoredMessage {
+  const all = getAllMessages();
+  const existingIdx = all.findIndex((m) => m.id === msg.id);
+  if (existingIdx >= 0) {
+    all[existingIdx] = msg;
+  } else {
+    all.push(msg);
+  }
+  memoryMessages = all;
+  try {
+    ensureMessagesFile();
+    fs.writeFileSync(MESSAGES_FILE, JSON.stringify(all, null, 2), "utf8");
+  } catch {}
+  return msg;
+}
+
+function ensureConversationsFile() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(CONVERSATIONS_FILE)) {
+      fs.writeFileSync(CONVERSATIONS_FILE, JSON.stringify([], null, 2), "utf8");
+    }
+  } catch {}
+}
+
+export function getAllConversations(): StoredConversation[] {
+  ensureConversationsFile();
+  try {
+    if (fs.existsSync(CONVERSATIONS_FILE)) {
+      const raw = fs.readFileSync(CONVERSATIONS_FILE, "utf8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        memoryConversations = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return memoryConversations;
+}
+
+export function saveConversation(conv: Partial<StoredConversation> & { id: string }): StoredConversation {
+  const all = getAllConversations();
+  const idx = all.findIndex((c) => c.id === conv.id);
+  let updated: StoredConversation;
+  if (idx >= 0) {
+    updated = {
+      ...all[idx],
+      ...conv,
+      updatedAt: new Date().toISOString(),
+    };
+    all[idx] = updated;
+  } else {
+    updated = {
+      id: conv.id,
+      participantA: conv.participantA || "user_victoire_lome",
+      participantB: conv.participantB || "user",
+      lastMessage: conv.lastMessage || "Nouvelle conversation",
+      lastMessageAt: conv.lastMessageAt || new Date().toISOString(),
+      unreadCount: conv.unreadCount || 0,
+      createdAt: conv.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    all.unshift(updated);
+  }
+  memoryConversations = all;
+  try {
+    ensureConversationsFile();
+    fs.writeFileSync(CONVERSATIONS_FILE, JSON.stringify(all, null, 2), "utf8");
+  } catch {}
+  return updated;
+}
+

@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Compte créé avec succès ! Bienvenue sur Meet Me Club.",
-      redirect: "/profil?welcome=1",
+      redirect: "/messages?welcome=1",
     });
   } catch (error) {
     console.error("[POST /api/auth/register]", error);

@@ -100,13 +100,15 @@ function formatTime(iso: string): string {
 function MessagesContent() {
   const searchParams = useSearchParams();
   const contactParam = searchParams.get("contact") || searchParams.get("user");
+  const isWelcome = searchParams.get("welcome") === "1";
 
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
   const [activeConvId, setActiveConvId] = useState<string>("conv_victoire_welcome");
-  const [mobileView, setMobileView] = useState<"list" | "chat">(contactParam ? "chat" : "list");
+  const [mobileView, setMobileView] = useState<"list" | "chat">(contactParam ? "chat" : (isWelcome ? "chat" : "list"));
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
   const [draft, setDraft] = useState("");
   const [myProfile, setMyProfile] = useState<any>(null);
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(isWelcome);
 
   // Modals
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -1037,6 +1039,31 @@ function MessagesContent() {
               </Link>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Bannière de bienvenue pour nouveaux membres ── */}
+      {showWelcomeBanner && (
+        <div style={{
+          background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+          color: "white",
+          textAlign: "center",
+          padding: "12px 16px",
+          fontWeight: 700,
+          fontSize: "14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          position: "relative",
+        }}>
+          <span>🎉</span>
+          <span>Bienvenue sur Meet Me Club ! Victoire vous attend — dites bonjour ! 👋</span>
+          <button
+            onClick={() => setShowWelcomeBanner(false)}
+            aria-label="Fermer"
+            style={{ position: "absolute", right: "12px", background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: "18px", lineHeight: 1 }}
+          >×</button>
         </div>
       )}
 

@@ -98,6 +98,17 @@ export async function POST(req: NextRequest) {
       status: "DELIVERED",
     };
 
+    const { saveMessage, saveConversation } = await import("@/lib/db-store");
+    saveMessage(userMessage as any);
+    saveMessage(victoireReply as any);
+    saveConversation({
+      id: conversationId,
+      participantA: "user_victoire_lome",
+      participantB: session.userId,
+      lastMessage: replyBody,
+      lastMessageAt: new Date().toISOString(),
+    });
+
     return NextResponse.json({ message: userMessage, reply: victoireReply }, { status: 201 });
   }
 
@@ -137,9 +148,49 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
+    const { saveMessage, saveConversation } = await import("@/lib/db-store");
+    saveMessage({
+      id: message.id,
+      conversationId: message.conversationId,
+      senderId: message.senderId,
+      body: message.body,
+      mediaUrl: message.mediaUrl,
+      createdAt: message.createdAt ? new Date(message.createdAt).toISOString() : new Date().toISOString(),
+      status: message.status || "SENT",
+    });
+    saveConversation({
+      id: conversationId,
+      participantA: conv.participantA,
+      participantB: conv.participantB,
+      lastMessage: message.body,
+      lastMessageAt: new Date().toISOString(),
+    });
+
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
     console.error("[POST /api/messages]", error);
+    // Local fallback persistence
+    try {
+      const { saveMessage, saveConversation } = await import("@/lib/db-store");
+      const fallbackMsg = {
+        id: `msg_${Date.now()}`,
+        conversationId,
+        senderId: session.userId,
+        body: (messageBody || "Média partagé").trim(),
+        mediaUrl: mediaUrl || null,
+        createdAt: new Date().toISOString(),
+        status: "SENT" as const,
+      };
+      saveMessage(fallbackMsg);
+      saveConversation({
+        id: conversationId,
+        participantA: session.userId,
+        participantB: "user",
+        lastMessage: fallbackMsg.body,
+        lastMessageAt: fallbackMsg.createdAt,
+      });
+      return NextResponse.json({ message: fallbackMsg }, { status: 201 });
+    } catch {}
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
