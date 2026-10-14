@@ -43,7 +43,7 @@ export default function MentionsPage() {
           Société à responsabilité limitée (SARL)<br />
           Siège social : Lomé, Togo<br />
           RCCM : [En cours d'immatriculation]<br />
-          Email : contact@meetmeclub.tg</p>
+          Email : contact@meetmeclub.net</p>
         </section>
 
         <section>
@@ -60,7 +60,7 @@ export default function MentionsPage() {
 
         <section>
           <h2 style={{ fontSize: "20px", color: "var(--color-blue)", marginBottom: "12px" }}>Propriété intellectuelle</h2>
-          <p>L'ensemble du contenu du site meetmeclub.tg (textes, images, logos, design) est protégé par le droit d'auteur et la propriété intellectuelle. Toute reproduction, même partielle, est interdite sans autorisation préalable.</p>
+          <p>L'ensemble du contenu du site meetmeclub.net (textes, images, logos, design) est protégé par le droit d'auteur et la propriété intellectuelle. Toute reproduction, même partielle, est interdite sans autorisation préalable.</p>
         </section>
 
         <section>

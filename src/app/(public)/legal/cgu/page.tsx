@@ -39,7 +39,7 @@ export default function CGUPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: "24px", color: "var(--color-gray-700)", lineHeight: 1.8, fontSize: "15px" }}>
         <section>
           <h2 style={{ fontSize: "20px", color: "var(--color-blue)", marginBottom: "12px" }}>1. Objet</h2>
-          <p>Les présentes Conditions Générales d'Utilisation (CGU) régissent l'utilisation de la plateforme Meet Me Club, accessible via l'application mobile et le site web meetmeclub.tg. Meet Me Club est une plateforme de mise en relation entre adultes majeurs (18 ans et plus) souhaitant se rencontrer dans des lieux soigneusement sélectionnés à Lomé, Togo.</p>
+          <p>Les présentes Conditions Générales d'Utilisation (CGU) régissent l'utilisation de la plateforme Meet Me Club, accessible via l'application mobile et le site web meetmeclub.net. Meet Me Club est une plateforme de mise en relation entre adultes majeurs (18 ans et plus) souhaitant se rencontrer dans des lieux soigneusement sélectionnés à Lomé, Togo.</p>
         </section>
 
         <section>
@@ -86,7 +86,7 @@ export default function CGUPage() {
 
         <section>
           <h2 style={{ fontSize: "20px", color: "var(--color-blue)", marginBottom: "12px" }}>9. Contact</h2>
-          <p>Pour toute question relative aux présentes CGU, contactez-nous à contact@meetmeclub.tg</p>
+          <p>Pour toute question relative aux présentes CGU, contactez-nous à contact@meetmeclub.net</p>
         </section>
       </div>
     </div>

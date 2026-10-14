@@ -27,33 +27,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isEmail = loginInput.includes("@");
-    const cleanEmail = isEmail ? loginInput.toLowerCase() : "";
-    const cleanPseudo = loginInput.toLowerCase();
+    // Nettoyer l'entrée : retirer le '@' initial si l'utilisateur a saisi son pseudo comme @pseudo
+    let cleanInput = loginInput.trim();
+    if (cleanInput.startsWith("@")) {
+      cleanInput = cleanInput.substring(1).trim();
+    }
 
-    // 1. Recherche dans Supabase / Prisma (par Email ou par Pseudo)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isEmail = emailRegex.test(cleanInput);
+    const cleanEmail = cleanInput.toLowerCase();
+    const cleanPseudo = cleanInput.toLowerCase();
+
+    // 1. Recherche dans Supabase / Prisma (par Email ou par Pseudo/Nom)
     let user: any = null;
     try {
       if (isEmail) {
         user = await prisma.user.findFirst({
           where: {
-            email: {
-              equals: cleanEmail,
-              mode: "insensitive",
-            },
+            OR: [
+              { email: { equals: cleanEmail, mode: "insensitive" } },
+              { profile: { pseudo: { equals: cleanEmail, mode: "insensitive" } } },
+            ],
           },
           include: { profile: true },
         });
       } else {
-        // Recherche par Pseudo
+        // Recherche très tolérante par Pseudo, Prénom ou début d'email
         user = await prisma.user.findFirst({
           where: {
-            profile: {
-              pseudo: {
-                equals: cleanPseudo,
-                mode: "insensitive",
-              },
-            },
+            OR: [
+              { profile: { pseudo: { equals: cleanPseudo, mode: "insensitive" } } },
+              { profile: { firstName: { equals: cleanPseudo, mode: "insensitive" } } },
+              { email: { equals: cleanEmail, mode: "insensitive" } },
+              { email: { startsWith: `${cleanPseudo}@`, mode: "insensitive" } },
+            ],
           },
           include: { profile: true },
         });
@@ -62,19 +69,20 @@ export async function POST(req: NextRequest) {
       console.warn("[login] Supabase find error:", e);
     }
 
-    // Fallback: recherche dans le store local par pseudo ou email
+    // Fallback: recherche dans le store local par pseudo, prénom ou email
     if (!user) {
       const allProfiles = (await import("@/lib/db-store")).getAllProfiles();
       const match = allProfiles.find(
         (p: any) =>
           (p.pseudo && p.pseudo.toLowerCase() === cleanPseudo) ||
-          (p.userId && p.userId === loginInput) ||
+          (p.firstName && p.firstName.toLowerCase() === cleanPseudo) ||
+          (p.userId && p.userId === cleanInput) ||
           (p.email && p.email.toLowerCase() === cleanEmail)
       );
       if (match) {
         user = {
           id: match.userId,
-          email: (match as any).email || `${(match.pseudo || "membre").toLowerCase()}@meetmeclub.tg`,
+          email: (match as any).email || `${(match.pseudo || "membre").toLowerCase()}@meetmeclub.net`,
           role: "MEMBER",
           status: "ACTIVE",
           passwordHash: null,
@@ -90,7 +98,8 @@ export async function POST(req: NextRequest) {
           // Si c'est un compte de test (@meetmeclub.tg ou mot de passe de test standard), mettre à jour pour débloquer
           const isTestAccount =
             cleanEmail.includes("meetmeclub.tg") ||
-            (user.email && user.email.includes("meetmeclub.tg")) ||
+            cleanEmail.includes("meetmeclub.net") ||
+            (user.email && (user.email.includes("meetmeclub.tg") || user.email.includes("meetmeclub.net"))) ||
             password === "123456";
 
           if (isTestAccount) {
@@ -123,7 +132,7 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         role: user.role || "MEMBER",
         status: user.status || "ACTIVE",
-        email: user.email || cleanEmail || `${cleanPseudo}@meetmeclub.tg`,
+        email: user.email || cleanEmail || `${cleanPseudo}@meetmeclub.net`,
       });
 
       return NextResponse.json({

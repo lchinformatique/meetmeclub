@@ -93,7 +93,7 @@ export default function ContactPage() {
                 </div>
                 <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                   <span style={{ fontSize: "20px" }}>📧</span>
-                  <span><strong>Email :</strong> contact@meetmeclub.tg</span>
+                  <span><strong>Email :</strong> contact@meetmeclub.net</span>
                 </div>
                 <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                   <span style={{ fontSize: "20px" }}>🕒</span>

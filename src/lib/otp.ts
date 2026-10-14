@@ -105,7 +105,7 @@ export async function sendSmsOtp(phone: string, code: string): Promise<void> {
 
 export async function sendEmailOtp(email: string, code: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || "noreply@meetmeclub.tg";
+  const from = process.env.EMAIL_FROM || "noreply@meetmeclub.net";
 
   if (!apiKey) {
     console.log(`[DEV] OTP for ${email}: ${code}`);
@@ -121,7 +121,7 @@ export async function sendEmailOtp(email: string, code: string): Promise<void> {
     subject: `${code} – Votre code Meet Me Club`,
     html: `
       <div style="font-family:Inter,sans-serif;max-width:480px;margin:auto;padding:32px;background:#fff;border-radius:16px;">
-        <img src="https://meetmeclub.tg/logo.png" alt="Meet Me Club" style="height:60px;margin-bottom:24px;" />
+        <img src="https://www.meetmeclub.net/logo.png" alt="Meet Me Club" style="height:60px;margin-bottom:24px;" />
         <h2 style="color:#0B2E6B;margin:0 0 8px;">Votre code de vérification</h2>
         <p style="color:#444;margin-bottom:24px;">Entrez ce code dans l'application Meet Me Club. Il est valable <strong>5 minutes</strong>.</p>
         <div style="font-size:40px;font-weight:bold;letter-spacing:16px;color:#E10600;text-align:center;padding:24px;background:#FFF5F5;border-radius:12px;">

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const cleanPseudo = (pseudo || (isEmail ? rawInput.split("@")[0] : rawInput)).toString().trim();
     const cleanEmail = isEmail
       ? rawInput.toLowerCase()
-      : `${cleanPseudo.toLowerCase().replace(/[^a-z0-9_]/gi, "")}@meetmeclub.tg`;
+      : `${cleanPseudo.toLowerCase().replace(/[^a-z0-9_]/gi, "")}@meetmeclub.net`;
 
     // 2. Date de naissance (par défaut 2000-01-01 pour 18+ si non fournie)
     let dob = new Date("2000-01-01");

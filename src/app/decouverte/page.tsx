@@ -116,19 +116,8 @@ export default function DecouvertePage() {
     fetchProfiles();
   }, []);
 
-  // Handle contact attempt with mandatory identity verification and quota enforcement
+  // Handle contact attempt with quota enforcement
   const handleInitiateExchange = async (profile: ProfileItem, action: "CHAT" | "RDV") => {
-    // 🛡️ Mesure de sécurité obligatoire : CNI + Selfie Facial
-    const isVerified = Boolean(
-      (myProfile?.idDocumentSubmitted || myProfile?.idDocumentVerified) &&
-      (myProfile?.selfieSubmitted || myProfile?.selfieVerified)
-    );
-
-    if (!isVerified) {
-      setSecurityModalOpen(true);
-      return;
-    }
-
     const targetId = profile.userId || profile.id;
     const contactedList: string[] = myProfile?.partnersContacted || [];
     const isAlreadyContacted = contactedList.includes(targetId);

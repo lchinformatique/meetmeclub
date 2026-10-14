@@ -15,11 +15,11 @@ export const metadata: Metadata = {
   keywords: ["rencontres Togo", "rencontres Lomé", "dating Afrique", "rendez-vous Lomé", "meet me club"],
   authors: [{ name: "Meet Me Club" }],
   creator: "Meet Me Club",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://meetmeclub.tg"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.meetmeclub.net"),
   openGraph: {
     type: "website",
     locale: "fr_TG",
-    url: "https://meetmeclub.tg",
+    url: "https://www.meetmeclub.net",
     siteName: "Meet Me Club",
     title: "Meet Me Club — Plus qu'une rencontre, un rendez-vous !",
     description:

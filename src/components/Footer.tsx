@@ -67,7 +67,7 @@ export default function Footer() {
               </span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <Mail size={13} className="text-amber-300" />
-                <span>contact@meetmeclub.tg</span>
+                <span>contact@meetmeclub.net</span>
               </span>
             </div>
           </div>

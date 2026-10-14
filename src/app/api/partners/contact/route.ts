@@ -19,24 +19,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "targetUserId requis" }, { status: 400 });
     }
 
-    const profile = getProfileByUserId(session.userId);
-    const isIdVerified = Boolean(profile?.idDocumentSubmitted || profile?.idDocumentVerified);
-    const isSelfieVerified = Boolean(profile?.selfieSubmitted || profile?.selfieVerified);
-
-    if (!isIdVerified || !isSelfieVerified) {
-      return NextResponse.json(
-        {
-          allowed: false,
-          needsVerification: true,
-          error: "Vérification d'identité requise",
-          message:
-            "Par mesure de sécurité et de protection d'image, vous devez obligatoirement soumettre votre pièce d'identité et un selfie de contrôle facial avant de pouvoir entrer en contact avec un partenaire.",
-          redirectUrl: "/profil/securite",
-        },
-        { status: 403 }
-      );
-    }
-
     const check = canContactPartner(session.userId, targetUserId);
 
     if (!check.allowed) {

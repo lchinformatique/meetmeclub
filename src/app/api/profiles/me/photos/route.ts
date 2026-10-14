@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         publicId: result.publicId,
         isMain: isFirst,
         order: profile.photos.length,
-        status: "PENDING",
+        status: "APPROVED",
       },
     });
 

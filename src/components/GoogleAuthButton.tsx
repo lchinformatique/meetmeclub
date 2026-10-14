@@ -26,7 +26,7 @@ export default function GoogleAuthButton({
     redirectTo ||
     (typeof window !== "undefined"
       ? `${window.location.origin}/auth/callback`
-      : "https://meetmeclub.vercel.app/auth/callback");
+      : "https://www.meetmeclub.net/auth/callback");
 
   async function handleGoogleSignIn() {
     if (loading) return;

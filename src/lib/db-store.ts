@@ -125,9 +125,7 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       relationshipGoal: profileData.relationshipGoal || "SERIOUS",
       plan: profileData.plan || "FREE",
       partnersContacted: profileData.partnersContacted || [],
-      photos: profileData.photos || [
-        { id: "def_photo", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }
-      ],
+      photos: Array.isArray(profileData.photos) ? profileData.photos : [],
       interests: profileData.interests || ["Discussions", "Sorties Lomé", "Cafés"],
       availabilities: profileData.availabilities || [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
       isVerified: true,

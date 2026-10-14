@@ -59,9 +59,9 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         relationshipGoal: (dbUser?.profile?.relationshipGoal as any) || "SERIOUS",
         plan: "FREE",
         partnersContacted: [],
-        photos: [
-          { id: "p1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }
-        ],
+        photos: (dbUser?.profile?.photos && dbUser.profile.photos.length > 0)
+          ? dbUser.profile.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
+          : [],
         interests: ["Discussions", "Sorties Lomé", "Cafés"],
         availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,
@@ -82,9 +82,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         relationshipGoal: "SERIOUS",
         plan: "FREE",
         partnersContacted: [],
-        photos: [
-          { id: "p1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80", isMain: true }
-        ],
+        photos: [],
         interests: ["Discussions", "Sorties Lomé"],
         availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,
@@ -209,9 +207,44 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                     {mainPhoto ? (
                       <Image src={mainPhoto.url} alt={profile.firstName} fill style={{ objectFit: "cover" }} />
                     ) : (
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "13px", fontWeight: 700, color: "#94A3B8" }}>
-                        Photo
-                      </div>
+                      <Link
+                        href="/profil/photos"
+                        title="Ajouter votre photo de profil"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: "100%",
+                          width: "100%",
+                          background: "linear-gradient(135deg, #0B2559 0%, #1D4ED8 100%)",
+                          color: "white",
+                          textDecoration: "none",
+                          position: "relative",
+                        }}
+                      >
+                        <span style={{ fontSize: "28px", fontWeight: 800, textTransform: "uppercase" }}>
+                          {(profile.firstName || "M").charAt(0)}
+                        </span>
+                        <span
+                          style={{
+                            position: "absolute",
+                            bottom: "2px",
+                            right: "2px",
+                            background: "#E10600",
+                            color: "white",
+                            borderRadius: "50%",
+                            width: "22px",
+                            height: "22px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                          }}
+                        >
+                          <Camera size={12} />
+                        </span>
+                      </Link>
                     )}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -429,6 +462,72 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
 
           {/* ── Main Content Column ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+            {/* ── Alerte Photo : Incitation à ajouter sa vraie photo ── */}
+            {!mainPhoto && (
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 100%)",
+                  border: "1.5px solid #BFDBFE",
+                  borderRadius: "var(--radius-xl)",
+                  padding: "18px 22px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "14px",
+                  boxShadow: "0 4px 14px rgba(37,99,235,0.08)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "12px",
+                      background: "white",
+                      border: "1.5px solid #DBEAFE",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#1D4ED8",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Camera size={22} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#1E3A8A", margin: "0 0 3px" }}>
+                      Ajoutez votre photo de profil
+                    </h3>
+                    <p style={{ fontSize: "13px", color: "#475569", margin: 0, fontWeight: 500 }}>
+                      Aucune fausse image par défaut : importez votre vraie photo pour être visible des membres du club.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/profil/photos"
+                  className="btn btn-primary btn-sm"
+                  style={{
+                    background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+                    color: "white",
+                    fontWeight: 800,
+                    fontSize: "13px",
+                    padding: "10px 18px",
+                    borderRadius: "12px",
+                    textDecoration: "none",
+                    boxShadow: "0 4px 14px rgba(225,6,0,0.28)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <Camera size={15} />
+                  <span>Ajouter ma photo</span>
+                </Link>
+              </div>
+            )}
 
             {/* ── Chat & Options d'enrichissement Bannière ── */}
             <div

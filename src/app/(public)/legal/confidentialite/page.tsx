@@ -93,7 +93,7 @@ export default function ConfidentialitePage() {
             <li><strong>Portabilité</strong> : recevoir vos données dans un format exploitable</li>
             <li><strong>Opposition</strong> : vous opposer à certains traitements</li>
           </ul>
-          <p style={{ marginTop: "8px" }}>Pour exercer ces droits, contactez-nous à <strong>privacy@meetmeclub.tg</strong></p>
+          <p style={{ marginTop: "8px" }}>Pour exercer ces droits, contactez-nous à <strong>privacy@meetmeclub.net</strong></p>
         </section>
 
         <section>
@@ -103,7 +103,7 @@ export default function ConfidentialitePage() {
 
         <section>
           <h2 style={{ fontSize: "20px", color: "var(--color-blue)", marginBottom: "12px" }}>7. Contact</h2>
-          <p>Pour toute question relative à la protection de vos données : <strong>privacy@meetmeclub.tg</strong></p>
+          <p>Pour toute question relative à la protection de vos données : <strong>privacy@meetmeclub.net</strong></p>
         </section>
       </div>
     </div>

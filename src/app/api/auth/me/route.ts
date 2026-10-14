@@ -35,6 +35,23 @@ export async function GET() {
     });
 
     if (!user) {
+      const { getProfileByUserId } = await import("@/lib/db-store");
+      const local = getProfileByUserId(session.userId);
+      if (local) {
+        return NextResponse.json({
+          authenticated: true,
+          user: {
+            id: local.userId,
+            email: session.email || null,
+            role: session.role || "MEMBER",
+            status: session.status || "ACTIVE",
+            firstName: local.firstName || "Membre",
+            city: local.city || "Lomé",
+            avatarUrl: local.photos?.find((p) => p.isMain)?.url || local.photos?.[0]?.url || null,
+            subscriptionTier: local.plan || "FREE",
+          },
+        });
+      }
       return NextResponse.json({ authenticated: false, user: null });
     }
 
