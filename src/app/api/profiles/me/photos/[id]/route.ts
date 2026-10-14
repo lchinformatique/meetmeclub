@@ -57,14 +57,22 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
     }
   }
 
-  await prisma.auditLog.create({
-    data: {
-      userId: session.userId,
-      action: "PHOTO_DELETED",
-      entity: "profile_photos",
-      entityId: photo.id,
-    },
-  });
+  try {
+    const { getProfileByUserId, saveProfile } = await import("@/lib/db-store");
+    const localProfile = getProfileByUserId(session.userId);
+    if (localProfile?.photos) {
+      const remaining = localProfile.photos.filter((p) => p.id !== id && p.id !== photo.id);
+      if (photo.isMain && remaining.length > 0) {
+        remaining[0].isMain = true;
+      }
+      saveProfile({
+        userId: session.userId,
+        photos: remaining,
+      });
+    }
+  } catch (err) {
+    console.warn("[DELETE photo] db-store sync warning:", err);
+  }
 
   return NextResponse.json({ success: true });
 }
@@ -93,28 +101,50 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
 
   const body = await req.json();
 
-  // Set as main photo
-  if (body.isMain === true) {
-    await prisma.profilePhoto.updateMany({
-      where: { profileId: profile.id },
-      data: { isMain: false },
-    });
-    await prisma.profilePhoto.update({
-      where: { id: photo.id },
-      data: { isMain: true },
-    });
+  // 1. Prisma update (best effort)
+  try {
+    if (body.isMain === true) {
+      await prisma.profilePhoto.updateMany({
+        where: { profileId: profile.id },
+        data: { isMain: false },
+      });
+      await prisma.profilePhoto.update({
+        where: { id: photo.id },
+        data: { isMain: true },
+      });
+    }
+    if (Array.isArray(body.order)) {
+      await Promise.all(
+        (body.order as Array<{ id: string; order: number }>).map((item) =>
+          prisma.profilePhoto.updateMany({
+            where: { id: item.id, profileId: profile.id },
+            data: { order: item.order },
+          })
+        )
+      );
+    }
+  } catch (err) {
+    console.warn("[PATCH photo] Prisma update warning:", err);
   }
 
-  // Reorder photos
-  if (Array.isArray(body.order)) {
-    await Promise.all(
-      (body.order as Array<{ id: string; order: number }>).map((item) =>
-        prisma.profilePhoto.updateMany({
-          where: { id: item.id, profileId: profile.id },
-          data: { order: item.order },
-        })
-      )
-    );
+  // 2. Sync with local db-store
+  try {
+    const { getProfileByUserId, saveProfile } = await import("@/lib/db-store");
+    const localProfile = getProfileByUserId(session.userId);
+    if (localProfile?.photos) {
+      if (body.isMain === true) {
+        const updatedPhotos = localProfile.photos.map((p) => ({
+          ...p,
+          isMain: p.id === id || p.id === photo.id,
+        }));
+        saveProfile({
+          userId: session.userId,
+          photos: updatedPhotos,
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("[PATCH photo] db-store sync error:", err);
   }
 
   return NextResponse.json({ success: true });

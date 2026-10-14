@@ -11,6 +11,8 @@ export interface StoredProfile {
   firstName: string;
   lastName?: string;
   pseudo?: string;
+  email?: string; // stored for reconnection after logout (email or pseudo login)
+  coverUrl?: string;
   gender: "MALE" | "FEMALE" | "OTHER";
   age: number;
   dateOfBirth?: string;

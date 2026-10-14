@@ -210,10 +210,13 @@ export default function ProfilSecuritePage() {
 
   async function handleLogout() {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      const target = data?.redirect || "/connexion";
+      router.push(target);
+      router.refresh();
     } catch {
-      // ignore
-    } finally {
+      // En cas d'erreur réseau, on force la redirection quand même
       router.push("/connexion");
       router.refresh();
     }

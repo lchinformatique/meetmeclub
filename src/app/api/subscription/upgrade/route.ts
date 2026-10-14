@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
           paymentRef: `UPGRADE_${Date.now()}`,
           paymentMethod: "UPGRADE",
         },
-      }).catch(() => {});
+      }).catch(() => { });
     } catch (err) {
       console.warn("[POST /api/subscription/upgrade] Prisma sync:", err);
     }

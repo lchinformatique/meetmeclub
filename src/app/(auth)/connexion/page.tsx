@@ -53,13 +53,14 @@ function ConnexionForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        // On envoie `identifier` (accepté par l'API comme email, pseudo ou login)
+        body: JSON.stringify({ identifier: email.trim(), password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Identifiants incorrects. Vérifiez votre e-mail et mot de passe.");
+        setError(data.error || "Identifiants incorrects. Vérifiez votre e-mail ou pseudo et votre mot de passe.");
         return;
       }
 

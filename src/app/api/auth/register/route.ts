@@ -142,6 +142,7 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       firstName: resolvedName,
       pseudo: resolvedPseudo,
+      email: cleanEmail, // stocké pour permettre la reconnexion par email après déconnexion
       gender: resolvedGender as any,
       city: "Lomé",
       age: new Date().getFullYear() - dob.getFullYear(),

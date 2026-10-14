@@ -90,7 +90,7 @@ export async function GET() {
           lastMessage: lastMsg?.body || "Nouvelle conversation",
           lastMessageAt: conv.lastMessageAt.toISOString(),
           unreadCount,
-          isOnline: false,
+          isOnline: true,
           isVerified,
         };
       })
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
         lastMessage: "Nouvelle conversation",
         lastMessageAt: conversation.lastMessageAt.toISOString(),
         unreadCount: 0,
-        isOnline: false,
+        isOnline: true,
         isVerified: true,
       },
     });

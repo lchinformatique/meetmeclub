@@ -9,7 +9,8 @@ import type { Metadata } from "next";
 import { getProfileByUserId, saveProfile, PLAN_LIMITS } from "@/lib/db-store";
 import Header from "@/components/Header";
 import LogoutButton from "@/components/LogoutButton";
-import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock } from "lucide-react";
+import ProfileInteractiveCard from "@/components/ProfileInteractiveCard";
+import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock, MessageSquare } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Mon Profil",
@@ -34,7 +35,13 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
             ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
           ],
         },
-        include: { profile: true },
+        include: {
+          profile: {
+            include: {
+              photos: { orderBy: { order: "asc" } },
+            },
+          },
+        },
       });
     } catch (e) {
       console.warn("Prisma user lookup warning:", e);
@@ -182,159 +189,8 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
           {/* ── Left Sidebar ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 
-            {/* Profile Card */}
-            <div className="card" style={{ overflow: "hidden", background: "white", borderRadius: "var(--radius-xl)", boxShadow: "0 4px 16px rgba(0,0,0,0.06)", border: "1px solid #E2E8F0" }}>
-              <div style={{ height: "160px", background: "var(--gradient-blue)", position: "relative" }}>
-                {mainPhoto && (
-                  <Image src={mainPhoto.url} alt={profile.firstName} fill style={{ objectFit: "cover" }} />
-                )}
-              </div>
-
-              <div style={{ padding: "0 24px 24px", marginTop: "-44px", position: "relative" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "16px" }}>
-                  <div
-                    style={{
-                      width: "88px",
-                      height: "88px",
-                      borderRadius: "50%",
-                      border: "4px solid white",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                      overflow: "hidden",
-                      position: "relative",
-                      background: "white",
-                    }}
-                  >
-                    {mainPhoto ? (
-                      <Image src={mainPhoto.url} alt={profile.firstName} fill style={{ objectFit: "cover" }} />
-                    ) : (
-                      <Link
-                        href="/profil/photos"
-                        title="Ajouter votre photo de profil"
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: "100%",
-                          width: "100%",
-                          background: "linear-gradient(135deg, #0B2559 0%, #1D4ED8 100%)",
-                          color: "white",
-                          textDecoration: "none",
-                          position: "relative",
-                        }}
-                      >
-                        <span style={{ fontSize: "28px", fontWeight: 800, textTransform: "uppercase" }}>
-                          {(profile.firstName || "M").charAt(0)}
-                        </span>
-                        <span
-                          style={{
-                            position: "absolute",
-                            bottom: "2px",
-                            right: "2px",
-                            background: "#E10600",
-                            color: "white",
-                            borderRadius: "50%",
-                            width: "22px",
-                            height: "22px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-                          }}
-                        >
-                          <Camera size={12} />
-                        </span>
-                      </Link>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Link href="/profil/edit" className="btn btn-outline-blue btn-sm" style={{ fontWeight: 700 }}>
-                      Modifier
-                    </Link>
-                    <LogoutButton variant="danger" label="Déconnexion" />
-                  </div>
-                </div>
-
-                <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", marginBottom: "4px" }}>
-                  {profile.firstName} {profile.lastName && <span style={{ color: "#334155" }}>{profile.lastName}</span>}
-                </h1>
-                {profile.pseudo && (
-                  <p style={{ color: "var(--color-blue)", fontWeight: 700, fontSize: "14px", margin: "0 0 8px" }}>
-                    @{profile.pseudo}
-                  </p>
-                )}
-                <p style={{ color: "#475569", fontSize: "14px", margin: "0 0 16px", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span>{profile.city}</span>
-                  {profile.neighborhood && <span>· {profile.neighborhood}</span>}
-                  <span>· {profile.age} ans</span>
-                </p>
-
-                {/* Verification badges */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: 700, background: "#EFF6FF", color: "#1D4ED8", padding: "4px 10px", borderRadius: "var(--radius-full)", border: "1px solid #BFDBFE" }}>
-                    Vérifié
-                  </span>
-                  <span style={{ fontSize: "12px", fontWeight: 700, background: "#ECFDF5", color: "#047857", padding: "4px 10px", borderRadius: "var(--radius-full)", border: "1px solid #A7F3D0" }}>
-                    18+ Confirmé
-                  </span>
-                  <span style={{ fontSize: "12px", fontWeight: 700, background: "#FEF2F2", color: "#B91C1C", padding: "4px 10px", borderRadius: "var(--radius-full)", border: "1px solid #FECACA" }}>
-                    Membre International
-                  </span>
-                </div>
-
-                {/* ── Subscription Tier Badge ── */}
-                <div style={{ marginTop: "12px", maxWidth: "100%" }}>
-                  {profile.plan === "VIP" ? (
-                    <div style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%",
-                      background: "linear-gradient(135deg, #92400E 0%, #B8860B 50%, #D4A017 100%)",
-                      color: "white", padding: "8px 16px", borderRadius: "var(--radius-full)",
-                      fontWeight: 800, fontSize: "14px",
-                      boxShadow: "0 4px 16px rgba(184, 134, 11, 0.35)",
-                      border: "2px solid rgba(255,215,0,0.4)",
-                    }}>
-                      <span style={{ fontSize: "18px" }}>👑</span>
-                      <span>Membre VIP — 15 000 F/mois</span>
-                    </div>
-                  ) : profile.plan === "COMPLICE" ? (
-                    <div style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%",
-                      background: "linear-gradient(135deg, #7C2D12 0%, #9A3412 50%, #C2410C 100%)",
-                      color: "white", padding: "8px 16px", borderRadius: "var(--radius-full)",
-                      fontWeight: 800, fontSize: "14px",
-                      boxShadow: "0 4px 16px rgba(194, 65, 12, 0.30)",
-                      border: "2px solid rgba(255,255,255,0.2)",
-                    }}>
-                      <span style={{ fontSize: "18px" }}>🍷</span>
-                      <span>Pass Complice — 6 000 F/mois</span>
-                    </div>
-                  ) : profile.plan === "ESSENTIAL" ? (
-                    <div style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%",
-                      background: "linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)",
-                      color: "white", padding: "8px 16px", borderRadius: "var(--radius-full)",
-                      fontWeight: 800, fontSize: "14px",
-                      boxShadow: "0 4px 16px rgba(37, 99, 235, 0.30)",
-                      border: "2px solid rgba(255,255,255,0.15)",
-                    }}>
-                      <span style={{ fontSize: "18px" }}>⭐</span>
-                      <span>Pass Essentiel — 3 000 F/mois</span>
-                    </div>
-                  ) : (
-                    <div style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap", maxWidth: "100%",
-                      background: "#F1F5F9",
-                      color: "#475569", padding: "8px 16px", borderRadius: "var(--radius-full)",
-                      fontWeight: 700, fontSize: "13px",
-                      border: "1px solid #CBD5E1",
-                    }}>
-                      <span style={{ fontSize: "16px" }}>⚡</span>
-                      <span>Plan Gratuit (Essai 7 jours)</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            {/* Interactive Profile Card with Click-to-Upload */}
+            <ProfileInteractiveCard profile={profile} />
 
             {/* Subscription & Quota Card */}
             <div className="card card-padded" style={{ background: "white", borderRadius: "var(--radius-xl)", border: isFree ? "2px solid #F59E0B" : "2px solid var(--color-blue)", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
@@ -432,31 +288,53 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
               </div>
             </div>
 
-            {/* Verification Card for Chat Access */}
+            {/* Direct Chat Access Card */}
             <div className="card card-padded" style={{ background: "white", borderRadius: "var(--radius-xl)", border: "1.5px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: (profile.idDocumentSubmitted && profile.selfieSubmitted) ? "#DCFCE7" : "#FEF3C7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {(profile.idDocumentVerified && profile.selfieVerified) ? <CheckCircle2 size={20} color="#16A34A" /> : <ShieldCheck size={20} color="#D97706" />}
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <MessageSquare size={18} color="#16A34A" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: "14px", fontWeight: 800, color: "#0F172A", margin: 0 }}>Accès au Chat (18+)</h3>
-                  <p style={{ fontSize: "11px", color: "#64748B", margin: 0 }}>Pièce d&apos;identité & Selfie obligatoires</p>
+                  <h3 style={{ fontSize: "14px", fontWeight: 800, color: "#0F172A", margin: 0 }}>Chat & Rencontres Directs</h3>
+                  <p style={{ fontSize: "11px", color: "#16A34A", margin: 0, fontWeight: 700 }}>✓ Accès Actif · 3 discussions offertes</p>
                 </div>
               </div>
               <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.5, margin: "0 0 12px" }}>
-                {(profile.idDocumentVerified && profile.selfieVerified)
-                  ? "Votre identité est validée ! Vous pouvez chatter librement avec les membres selon votre plan."
-                  : (profile.idDocumentSubmitted || profile.selfieSubmitted)
-                  ? "Documents soumis ⏳. Validation en cours par notre équipe sous 24h pour activer le chat."
-                  : "Obligatoire avant de pouvoir chatter : soumettez votre pièce d'identité et un selfie de conformité."}
+                Votre salon membre est prêt. Vous pouvez explorer les profils connectés et commencer à discuter dès maintenant.
               </p>
-              <Link
-                href="/profil/securite"
-                className="btn btn-sm btn-outline-blue"
-                style={{ width: "100%", textAlign: "center", justifyContent: "center", fontWeight: 700 }}
-              >
-                {(profile.idDocumentSubmitted && profile.selfieSubmitted) ? "Voir mon statut de sécurité" : "Soumettre ma pièce & mon selfie 🤳"}
-              </Link>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <Link
+                  href="/decouverte"
+                  className="btn btn-sm"
+                  style={{
+                    width: "100%",
+                    textAlign: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+                    color: "white",
+                    padding: "9px 14px",
+                    borderRadius: "10px",
+                    textDecoration: "none",
+                    boxShadow: "0 4px 12px rgba(11,37,89,0.20)",
+                  }}
+                >
+                  Découvrir les membres & chatter 💬
+                </Link>
+                <Link
+                  href="/profil/securite"
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#2563EB",
+                    textAlign: "center",
+                    textDecoration: "none",
+                    padding: "4px",
+                  }}
+                >
+                  Badge Certifié 🛡️ (Optionnel)
+                </Link>
+              </div>
             </div>
           </div>
 

@@ -26,12 +26,17 @@ export default function LogoutButton({
     if (loading) return;
     setLoading(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      const target = data?.redirect || "/connexion";
+      router.push(target);
+      router.refresh();
     } catch (err) {
       console.warn("Erreur logout:", err);
-    } finally {
       router.push("/connexion");
       router.refresh();
+    } finally {
+      setLoading(false);
     }
   }
 

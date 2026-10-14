@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
       });
 
       if (dbProfiles && dbProfiles.length > 0) {
+        const dbUserIds = new Set(dbProfiles.map((p) => p.userId));
         const formatted = dbProfiles.map((p) => {
           let calculatedAge = 25;
           if (p.user?.dateOfBirth) {
@@ -47,7 +48,39 @@ export async function GET(req: NextRequest) {
             const now = new Date();
             calculatedAge = now.getFullYear() - birthDate.getFullYear();
           }
+
+          // Check if local store has more recent photos
+          const localMatch = getAllProfiles().find((lp) => lp.userId === p.userId);
+          let photos = p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain }));
+          if (photos.length === 0 && localMatch?.photos && localMatch.photos.length > 0) {
+            photos = localMatch.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain }));
+          }
+
           return {
+            id: p.id,
+            userId: p.userId,
+            firstName: p.firstName,
+            pseudo: p.pseudo || localMatch?.pseudo || p.firstName,
+            gender: p.gender,
+            city: p.city,
+            neighborhood: p.neighborhood || localMatch?.neighborhood || "Lomé",
+            profession: p.profession || localMatch?.profession,
+            bio: p.bio || localMatch?.bio,
+            relationshipGoal: p.relationshipGoal,
+            plan: "FREE",
+            profileCompleteness: p.profileCompleteness || 90,
+            photos,
+            interests: p.interests.map((pi) => ({ interest: { name: pi.interest.name, icon: pi.interest.icon || "✨" } })),
+            verifications: p.verifications.map((v) => ({ type: v.type })),
+            age: calculatedAge,
+            isVerified: true,
+          };
+        });
+
+        // Add any local profiles not yet in dbProfiles
+        const extraLocal = getAllProfiles()
+          .filter((lp) => lp.isVisible && lp.userId !== session.userId && !dbUserIds.has(lp.userId))
+          .map((p) => ({
             id: p.id,
             userId: p.userId,
             firstName: p.firstName,
@@ -58,17 +91,16 @@ export async function GET(req: NextRequest) {
             profession: p.profession,
             bio: p.bio,
             relationshipGoal: p.relationshipGoal,
-            plan: "FREE",
-            profileCompleteness: p.profileCompleteness || 90,
+            plan: p.plan,
+            profileCompleteness: 90,
             photos: p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain })),
-            interests: p.interests.map((pi) => ({ interest: { name: pi.interest.name, icon: pi.interest.icon || "✨" } })),
-            verifications: p.verifications.map((v) => ({ type: v.type })),
-            age: calculatedAge,
-            isVerified: true,
-          };
-        });
+            interests: p.interests.map((name) => ({ interest: { name, icon: "✨" } })),
+            verifications: p.isVerified ? [{ type: "PHONE" }, { type: "SELFIE" }] : [],
+            age: p.age,
+            isVerified: p.isVerified,
+          }));
 
-        return NextResponse.json({ profiles: formatted });
+        return NextResponse.json({ profiles: [...formatted, ...extraLocal] });
       }
     } catch (dbErr) {
       console.warn("[GET /api/profiles] Supabase query fallback to local store:", dbErr);
