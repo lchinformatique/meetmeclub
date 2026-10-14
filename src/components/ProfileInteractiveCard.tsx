@@ -2,9 +2,10 @@
 // src/components/ProfileInteractiveCard.tsx
 // Interactive Profile Card with direct Click-to-Upload for Avatar and Cover Photo
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Camera, Edit3, Loader2, Check, Sparkles } from "lucide-react";
 import { StoredProfile } from "@/lib/db-store";
 
@@ -17,7 +18,13 @@ export default function ProfileInteractiveCard({
   profile: initialProfile,
   onProfileUpdated,
 }: ProfileInteractiveCardProps) {
+  const router = useRouter();
   const [profile, setProfile] = useState<StoredProfile>(initialProfile);
+
+  useEffect(() => {
+    setProfile(initialProfile);
+  }, [initialProfile]);
+
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -83,6 +90,7 @@ export default function ProfileInteractiveCard({
 
         setProfile(updatedProfile);
         if (onProfileUpdated) onProfileUpdated(updatedProfile);
+        router.refresh();
         showToast("Photo de profil mise à jour avec succès ! ✓");
         setUploadingAvatar(false);
       };
@@ -135,6 +143,7 @@ export default function ProfileInteractiveCard({
 
         setProfile(updatedProfile);
         if (onProfileUpdated) onProfileUpdated(updatedProfile);
+        router.refresh();
         showToast("Photo de couverture mise à jour ! ✓");
         setUploadingCover(false);
       };

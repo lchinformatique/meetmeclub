@@ -34,38 +34,25 @@ export async function GET() {
       },
     });
 
-    if (!user) {
-      const { getProfileByUserId } = await import("@/lib/db-store");
-      const local = getProfileByUserId(session.userId);
-      if (local) {
-        return NextResponse.json({
-          authenticated: true,
-          user: {
-            id: local.userId,
-            email: session.email || null,
-            role: session.role || "MEMBER",
-            status: session.status || "ACTIVE",
-            firstName: local.firstName || "Membre",
-            city: local.city || "Lomé",
-            avatarUrl: local.photos?.find((p) => p.isMain)?.url || local.photos?.[0]?.url || null,
-            subscriptionTier: local.plan || "FREE",
-          },
-        });
-      }
-      return NextResponse.json({ authenticated: false, user: null });
-    }
+    const { getProfileByUserId } = await import("@/lib/db-store");
+    const local = getProfileByUserId(session.userId);
+
+    const resolvedFirstName = local?.firstName || user?.profile?.firstName || session.email?.split("@")[0] || "Membre";
+    const resolvedCity = local?.city || user?.profile?.city || "Lomé";
+    const resolvedAvatar = local?.photos?.find((p) => p.isMain)?.url || local?.photos?.[0]?.url || user?.profile?.photos?.[0]?.url || null;
+    const resolvedPlan = local?.plan || "FREE";
 
     return NextResponse.json({
       authenticated: true,
       user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        firstName: user.profile?.firstName || user.email?.split("@")[0] || "Membre",
-        city: user.profile?.city || "Lomé",
-        avatarUrl: user.profile?.photos?.[0]?.url || null,
-        subscriptionTier: "FREE",
+        id: session.userId,
+        email: user?.email || session.email || null,
+        role: user?.role || session.role || "MEMBER",
+        status: user?.status || session.status || "ACTIVE",
+        firstName: resolvedFirstName,
+        city: resolvedCity,
+        avatarUrl: resolvedAvatar,
+        subscriptionTier: resolvedPlan,
       },
     });
   } catch (error) {

@@ -12,6 +12,9 @@ import LogoutButton from "@/components/LogoutButton";
 import ProfileInteractiveCard from "@/components/ProfileInteractiveCard";
 import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock, MessageSquare } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Mon Profil",
   robots: { index: false },
@@ -23,80 +26,94 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   const session = await getSession();
   if (!session?.userId) redirect("/connexion");
 
-  let profile = getProfileByUserId(session.userId);
-  if (!profile) {
-    let dbUser: any = null;
-    try {
-      const { prisma } = await import("@/lib/prisma");
-      dbUser = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { id: session.userId },
-            ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
-          ],
-        },
-        include: {
-          profile: {
-            include: {
-              photos: { orderBy: { order: "asc" } },
-            },
+  // 1. Toujours chercher dans Prisma en priorité pour avoir les données fraîches
+  let dbUser: any = null;
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: session.userId },
+          ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
+        ],
+      },
+      include: {
+        profile: {
+          include: {
+            photos: { orderBy: { order: "asc" } },
           },
         },
-      });
-    } catch (e) {
-      console.warn("Prisma user lookup warning:", e);
-    }
+      },
+    });
+  } catch (e) {
+    console.warn("Prisma user lookup warning:", e);
+  }
 
-    const fallbackFirstName = dbUser?.profile?.firstName || session.email?.split("@")[0] || "Membre";
-    const fallbackPseudo = dbUser?.profile?.pseudo || fallbackFirstName;
+  // 2. Récupérer ou initialiser le profil local
+  let profile = getProfileByUserId(session.userId);
 
-    try {
+  if (!profile) {
+    if (dbUser?.profile) {
+      const dp = dbUser.profile;
+      const dbPhotos = (dp.photos && dp.photos.length > 0)
+        ? dp.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
+        : [];
+
       profile = saveProfile({
         userId: session.userId,
-        firstName: fallbackFirstName,
+        firstName: dp.firstName || session.email?.split("@")[0] || "Membre",
         lastName: "",
-        pseudo: fallbackPseudo,
-        gender: (dbUser?.profile?.gender as any) || "OTHER",
+        pseudo: dp.pseudo || dp.firstName,
+        gender: (dp.gender as any) || "OTHER",
         age: 26,
-        phone: session.phone || undefined,
-        city: dbUser?.profile?.city || "Lomé",
-        neighborhood: dbUser?.profile?.neighborhood || "Centre-ville",
-        profession: dbUser?.profile?.profession || "Membre actif",
-        bio: dbUser?.profile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
-        relationshipGoal: (dbUser?.profile?.relationshipGoal as any) || "SERIOUS",
+        phone: session.phone || dbUser.phone || undefined,
+        city: dp.city || "Lomé",
+        neighborhood: dp.neighborhood || "Centre-ville",
+        profession: dp.profession || "Membre actif",
+        bio: dp.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+        relationshipGoal: (dp.relationshipGoal as any) || "SERIOUS",
+        relationshipStatus: dp.relationshipStatus || "Célibataire",
+        height: dp.height || null,
+        hasChildren: dp.hasChildren ?? false,
+        religion: dp.religion || undefined,
+        languages: dp.languages || ["Français"],
         plan: "FREE",
         partnersContacted: [],
-        photos: (dbUser?.profile?.photos && dbUser.profile.photos.length > 0)
-          ? dbUser.profile.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
-          : [],
+        photos: dbPhotos,
         interests: ["Discussions", "Sorties Lomé", "Cafés"],
         availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,
         isVisible: true,
       });
-    } catch {}
-
-    if (!profile) {
-      profile = {
-        id: `prof_${session.userId}`,
+    } else {
+      const fallbackFirstName = session.email?.split("@")[0] || "Membre";
+      profile = saveProfile({
         userId: session.userId,
         firstName: fallbackFirstName,
-        pseudo: fallbackPseudo,
+        lastName: "",
+        pseudo: fallbackFirstName,
         gender: "OTHER",
         age: 26,
+        phone: session.phone || undefined,
         city: "Lomé",
+        neighborhood: "Centre-ville",
+        profession: "Membre actif",
         bio: "Nouveau membre sur Meet Me Club à Lomé.",
         relationshipGoal: "SERIOUS",
+        relationshipStatus: "Célibataire",
         plan: "FREE",
         partnersContacted: [],
         photos: [],
-        interests: ["Discussions", "Sorties Lomé"],
+        interests: ["Discussions", "Sorties Lomé", "Cafés"],
         availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,
         isVisible: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      });
+    }
+  } else {
+    // Si le profil existe déjà mais qu'il manque le téléphone de session, le compléter
+    if (session.phone && !profile.phone) {
+      profile = saveProfile({ userId: session.userId, phone: session.phone });
     }
   }
 
@@ -537,7 +554,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                 {profile.bio || "Aucune description pour le moment. Cliquez sur Modifier pour vous présenter aux membres !"}
               </p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", padding: "16px", background: "#F8FAFC", borderRadius: "var(--radius-lg)", border: "1px solid #E2E8F0" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", padding: "16px", background: "#F8FAFC", borderRadius: "var(--radius-lg)", border: "1px solid #E2E8F0" }}>
                 <div>
                   <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Profession</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.profession || "Non spécifiée"}</strong>
@@ -554,6 +571,28 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Téléphone</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.phone || "+228 90 XX XX XX"}</strong>
                 </div>
+                <div>
+                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Taille</span>
+                  <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.height ? `${profile.height} cm` : "Non précisée"}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Enfants</span>
+                  <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.hasChildren ? "A des enfants" : "Sans enfant"}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Langues</span>
+                  <strong style={{ fontSize: "14px", color: "#0F172A" }}>
+                    {Array.isArray(profile.languages) && profile.languages.length > 0
+                      ? profile.languages.join(", ")
+                      : "Français"}
+                  </strong>
+                </div>
+                {profile.religion && (
+                  <div>
+                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Religion</span>
+                    <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.religion}</strong>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -646,6 +685,42 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   );
                 })}
               </div>
+            </div>
+
+            {/* ── Déconnexion Rapide & Sécurisée ── */}
+            <div
+              className="card card-padded"
+              style={{
+                background: "#FEF2F2",
+                borderRadius: "var(--radius-xl)",
+                border: "1.5px solid #FCA5A5",
+                marginTop: "20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "16px",
+                padding: "20px 24px",
+              }}
+            >
+              <div>
+                <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#991B1B", margin: "0 0 4px 0" }}>
+                  Déconnexion de votre compte
+                </h3>
+                <p style={{ fontSize: "13px", color: "#7F1D1D", margin: 0 }}>
+                  Vous pouvez vous reconnecter à tout moment avec votre e-mail ou votre pseudo.
+                </p>
+              </div>
+              <LogoutButton
+                variant="danger"
+                label="Se déconnecter"
+                style={{
+                  padding: "10px 24px",
+                  fontWeight: 800,
+                  fontSize: "14px",
+                  boxShadow: "0 4px 14px rgba(220, 38, 38, 0.25)",
+                }}
+              />
             </div>
 
           </div>

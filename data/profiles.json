@@ -1,1 +1,68 @@
-[]
+[
+  {
+    "id": "prof_victoire_lome",
+    "userId": "user_victoire_lome",
+    "firstName": "Victoire",
+    "lastName": "Lawson",
+    "pseudo": "victoire_lome",
+    "email": "victoire@meetmeclub.net",
+    "gender": "FEMALE",
+    "age": 24,
+    "phone": "+228 90 12 34 56",
+    "city": "Lomé",
+    "neighborhood": "Tokoin & Nyékonakpoè",
+    "profession": "Styliste & Créatrice de mode",
+    "relationshipStatus": "Célibataire",
+    "educationLevel": "Master Mode & Design",
+    "height": 168,
+    "hasChildren": false,
+    "languages": [
+      "Français",
+      "Mina",
+      "Anglais"
+    ],
+    "bio": "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
+    "relationshipGoal": "SERIOUS",
+    "plan": "VIP",
+    "partnersContacted": [],
+    "photos": [
+      {
+        "id": "p_victoire_1",
+        "url": "/victoire_profile.jpg",
+        "isMain": true
+      }
+    ],
+    "interests": [
+      "Mode & Style",
+      "Voyages",
+      "Dîners aux chandelles",
+      "Musique",
+      "Sorties Lomé"
+    ],
+    "availabilities": [
+      {
+        "dayOfWeek": 5,
+        "startTime": "18:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeek": 6,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeek": 0,
+        "startTime": "14:00",
+        "endTime": "21:00"
+      }
+    ],
+    "isVerified": true,
+    "idDocumentSubmitted": true,
+    "idDocumentVerified": true,
+    "selfieSubmitted": true,
+    "selfieVerified": true,
+    "isVisible": true,
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2026-10-14T14:50:20.248Z"
+  }
+]

@@ -22,7 +22,11 @@ export interface StoredProfile {
   profession?: string;
   educationLevel?: string;
   relationshipStatus?: string;
-  height?: number;
+  height?: number | null;
+  hasChildren?: boolean;
+  religion?: string;
+  languages?: string[];
+  passwordHash?: string;
   bio: string;
   relationshipGoal: "FRIENDSHIP" | "SERIOUS" | "MARRIAGE" | "CASUAL" | "EXCHANGE";
   plan: "FREE" | "ESSENTIAL" | "COMPLICE" | "VIP";
@@ -44,14 +48,61 @@ export interface StoredProfile {
   updatedAt: string;
 }
 
-const isVercel = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === "production");
-const DATA_DIR = isVercel ? "/tmp" : path.join(process.cwd(), "data");
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const DATA_DIR = isServerless
+  ? (process.platform === "win32" ? path.join(process.cwd(), "data") : "/tmp")
+  : path.join(process.cwd(), "data");
 const PROFILES_FILE = path.join(DATA_DIR, "profiles.json");
 
-// In-memory fallback to guarantee zero crashes even on read-only environments
-let memoryProfiles: StoredProfile[] = [];
+// Profil officiel par défaut pour que tout nouvel utilisateur ait immédiatement un contact réel avec qui échanger
+export const VICTOIRE_PROFILE: StoredProfile = {
+  id: "prof_victoire_lome",
+  userId: "user_victoire_lome",
+  firstName: "Victoire",
+  lastName: "Lawson",
+  pseudo: "victoire_lome",
+  email: "victoire@meetmeclub.net",
+  gender: "FEMALE",
+  age: 24,
+  phone: "+228 90 12 34 56",
+  city: "Lomé",
+  neighborhood: "Tokoin & Nyékonakpoè",
+  profession: "Styliste & Créatrice de mode",
+  relationshipStatus: "Célibataire",
+  educationLevel: "Master Mode & Design",
+  height: 168,
+  hasChildren: false,
+  languages: ["Français", "Mina", "Anglais"],
+  bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
+  relationshipGoal: "SERIOUS",
+  plan: "VIP",
+  partnersContacted: [],
+  photos: [
+    { id: "p_victoire_1", url: "/victoire_profile.jpg", isMain: true }
+  ],
+  interests: ["Mode & Style", "Voyages", "Dîners aux chandelles", "Musique", "Sorties Lomé"],
+  availabilities: [
+    { dayOfWeek: 5, startTime: "18:00", endTime: "22:00" },
+    { dayOfWeek: 6, startTime: "15:00", endTime: "23:00" },
+    { dayOfWeek: 0, startTime: "14:00", endTime: "21:00" },
+  ],
+  isVerified: true,
+  idDocumentSubmitted: true,
+  idDocumentVerified: true,
+  selfieSubmitted: true,
+  selfieVerified: true,
+  isVisible: true,
+  createdAt: "2024-01-01T00:00:00.000Z",
+  updatedAt: new Date().toISOString(),
+};
 
-// Ensure data folder exists
+// Victoire est présente par défaut dans le club pour accueillir et répondre aux nouveaux membres
+export const DEFAULT_PROFILES: StoredProfile[] = [VICTOIRE_PROFILE];
+
+// In-memory fallback to guarantee zero crashes even on read-only environments
+let memoryProfiles: StoredProfile[] = [...DEFAULT_PROFILES];
+
+// Ensure data folder and profiles file exist with Victoire
 function ensureFile() {
   if (memoryProfiles.length === 0) {
     memoryProfiles = [...DEFAULT_PROFILES];
@@ -62,14 +113,20 @@ function ensureFile() {
     }
     if (!fs.existsSync(PROFILES_FILE)) {
       fs.writeFileSync(PROFILES_FILE, JSON.stringify(DEFAULT_PROFILES, null, 2), "utf8");
+    } else {
+      try {
+        const raw = fs.readFileSync(PROFILES_FILE, "utf8");
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && !list.some((p) => p.userId === VICTOIRE_PROFILE.userId)) {
+          list.unshift(VICTOIRE_PROFILE);
+          fs.writeFileSync(PROFILES_FILE, JSON.stringify(list, null, 2), "utf8");
+        }
+      } catch {}
     }
   } catch {
     // Silent catch for read-only serverless filesystems
   }
 }
-
-// No default profiles — only real registered users appear in the system
-const DEFAULT_PROFILES: StoredProfile[] = [];
 
 export function getAllProfiles(): StoredProfile[] {
   ensureFile();
@@ -77,13 +134,23 @@ export function getAllProfiles(): StoredProfile[] {
     if (fs.existsSync(PROFILES_FILE)) {
       const raw = fs.readFileSync(PROFILES_FILE, "utf8");
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
+        // Garantir que Victoire est toujours présente
+        if (!parsed.some((p) => p.userId === VICTOIRE_PROFILE.userId)) {
+          parsed.unshift(VICTOIRE_PROFILE);
+          try {
+            fs.writeFileSync(PROFILES_FILE, JSON.stringify(parsed, null, 2), "utf8");
+          } catch {}
+        }
         memoryProfiles = parsed;
         return parsed;
       }
     }
   } catch {
     // Read failed, use memory fallback
+  }
+  if (!memoryProfiles.some((p) => p.userId === VICTOIRE_PROFILE.userId)) {
+    memoryProfiles.unshift(VICTOIRE_PROFILE);
   }
   return memoryProfiles;
 }
@@ -122,7 +189,13 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       profession: profileData.profession || "Professionnel(le)",
       educationLevel: profileData.educationLevel || "Supérieur",
       relationshipStatus: profileData.relationshipStatus || "Célibataire",
-      height: profileData.height,
+      height: profileData.height ?? null,
+      hasChildren: profileData.hasChildren ?? false,
+      religion: profileData.religion,
+      languages: profileData.languages || ["Français"],
+      coverUrl: profileData.coverUrl,
+      email: profileData.email,
+      passwordHash: profileData.passwordHash,
       bio: profileData.bio || "Membre actif de la communauté Meet Me Club à Lomé.",
       relationshipGoal: profileData.relationshipGoal || "SERIOUS",
       plan: profileData.plan || "FREE",

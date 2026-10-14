@@ -96,10 +96,44 @@ export async function GET() {
       })
     );
 
+    // Garantir que chaque utilisateur a une conversation d'accueil avec Victoire
+    const hasVictoire = enriched.some(
+      (c) => c.participantId === "user_victoire_lome" || c.id === "conv_victoire_welcome"
+    );
+    if (!hasVictoire && session.userId !== "user_victoire_lome") {
+      enriched.unshift({
+        id: "conv_victoire_welcome",
+        participantId: "user_victoire_lome",
+        firstName: "Victoire",
+        pseudo: "@victoire_lome",
+        photoUrl: "/victoire_profile.jpg",
+        lastMessage: "Coucou ! 👋 Ravie de faire ta connaissance sur Meet Me Club ! Comment s'est passée ta journée ? 😊",
+        lastMessageAt: new Date().toISOString(),
+        unreadCount: 1,
+        isOnline: true,
+        isVerified: true,
+      });
+    }
+
     return NextResponse.json({ conversations: enriched });
   } catch (error) {
-    console.warn("[GET /api/conversations] DB error, returning empty:", error);
-    return NextResponse.json({ conversations: [] });
+    console.warn("[GET /api/conversations] DB error, returning Victoire welcome:", error);
+    return NextResponse.json({
+      conversations: [
+        {
+          id: "conv_victoire_welcome",
+          participantId: "user_victoire_lome",
+          firstName: "Victoire",
+          pseudo: "@victoire_lome",
+          photoUrl: "/victoire_profile.jpg",
+          lastMessage: "Coucou ! 👋 Ravie de faire ta connaissance sur Meet Me Club ! Comment s'est passée ta journée ? 😊",
+          lastMessageAt: new Date().toISOString(),
+          unreadCount: 1,
+          isOnline: true,
+          isVerified: true,
+        },
+      ],
+    });
   }
 }
 
@@ -125,6 +159,24 @@ export async function POST(req: NextRequest) {
       { error: "Vous ne pouvez pas chatter avec vous-même." },
       { status: 400 }
     );
+  }
+
+  // Si c'est avec Victoire, retourner immédiatement la conversation active
+  if (targetUserId === "user_victoire_lome") {
+    return NextResponse.json({
+      conversation: {
+        id: "conv_victoire_welcome",
+        participantId: "user_victoire_lome",
+        firstName: "Victoire",
+        pseudo: "@victoire_lome",
+        photoUrl: "/victoire_profile.jpg",
+        lastMessage: "Coucou ! 👋 Ravie de faire ta connaissance sur Meet Me Club ! Comment s'est passée ta journée ? 😊",
+        lastMessageAt: new Date().toISOString(),
+        unreadCount: 0,
+        isOnline: true,
+        isVerified: true,
+      },
+    });
   }
 
   // Tout utilisateur authentifie avec son Plan Gratuit ou superieur peut initier une conversation

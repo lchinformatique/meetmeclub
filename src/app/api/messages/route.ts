@@ -67,6 +67,40 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Si le message est adressé à Victoire, générer la réponse automatique
+  if (conversationId === "conv_victoire_welcome" || conversationId.includes("victoire")) {
+    const { getVictoireReply } = await import("@/lib/victoire-bot");
+    let mediaType: "image" | "audio" | "location" | undefined;
+    if (mediaUrl) {
+      if (mediaUrl.includes("video") || mediaUrl.includes("image") || mediaUrl.startsWith("data:image")) mediaType = "image";
+      else if (mediaUrl.includes("audio") || mediaUrl.startsWith("data:audio")) mediaType = "audio";
+    }
+    if (messageBody?.includes("📍")) mediaType = "location";
+
+    const userMessage = {
+      id: `msg_${Date.now()}`,
+      conversationId,
+      senderId: session.userId,
+      body: (messageBody || "Média partagé").trim(),
+      mediaUrl: mediaUrl || null,
+      createdAt: new Date().toISOString(),
+      status: "SENT",
+    };
+
+    const replyBody = getVictoireReply(messageBody || "", mediaType);
+    const victoireReply = {
+      id: `msg_victoire_${Date.now() + 1}`,
+      conversationId,
+      senderId: "user_victoire_lome",
+      body: replyBody,
+      mediaUrl: null,
+      createdAt: new Date(Date.now() + 1500).toISOString(),
+      status: "DELIVERED",
+    };
+
+    return NextResponse.json({ message: userMessage, reply: victoireReply }, { status: 201 });
+  }
+
   try {
     // Verify the caller is a participant of this conversation
     const conv = await (prisma as any).conversation.findFirst({

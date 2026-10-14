@@ -21,6 +21,22 @@ export async function GET(
   const cursor = searchParams.get("cursor"); // message id for pagination
   const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
 
+  if (conversationId === "conv_victoire_welcome" || conversationId.includes("victoire")) {
+    return NextResponse.json({
+      messages: [
+        {
+          id: "msg_victoire_intro",
+          conversationId,
+          senderId: "user_victoire_lome",
+          body: "Coucou ! 👋 Bienvenue sur Meet Me Club Lomé. Je suis ravie de faire ta connaissance ! Comment s'est passée ta journée ? 😊",
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          status: "DELIVERED",
+        },
+      ],
+      hasMore: false,
+    });
+  }
+
   try {
     // Verify caller is a participant
     const conv = await (prisma as any).conversation.findFirst({

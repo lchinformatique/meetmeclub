@@ -42,11 +42,33 @@ interface Conversation {
 
 const ME_ID = "me";
 
-// Conversations loaded from API — no hardcoded fake data
-const INITIAL_CONVERSATIONS: Conversation[] = [];
+// Conversation officielle d'accueil avec Victoire pour garantir un échange immédiat
+export const VICTOIRE_CONVERSATION: Conversation = {
+  id: "conv_victoire_welcome",
+  participantId: "user_victoire_lome",
+  firstName: "Victoire",
+  pseudo: "@victoire_lome",
+  photoUrl: "/victoire_profile.jpg",
+  lastMessage: "Coucou ! 👋 Ravie de faire ta connaissance sur Meet Me Club ! Comment s'est passée ta journée ? 😊",
+  lastMessageAt: new Date().toISOString(),
+  unreadCount: 1,
+  isOnline: true,
+  isVerified: true,
+};
 
-// Messages loaded from API — no hardcoded fake data
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {};
+const INITIAL_CONVERSATIONS: Conversation[] = [VICTOIRE_CONVERSATION];
+
+const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
+  conv_victoire_welcome: [
+    {
+      id: "msg_victoire_intro",
+      senderId: "user_victoire_lome",
+      body: "Coucou ! 👋 Bienvenue sur Meet Me Club Lomé. Je suis ravie de faire ta connaissance ! Comment s'est passée ta journée ? 😊",
+      createdAt: new Date().toISOString(),
+      status: "DELIVERED",
+    },
+  ],
+};
 
 const LOME_SPOTS = [
   { name: "🏖️ Plage de Lomé (Boulevard du Mono)", lat: 6.1264, lng: 1.2255 },
@@ -80,7 +102,7 @@ function MessagesContent() {
   const contactParam = searchParams.get("contact") || searchParams.get("user");
 
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [activeConvId, setActiveConvId] = useState<string>("conv-1");
+  const [activeConvId, setActiveConvId] = useState<string>("conv_victoire_welcome");
   const [mobileView, setMobileView] = useState<"list" | "chat">(contactParam ? "chat" : "list");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
   const [draft, setDraft] = useState("");
@@ -94,6 +116,7 @@ function MessagesContent() {
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [vipModalOpen, setVipModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
 
   // Video call state
   const [videoCallOpen, setVideoCallOpen] = useState(false);
@@ -562,6 +585,38 @@ function MessagesContent() {
     } catch (err) {
       console.warn("Could not sync voice message to server:", err);
     }
+
+    // Si on échange avec Victoire, réponse automatique à la note vocale
+    if (
+      activeConv?.participantId === "user_victoire_lome" ||
+      activeConvId.includes("victoire") ||
+      activeConv?.firstName === "Victoire"
+    ) {
+      setIsPartnerTyping(true);
+      setTimeout(async () => {
+        setIsPartnerTyping(false);
+        const { getVictoireReply } = await import("@/lib/victoire-bot");
+        const replyText = getVictoireReply(voiceText, "audio");
+        const autoReply: ChatMessage = {
+          id: `victoire-${Date.now()}`,
+          senderId: "user_victoire_lome",
+          body: replyText,
+          createdAt: new Date().toISOString(),
+          status: "DELIVERED",
+        };
+        setMessages((prev) => ({
+          ...prev,
+          [activeConvId]: [...(prev[activeConvId] ?? []), autoReply],
+        }));
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === activeConvId
+              ? { ...c, lastMessage: replyText, lastMessageAt: new Date().toISOString() }
+              : c
+          )
+        );
+      }, 1600);
+    }
   };
 
   // ── Voice Message Playback ───────────────────────────────────
@@ -682,16 +737,64 @@ function MessagesContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId: activeConvId, body: msgBody }),
       });
-      if (!res.ok) {
+      if (res.ok) {
         const data = await res.json();
-        if (res.status === 403 && data.redirectUrl) {
-          setSecurityModalOpen(true);
+        if (data.reply) {
+          setIsPartnerTyping(true);
+          setTimeout(() => {
+            setIsPartnerTyping(false);
+            setMessages((prev) => ({
+              ...prev,
+              [activeConvId]: [...(prev[activeConvId] ?? []), data.reply],
+            }));
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === activeConvId
+                  ? { ...c, lastMessage: data.reply.body, lastMessageAt: new Date().toISOString() }
+                  : c
+              )
+            );
+          }, 1400);
+          return;
         }
       }
     } catch (e) {
       console.warn("Message send error (optimistic UI preserved):", e);
     }
-  }, [draft, activeConvId, isFreePlan, conversations]);
+
+    // Client-side fallback reply if talking to Victoire
+    const isTalkingToVictoire =
+      activeConv?.participantId === "user_victoire_lome" ||
+      activeConvId.includes("victoire") ||
+      activeConv?.firstName === "Victoire";
+
+    if (isTalkingToVictoire) {
+      setIsPartnerTyping(true);
+      setTimeout(async () => {
+        setIsPartnerTyping(false);
+        const { getVictoireReply } = await import("@/lib/victoire-bot");
+        const replyText = getVictoireReply(msgBody);
+        const autoReply: ChatMessage = {
+          id: `victoire-${Date.now()}`,
+          senderId: "user_victoire_lome",
+          body: replyText,
+          createdAt: new Date().toISOString(),
+          status: "DELIVERED",
+        };
+        setMessages((prev) => ({
+          ...prev,
+          [activeConvId]: [...(prev[activeConvId] ?? []), autoReply],
+        }));
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === activeConvId
+              ? { ...c, lastMessage: replyText, lastMessageAt: new Date().toISOString() }
+              : c
+          )
+        );
+      }, 1500);
+    }
+  }, [draft, activeConvId, isFreePlan, conversations, activeConv]);
 
   // Send Photo or Video from Device
   const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -745,6 +848,38 @@ function MessagesContent() {
       } catch (err) {
         console.warn("Could not sync media to server:", err);
       }
+
+      // If talking to Victoire, reply to photo/media
+      if (
+        activeConv?.participantId === "user_victoire_lome" ||
+        activeConvId.includes("victoire") ||
+        activeConv?.firstName === "Victoire"
+      ) {
+        setIsPartnerTyping(true);
+        setTimeout(async () => {
+          setIsPartnerTyping(false);
+          const { getVictoireReply } = await import("@/lib/victoire-bot");
+          const replyText = getVictoireReply(mediaLabel, "image");
+          const autoReply: ChatMessage = {
+            id: `victoire-${Date.now()}`,
+            senderId: "user_victoire_lome",
+            body: replyText,
+            createdAt: new Date().toISOString(),
+            status: "DELIVERED",
+          };
+          setMessages((prev) => ({
+            ...prev,
+            [activeConvId]: [...(prev[activeConvId] ?? []), autoReply],
+          }));
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === activeConvId
+                ? { ...c, lastMessage: replyText, lastMessageAt: new Date().toISOString() }
+                : c
+            )
+          );
+        }, 1800);
+      }
     };
     reader.readAsDataURL(file);
     e.target.value = "";
@@ -795,6 +930,38 @@ function MessagesContent() {
         }),
       }).catch((e) => console.warn("Location sync warning:", e));
     } catch {}
+
+    // If talking to Victoire, reply to location
+    if (
+      activeConv?.participantId === "user_victoire_lome" ||
+      activeConvId.includes("victoire") ||
+      activeConv?.firstName === "Victoire"
+    ) {
+      setIsPartnerTyping(true);
+      setTimeout(async () => {
+        setIsPartnerTyping(false);
+        const { getVictoireReply } = await import("@/lib/victoire-bot");
+        const replyText = getVictoireReply(label, "location");
+        const autoReply: ChatMessage = {
+          id: `victoire-${Date.now()}`,
+          senderId: "user_victoire_lome",
+          body: replyText,
+          createdAt: new Date().toISOString(),
+          status: "DELIVERED",
+        };
+        setMessages((prev) => ({
+          ...prev,
+          [activeConvId]: [...(prev[activeConvId] ?? []), autoReply],
+        }));
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === activeConvId
+              ? { ...c, lastMessage: replyText, lastMessageAt: new Date().toISOString() }
+              : c
+          )
+        );
+      }, 1500);
+    }
 
     setLocationModalOpen(false);
   };
@@ -1539,6 +1706,25 @@ function MessagesContent() {
                   </div>
                 );
               })}
+
+              {isPartnerTyping && (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "12px 16px 4px" }}>
+                  <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", border: "2px solid #2563EB", flexShrink: 0 }}>
+                    <Image
+                      src={activeConv.photoUrl || "/victoire_profile.jpg"}
+                      alt={activeConv.firstName}
+                      width={32}
+                      height={32}
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                  <div style={{ background: "white", padding: "8px 14px", borderRadius: "18px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #E2E8F0", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontWeight: 700, fontSize: "13px", color: "#0B2559" }}>{activeConv.firstName}</span>
+                    <span style={{ fontSize: "12px", color: "#64748B" }}>est en train d&apos;écrire</span>
+                    <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "#10B981" }} />
+                  </div>
+                </div>
+              )}
               <div ref={bottomRef} />
             </div>
 

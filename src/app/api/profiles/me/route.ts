@@ -148,7 +148,6 @@ export async function PATCH(request: NextRequest) {
       if (body.languages !== undefined) updateData.languages = body.languages;
       if (body.educationLevel !== undefined) updateData.educationLevel = body.educationLevel;
       if (body.isVisible !== undefined) updateData.isVisible = body.isVisible;
-      if (coverUrl !== undefined) updateData.coverUrl = coverUrl;
       if (Object.keys(updateData).length > 0) {
         await prisma.profile.upsert({
           where: { userId: session.userId },

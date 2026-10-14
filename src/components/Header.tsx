@@ -854,8 +854,10 @@ export default function Header() {
           .header-hamburger        { display: flex !important; }
           .header-login-btn        { display: none !important; }
           .header-join-btn         { display: none !important; }
-          .profile-btn             { display: none !important; }
-          .logout-btn              { display: none !important; }
+          .profile-btn             { display: flex !important; padding: 5px 8px !important; }
+          .header-profile-name     { display: none !important; }
+          .header-logout-btn       { display: flex !important; padding: 8px 10px !important; }
+          .header-logout-btn span  { display: none !important; }
           .header-mobile-back-btn  { display: flex !important; }
         }
 
