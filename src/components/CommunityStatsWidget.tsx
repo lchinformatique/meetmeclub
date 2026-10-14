@@ -1,15 +1,20 @@
 "use client";
 // src/components/CommunityStatsWidget.tsx
-// Real-time Community Statistics Widget — Updates automatically when new members join
+// Real-time Community Statistics Widget — Shows live data from Supabase
 
 import { useState, useEffect } from "react";
 
 interface StatsData {
   totalMembers: number;
-  vipMembers: number;
-  compliceMembers: number;
-  essentialMembers: number;
-  freeMembers: number;
+  totalProfiles?: number;
+  totalPhotos?: number;
+  totalVerifications?: number;
+  maleMembers?: number;
+  femaleMembers?: number;
+  vipMembers?: number;
+  compliceMembers?: number;
+  essentialMembers?: number;
+  freeMembers?: number;
   verifiedSelfieMembers: number;
   organizedDates: number;
   onlineNow: number;
@@ -22,17 +27,18 @@ interface CommunityStatsWidgetProps {
 
 export default function CommunityStatsWidget({ compact = false }: CommunityStatsWidgetProps) {
   const [stats, setStats] = useState<StatsData>({
-    totalMembers: 1424,
-    vipMembers: 184,
-    compliceMembers: 312,
-    essentialMembers: 540,
-    freeMembers: 388,
-    verifiedSelfieMembers: 1294,
-    organizedDates: 394,
-    onlineNow: 72,
+    totalMembers: 0,
+    totalProfiles: 0,
+    totalPhotos: 0,
+    totalVerifications: 0,
+    maleMembers: 0,
+    femaleMembers: 0,
+    verifiedSelfieMembers: 0,
+    organizedDates: 0,
+    onlineNow: 0,
     lastUpdated: new Date().toISOString(),
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchStats = async () => {
     try {
@@ -41,6 +47,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
         const data = await res.json();
         if (data?.stats) {
           setStats(data.stats);
+          setLoading(false);
         }
       }
     } catch {
@@ -77,21 +84,26 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
           <strong style={{ fontSize: "14px", color: "#0B2E6B", fontWeight: 800 }}>
             {stats.totalMembers.toLocaleString("fr-FR")}
           </strong>
-        </div>
-        <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "16px" }}>👑</span>
-          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>VIP &amp; Prestige :</span>
-          <strong style={{ fontSize: "14px", color: "#B45309", fontWeight: 800 }}>
-            {(stats.vipMembers + stats.compliceMembers).toLocaleString("fr-FR")}
-          </strong>
+          {(stats.maleMembers != null && stats.femaleMembers != null) && (
+            <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>
+              (♂ {stats.maleMembers} · ♀ {stats.femaleMembers})
+            </span>
+          )}
         </div>
         <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{ fontSize: "16px" }}>🤳</span>
-          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Vérifiés Selfie :</span>
+          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Vérifiés :</span>
           <strong style={{ fontSize: "14px", color: "#059669", fontWeight: 800 }}>
             {stats.verifiedSelfieMembers.toLocaleString("fr-FR")}
+          </strong>
+        </div>
+        <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ fontSize: "16px" }}>📸</span>
+          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Photos :</span>
+          <strong style={{ fontSize: "14px", color: "#7C3AED", fontWeight: 800 }}>
+            {(stats.totalPhotos ?? 0).toLocaleString("fr-FR")}
           </strong>
         </div>
         <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
@@ -214,18 +226,18 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
               {stats.totalMembers.toLocaleString("fr-FR")}
             </div>
             <div style={{ fontSize: "12px", fontWeight: 700, color: "#64748B", marginTop: "3px" }}>
-              Total Membres Inscrits
+              Membres Inscrits {stats.maleMembers != null && stats.femaleMembers != null ? `(♂ ${stats.maleMembers} · ♀ ${stats.femaleMembers})` : ""}
             </div>
           </div>
         </div>
 
-        {/* Metric 2: VIP & Prestige */}
+        {/* Metric 2: Profils avec Photos */}
         <div
           style={{
-            background: "#FFFBEB",
+            background: "#F5F3FF",
             borderRadius: "16px",
             padding: "14px 16px",
-            border: "1px solid #FDE68A",
+            border: "1px solid #DDD6FE",
             display: "flex",
             alignItems: "center",
             gap: "12px",
@@ -236,8 +248,8 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
               width: "44px",
               height: "44px",
               borderRadius: "12px",
-              background: "rgba(180, 83, 9, 0.12)",
-              color: "#B45309",
+              background: "rgba(124, 58, 237, 0.12)",
+              color: "#7C3AED",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -245,14 +257,14 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
               flexShrink: 0,
             }}
           >
-            👑
+            📸
           </div>
           <div>
-            <div style={{ fontSize: "22px", fontWeight: 900, color: "#B45309", lineHeight: 1 }}>
-              {(stats.vipMembers + stats.compliceMembers).toLocaleString("fr-FR")}
+            <div style={{ fontSize: "22px", fontWeight: 900, color: "#7C3AED", lineHeight: 1 }}>
+              {(stats.totalPhotos ?? 0).toLocaleString("fr-FR")}
             </div>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400E", marginTop: "3px" }}>
-              Membres VIP &amp; Sorties
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#6D28D9", marginTop: "3px" }}>
+              Photos de Profil
             </div>
           </div>
         </div>
@@ -290,7 +302,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
               {stats.verifiedSelfieMembers.toLocaleString("fr-FR")}
             </div>
             <div style={{ fontSize: "12px", fontWeight: 700, color: "#166534", marginTop: "3px" }}>
-              Identités Vérifiées Selfie
+              Identités Vérifiées
             </div>
           </div>
         </div>
