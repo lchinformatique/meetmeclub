@@ -12,30 +12,62 @@ export async function GET() {
       return NextResponse.json({ authenticated: false, user: null });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.userId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        status: true,
-        profile: {
-          select: {
-            firstName: true,
-            city: true,
-            gender: true,
-            photos: {
-              where: { isMain: true },
-              take: 1,
-              select: { url: true },
+    let user: any = null;
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: session.userId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+          profile: {
+            select: {
+              firstName: true,
+              city: true,
+              gender: true,
+              photos: {
+                where: { isMain: true },
+                take: 1,
+                select: { url: true },
+              },
             },
           },
         },
-      },
-    });
+      });
+    } catch (dbErr) {
+      console.warn("Prisma lookup in /api/auth/me non-fatal warning:", dbErr);
+    }
 
     const { getProfileByUserId } = await import("@/lib/db-store");
-    const local = getProfileByUserId(session.userId);
+    let local = getProfileByUserId(session.userId);
+
+    // If local store does not have it, try Supabase REST
+    if (!local) {
+      try {
+        const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+        const supa = await getProfileFromSupabase(session.userId);
+        if (supa) {
+          const { saveProfile } = await import("@/lib/db-store");
+          local = saveProfile({
+            userId: session.userId,
+            firstName: supa.firstName || "Membre",
+            pseudo: supa.pseudo || undefined,
+            email: session.email || undefined,
+            city: supa.city || "Lomé",
+            gender: (supa.gender as any) || "OTHER",
+            plan: "FREE",
+            photos: (supa.photos || []).map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain })),
+            bio: supa.bio || "Membre Meet Me Club.",
+            relationshipGoal: (supa.relationshipGoal as any) || "SERIOUS",
+            isVerified: supa.isVerified ?? true,
+            isVisible: true,
+          });
+        }
+      } catch (supaErr) {
+        console.warn("Supabase lookup in /api/auth/me non-fatal warning:", supaErr);
+      }
+    }
 
     const resolvedFirstName = local?.firstName || user?.profile?.firstName || session.email?.split("@")[0] || "Membre";
     const resolvedCity = local?.city || user?.profile?.city || "Lomé";

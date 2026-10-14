@@ -1565,6 +1565,18 @@ select,
   .messages-split-view {
     display: flex !important;
     flex-direction: column !important;
+    height: 100dvh !important;
+    height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  .messages-chat-pane {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
   }
 
   .hidden-on-mobile {
@@ -1573,6 +1585,10 @@ select,
 
   .mobile-back-to-list-btn {
     display: flex !important;
+  }
+
+  .chat-account-label {
+    display: none !important;
   }
 }
 

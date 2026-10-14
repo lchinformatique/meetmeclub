@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
       cleanEmail.split("@")[0] ||
       "Membre";
 
+    const emailPrefix = cleanEmail.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
+    const cleanPseudo = (name as string)?.trim().replace(/\s+/g, "_").toLowerCase() || emailPrefix;
+
     // ── 2. Créer l'utilisateur s'il n'existe pas ───────────────────────────
     if (!user) {
       try {
@@ -71,7 +74,7 @@ export async function POST(req: NextRequest) {
             data: {
               userId: newUser.id,
               firstName,
-              pseudo: `${firstName.toLowerCase()}_${Math.floor(100 + Math.random() * 900)}`,
+              pseudo: cleanPseudo,
               gender: "OTHER",
               city: "Lomé",
               bio: "Nouveau membre sur Meet Me Club à Lomé.",
@@ -90,7 +93,7 @@ export async function POST(req: NextRequest) {
           role: newUser.role,
           status: newUser.status,
           googleId: newUser.googleId,
-          profile: { firstName },
+          profile: { firstName, pseudo: cleanPseudo },
         };
       } catch (createErr) {
         console.warn("[google-callback] User creation error, checking existing:", createErr);
@@ -104,7 +107,7 @@ export async function POST(req: NextRequest) {
               role: true,
               status: true,
               googleId: true,
-              profile: { select: { firstName: true } },
+              profile: { select: { firstName: true, pseudo: true } },
             },
           });
         } catch {}
@@ -117,7 +120,7 @@ export async function POST(req: NextRequest) {
             role: "MEMBER",
             status: "ACTIVE",
             googleId: supabaseId,
-            profile: { firstName },
+            profile: { firstName, pseudo: cleanPseudo },
           };
         }
       }
@@ -135,12 +138,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Synchronisation directe Supabase REST (HTTPS)
+    try {
+      const { upsertProfileInSupabase, savePhotoInSupabase } = await import("@/lib/supabase-server");
+      await upsertProfileInSupabase(user.id, {
+        firstName,
+        pseudo: cleanPseudo,
+        gender: "OTHER",
+        city: "Lomé",
+        bio: "Nouveau membre sur Meet Me Club à Lomé.",
+        relationshipGoal: "SERIOUS",
+      });
+      if (avatarUrl) {
+        await savePhotoInSupabase(user.id, avatarUrl as string, true);
+      }
+    } catch (supaErr) {
+      console.warn("[google-callback] Supabase REST sync warning:", supaErr);
+    }
+
     // Sauvegarde store local (non-bloquante)
     try {
       saveProfile({
         userId: user.id,
         firstName,
-        pseudo: firstName.toLowerCase(),
+        pseudo: cleanPseudo,
+        email: cleanEmail,
         gender: "OTHER",
         city: "Lomé",
         age: 25,

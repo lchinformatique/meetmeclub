@@ -43,6 +43,17 @@ export async function POST(req: NextRequest) {
       console.warn("[POST /api/subscription/upgrade] Prisma sync:", err);
     }
 
+    try {
+      const { getSupabaseAdmin } = await import("@/lib/supabase-server");
+      const sb = getSupabaseAdmin();
+      await sb
+        .from("profiles")
+        .update({ updatedAt: new Date().toISOString() })
+        .eq("userId", session.userId);
+    } catch (err) {
+      console.warn("[POST /api/subscription/upgrade] Supabase sync:", err);
+    }
+
     return NextResponse.json({
       success: true,
       profile: updated,

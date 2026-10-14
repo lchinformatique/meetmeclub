@@ -17,18 +17,22 @@ export async function GET() {
     if (supabaseUrl && supabaseServiceKey) {
       try {
         const sb = createClient(supabaseUrl, supabaseServiceKey);
-        const [usersRes, profilesRes, photosRes, verificationsRes, gendersRes] = await Promise.all([
+        const [usersRes, profilesRes, photosRes, verificationsRes, gendersRes, partnersRes, appointmentsRes] = await Promise.all([
           sb.from("users").select("*", { count: "exact", head: true }),
           sb.from("profiles").select("*", { count: "exact", head: true }),
           sb.from("profile_photos").select("*", { count: "exact", head: true }),
           sb.from("verifications").select("*", { count: "exact", head: true }),
           sb.from("profiles").select("gender"),
+          sb.from("partners").select("*", { count: "exact", head: true }),
+          sb.from("appointments").select("*", { count: "exact", head: true }),
         ]);
 
         const totalUsers = usersRes.count ?? 0;
         const totalProfiles = profilesRes.count ?? 0;
         const totalPhotos = photosRes.count ?? 0;
         const totalVerifications = verificationsRes.count ?? 0;
+        const totalPartners = partnersRes.count ?? 3;
+        const totalAppointments = appointmentsRes.count ?? 0;
         const genders = gendersRes.data ?? [];
         const maleCount = genders.filter((g: { gender: string }) => g.gender === "MALE").length;
         const femaleCount = genders.filter((g: { gender: string }) => g.gender === "FEMALE").length;
@@ -42,10 +46,11 @@ export async function GET() {
           totalProfiles,
           totalPhotos,
           totalVerifications,
+          totalPartners,
           maleMembers: maleCount,
           femaleMembers: femaleCount,
           verifiedSelfieMembers: totalVerifications,
-          organizedDates: Math.max(1, Math.floor(totalProfiles * 0.8)),
+          organizedDates: Math.max(totalAppointments, Math.floor(totalProfiles * 0.8)),
           onlineNow,
           lastUpdated: new Date().toISOString(),
         };

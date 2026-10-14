@@ -52,8 +52,51 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   // 2. Récupérer ou initialiser le profil local
   let profile = getProfileByUserId(session.userId);
 
+  // Vérifier également Supabase REST pour garantir la persistance des photos et couverture
+  let supaProfile: any = null;
+  if (!profile || !profile.photos || profile.photos.length === 0 || !profile.coverUrl) {
+    try {
+      const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+      supaProfile = await getProfileFromSupabase(session.userId);
+    } catch (supaErr) {
+      console.warn("Supabase profile lookup warning:", supaErr);
+    }
+  }
+
   if (!profile) {
-    if (dbUser?.profile) {
+    if (supaProfile) {
+      const supaPhotos = (supaProfile.photos && supaProfile.photos.length > 0)
+        ? supaProfile.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
+        : [];
+
+      profile = saveProfile({
+        userId: session.userId,
+        firstName: supaProfile.firstName || session.email?.split("@")[0] || "Membre",
+        lastName: supaProfile.lastName || "",
+        pseudo: supaProfile.pseudo || supaProfile.firstName,
+        gender: (supaProfile.gender as any) || "OTHER",
+        age: 26,
+        phone: session.phone || supaProfile.phone || dbUser?.phone || undefined,
+        city: supaProfile.city || "Lomé",
+        neighborhood: supaProfile.neighborhood || "Centre-ville",
+        profession: supaProfile.profession || "Membre actif",
+        bio: supaProfile.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+        relationshipGoal: (supaProfile.relationshipGoal as any) || "SERIOUS",
+        relationshipStatus: supaProfile.relationshipStatus || "Célibataire",
+        height: supaProfile.height || null,
+        hasChildren: supaProfile.hasChildren ?? false,
+        religion: supaProfile.religion || undefined,
+        languages: supaProfile.languages || ["Français"],
+        coverUrl: supaProfile.coverUrl || undefined,
+        plan: "FREE",
+        partnersContacted: [],
+        photos: supaPhotos,
+        interests: ["Discussions", "Sorties Lomé", "Cafés"],
+        availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
+        isVerified: true,
+        isVisible: true,
+      });
+    } else if (dbUser?.profile) {
       const dp = dbUser.profile;
       const dbPhotos = (dp.photos && dp.photos.length > 0)
         ? dp.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
@@ -111,9 +154,19 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
       });
     }
   } else {
-    // Si le profil existe déjà mais qu'il manque le téléphone de session, le compléter
+    // Si le profil existe déjà mais n'a pas de photo ou couverture, tenter de compléter avec Supabase
+    const updates: any = {};
+    if ((!profile.photos || profile.photos.length === 0) && supaProfile?.photos && supaProfile.photos.length > 0) {
+      updates.photos = supaProfile.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }));
+    }
+    if (!profile.coverUrl && supaProfile?.coverUrl) {
+      updates.coverUrl = supaProfile.coverUrl;
+    }
     if (session.phone && !profile.phone) {
-      profile = saveProfile({ userId: session.userId, phone: session.phone });
+      updates.phone = session.phone;
+    }
+    if (Object.keys(updates).length > 0) {
+      profile = saveProfile({ userId: session.userId, ...updates });
     }
   }
 

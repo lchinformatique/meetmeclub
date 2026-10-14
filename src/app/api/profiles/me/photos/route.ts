@@ -37,7 +37,7 @@ export async function GET() {
 
   // 2. Fallback store local
   const local = getProfileByUserId(session.userId);
-  const photos = (local?.photos || []).map((p, i) => ({
+  let photos = (local?.photos || []).map((p, i) => ({
     id: p.id,
     url: p.url,
     thumbnailUrl: p.url,
@@ -45,6 +45,31 @@ export async function GET() {
     order: i,
     status: "APPROVED",
   }));
+
+  // 3. Fallback Supabase REST si pas de photos trouvées
+  if (photos.length === 0) {
+    try {
+      const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+      const supa = await getProfileFromSupabase(session.userId);
+      if (supa?.photos && supa.photos.length > 0) {
+        photos = supa.photos.map((p: any, i: number) => ({
+          id: p.id || `supa_${i}`,
+          url: p.url,
+          thumbnailUrl: p.url,
+          isMain: p.isMain,
+          order: i,
+          status: "APPROVED",
+        }));
+        saveProfile({
+          userId: session.userId,
+          photos: photos.map((p) => ({ id: p.id, url: p.url, isMain: p.isMain })),
+        });
+      }
+    } catch (e) {
+      console.warn("Supabase photos fallback warning:", e);
+    }
+  }
+
   return NextResponse.json({ photos });
 }
 

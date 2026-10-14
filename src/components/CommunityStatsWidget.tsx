@@ -9,6 +9,7 @@ interface StatsData {
   totalProfiles?: number;
   totalPhotos?: number;
   totalVerifications?: number;
+  totalPartners?: number;
   maleMembers?: number;
   femaleMembers?: number;
   vipMembers?: number;
@@ -31,6 +32,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
     totalProfiles: 0,
     totalPhotos: 0,
     totalVerifications: 0,
+    totalPartners: 3,
     maleMembers: 0,
     femaleMembers: 0,
     verifiedSelfieMembers: 0,
@@ -104,6 +106,14 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
           <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Photos :</span>
           <strong style={{ fontSize: "14px", color: "#7C3AED", fontWeight: 800 }}>
             {(stats.totalPhotos ?? 0).toLocaleString("fr-FR")}
+          </strong>
+        </div>
+        <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ fontSize: "16px" }}>🌴</span>
+          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Lieux Partenaires :</span>
+          <strong style={{ fontSize: "14px", color: "#B45309", fontWeight: 800 }}>
+            {stats.totalPartners ?? 3} à Lomé
           </strong>
         </div>
         <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />

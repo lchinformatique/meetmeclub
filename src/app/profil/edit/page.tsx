@@ -54,12 +54,45 @@ const NEIGHBORHOODS_LOME = [
   "Autre",
 ];
 
+const COUNTRY_CODES = [
+  { code: "+228", country: "Togo", flag: "🇹🇬" },
+  { code: "+33", country: "France", flag: "🇫🇷" },
+  { code: "+229", country: "Bénin", flag: "🇧🇯" },
+  { code: "+225", country: "Côte d'Ivoire", flag: "🇨🇮" },
+  { code: "+233", country: "Ghana", flag: "🇬🇭" },
+  { code: "+221", country: "Sénégal", flag: "🇸🇳" },
+  { code: "+226", country: "Burkina Faso", flag: "🇧🇫" },
+  { code: "+234", country: "Nigeria", flag: "🇳🇬" },
+  { code: "+237", country: "Cameroun", flag: "🇨🇲" },
+  { code: "+241", country: "Gabon", flag: "🇬🇦" },
+  { code: "+242", country: "Congo", flag: "🇨🇬" },
+  { code: "+243", country: "RDC", flag: "🇨🇩" },
+  { code: "+223", country: "Mali", flag: "🇲🇱" },
+  { code: "+224", country: "Guinée", flag: "🇬🇳" },
+  { code: "+227", country: "Niger", flag: "🇳🇪" },
+  { code: "+32", country: "Belgique", flag: "🇧🇪" },
+  { code: "+41", country: "Suisse", flag: "🇨🇭" },
+  { code: "+1", country: "Canada / USA", flag: "🇨🇦" },
+  { code: "+49", country: "Allemagne", flag: "🇩🇪" },
+  { code: "+44", country: "Royaume-Uni", flag: "🇬🇧" },
+  { code: "+34", country: "Espagne", flag: "🇪🇸" },
+  { code: "+39", country: "Italie", flag: "🇮🇹" },
+  { code: "+351", country: "Portugal", flag: "🇵🇹" },
+  { code: "+212", country: "Maroc", flag: "🇲🇦" },
+  { code: "+216", country: "Tunisie", flag: "🇹🇳" },
+  { code: "+971", country: "Émirats Arabes Unis", flag: "🇦🇪" },
+  { code: "+86", country: "Chine", flag: "🇨🇳" },
+];
+
 const LANGUAGES_LIST = [
-  { code: "fr", label: "Français" },
-  { code: "ewe", label: "Éwé" },
-  { code: "kabyè", label: "Kabyè" },
-  { code: "en", label: "Anglais" },
-  { code: "mina", label: "Mina" },
+  { code: "fr", label: "🇫🇷 Français" },
+  { code: "en", label: "🇬🇧 Anglais" },
+  { code: "es", label: "🇪🇸 Espagnol" },
+  { code: "de", label: "🇩🇪 Allemand" },
+  { code: "it", label: "🇮🇹 Italien" },
+  { code: "pt", label: "🇵🇹 Portugais" },
+  { code: "zh", label: "🇨🇳 Chinois" },
+  { code: "ar", label: "🇦🇪 Arabe" },
 ];
 
 export default function ProfilEditPage() {
@@ -72,6 +105,9 @@ export default function ProfilEditPage() {
   const [coverUrl, setCoverUrl] = useState<string>("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+
+  const [selectedCountryCode, setSelectedCountryCode] = useState("+228");
+  const [rawPhone, setRawPhone] = useState("");
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +125,7 @@ export default function ProfilEditPage() {
     hasChildren: false,
     religion: "",
     height: null,
-    languages: ["fr", "ewe"],
+    languages: ["fr", "en"],
     bio: "",
     relationshipGoal: "SERIOUS",
   });
@@ -104,11 +140,20 @@ export default function ProfilEditPage() {
         }
         const data = await res.json();
         if (data.profile) {
+          const currentPhone = data.profile.phone || "";
+          const matchedCountry = COUNTRY_CODES.find((c) => currentPhone.startsWith(c.code));
+          if (matchedCountry) {
+            setSelectedCountryCode(matchedCountry.code);
+            setRawPhone(currentPhone.substring(matchedCountry.code.length).trim());
+          } else {
+            setRawPhone(currentPhone);
+          }
+
           setForm({
             firstName: data.profile.firstName || "",
             lastName: data.profile.lastName || "",
             pseudo: data.profile.pseudo || "",
-            phone: data.profile.phone || "",
+            phone: currentPhone,
             gender: data.profile.gender || "OTHER",
             city: data.profile.city || "Lomé",
             neighborhood: data.profile.neighborhood || "",
@@ -117,7 +162,7 @@ export default function ProfilEditPage() {
             hasChildren: data.profile.hasChildren ?? false,
             religion: data.profile.religion || "",
             height: data.profile.height || null,
-            languages: data.profile.languages || ["fr"],
+            languages: data.profile.languages || ["fr", "en"],
             bio: data.profile.bio || "",
             relationshipGoal: data.profile.relationshipGoal || "SERIOUS",
           });
@@ -192,11 +237,14 @@ export default function ProfilEditPage() {
     setMessage(null);
 
     try {
+      const finalPhone = rawPhone.trim() ? `${selectedCountryCode} ${rawPhone.trim()}` : "";
       const res = await fetch("/api/profiles/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          phone: finalPhone,
+          coverUrl: coverUrl || undefined,
           height: form.height ? Number(form.height) : null,
           pseudo: form.pseudo.trim() ? form.pseudo.trim() : null,
         }),
@@ -473,16 +521,58 @@ export default function ProfilEditPage() {
               </div>
 
               <div className="input-group">
-                <label className="input-label" htmlFor="phone" style={{ color: "#0F172A", fontWeight: 700 }}>Numéro de téléphone</label>
-                <input
-                  id="phone"
-                  className="input"
-                  type="tel"
-                  placeholder="+228 90 XX XX XX"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  style={{ color: "#0F172A", fontWeight: 600 }}
-                />
+                <label className="input-label" htmlFor="phone" style={{ color: "#0F172A", fontWeight: 700 }}>
+                  Numéro de téléphone
+                </label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <select
+                    value={selectedCountryCode}
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      setSelectedCountryCode(code);
+                      setForm((prev) => ({
+                        ...prev,
+                        phone: rawPhone.trim() ? `${code} ${rawPhone.trim()}` : "",
+                      }));
+                    }}
+                    style={{
+                      width: "145px",
+                      borderRadius: "10px",
+                      border: "1.5px solid #CBD5E1",
+                      padding: "10px 8px",
+                      background: "white",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "#0B2559",
+                      outline: "none",
+                      flexShrink: 0,
+                      cursor: "pointer",
+                    }}
+                    title="Choisir votre pays"
+                  >
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={`${c.country}-${c.code}`} value={c.code}>
+                        {c.flag} {c.code} ({c.country})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    id="phone"
+                    className="input"
+                    type="tel"
+                    placeholder="90 XX XX XX"
+                    value={rawPhone}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setRawPhone(val);
+                      setForm((prev) => ({
+                        ...prev,
+                        phone: val.trim() ? `${selectedCountryCode} ${val.trim()}` : "",
+                      }));
+                    }}
+                    style={{ color: "#0F172A", fontWeight: 600, flex: 1 }}
+                  />
+                </div>
               </div>
             </div>
 

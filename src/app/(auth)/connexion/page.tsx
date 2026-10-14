@@ -395,50 +395,13 @@ function ConnexionForm() {
             </button>
           </form>
 
-          {/* ── Lien Créer un Compte en Haut avant Google ── */}
-          <div
-            style={{
-              marginTop: "20px",
-              padding: "16px 14px",
-              background: "#F8FAFC",
-              border: "1.5px solid #E2E8F0",
-              borderRadius: "16px",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "14px", color: "#475569", fontWeight: 600, marginBottom: "8px" }}>
-              Pas encore membre de Meet Me Club ?
-            </div>
-            <Link
-              href="/inscription"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                width: "100%",
-                padding: "12px 18px",
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
-                color: "white",
-                fontWeight: 700,
-                fontSize: "14px",
-                textDecoration: "none",
-                boxShadow: "0 4px 14px rgba(225,6,0,0.25)",
-              }}
-            >
-              <UserPlus size={16} />
-              <span>Créer un compte gratuitement</span>
-            </Link>
-          </div>
-
           {/* ── Séparateur Google ── */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: "12px",
-              margin: "22px 0 16px",
+              margin: "20px 0 16px",
             }}
           >
             <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
@@ -446,7 +409,7 @@ function ConnexionForm() {
               style={{
                 fontSize: "12px",
                 fontWeight: 600,
-                color: "#A0AABF",
+                color: "#8B99B5",
                 whiteSpace: "nowrap",
                 letterSpacing: "0.3px",
               }}
@@ -456,12 +419,34 @@ function ConnexionForm() {
             <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
           </div>
 
-          {/* ── Bouton Google OAuth en Bas ── */}
+          {/* ── Bouton Google OAuth Direct ── */}
           <div>
             <GoogleAuthButton
               label="Continuer avec Google"
               onError={(msg) => setError(msg)}
             />
+          </div>
+
+          {/* ── Lien Créer un Compte Simple et Élégant ── */}
+          <div style={{ marginTop: "22px", textAlign: "center" }}>
+            <span style={{ fontSize: "14px", color: "#64748B", fontWeight: 500 }}>
+              Pas encore de compte ?{" "}
+            </span>
+            <Link
+              href="/inscription"
+              style={{
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "#E10600",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              <span>Créer un compte gratuit</span>
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
 

@@ -47,7 +47,7 @@ export default function MobileBottomNav() {
     { href: "/", label: "Accueil", Icon: Home },
     { href: "/decouverte", label: "Découvrir", Icon: Compass },
     {
-      href: isAuthenticated ? "/messages" : "/connexion?callbackUrl=/messages",
+      href: "/messages",
       activeHref: "/messages",
       label: "Messages",
       Icon: MessageSquare,
@@ -55,7 +55,7 @@ export default function MobileBottomNav() {
     },
     { href: "/rendez-vous", label: "Sorties", Icon: Calendar },
     {
-      href: isAuthenticated ? "/profil" : "/connexion?callbackUrl=/profil",
+      href: "/profil",
       activeHref: "/profil",
       label: "Profil",
       Icon: User,

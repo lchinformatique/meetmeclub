@@ -178,6 +178,7 @@ export async function upsertProfileInSupabase(userId: string, data: {
   languages?: string[];
   educationLevel?: string | null;
   phone?: string | null;
+  coverUrl?: string | null;
 }) {
   const admin = getSupabaseAdmin();
   try {
@@ -214,20 +215,34 @@ export async function upsertProfileInSupabase(userId: string, data: {
     if (data.hasChildren !== undefined) profilePayload.hasChildren = data.hasChildren;
     if (data.languages !== undefined) profilePayload.languages = data.languages;
     if (data.educationLevel !== undefined) profilePayload.educationLevel = data.educationLevel;
+    if (data.coverUrl !== undefined) profilePayload.coverUrl = data.coverUrl;
 
     if (existing?.id) {
-      const { data: updated, error } = await admin
+      let { data: updated, error } = await admin
         .from("profiles")
         .update(profilePayload)
         .eq("id", existing.id)
         .select()
         .single();
 
+      if (error && profilePayload.coverUrl) {
+        // Fallback if coverUrl column does not exist in schema
+        delete profilePayload.coverUrl;
+        const retry = await admin
+          .from("profiles")
+          .update(profilePayload)
+          .eq("id", existing.id)
+          .select()
+          .single();
+        updated = retry.data;
+        error = retry.error;
+      }
+
       if (error) console.warn("[upsertProfileInSupabase] Update error:", error);
       return updated;
     } else {
       const newId = `prof_${Date.now()}`;
-      const { data: created, error } = await admin
+      let { data: created, error } = await admin
         .from("profiles")
         .insert({
           id: newId,
@@ -244,6 +259,29 @@ export async function upsertProfileInSupabase(userId: string, data: {
         })
         .select()
         .single();
+
+      if (error && profilePayload.coverUrl) {
+        delete profilePayload.coverUrl;
+        const retry = await admin
+          .from("profiles")
+          .insert({
+            id: newId,
+            userId,
+            firstName: data.firstName || "Membre",
+            pseudo: data.pseudo || null,
+            gender: data.gender || "OTHER",
+            city: data.city || "Lomé",
+            bio: data.bio || "Nouveau membre sur Meet Me Club.",
+            relationshipGoal: data.relationshipGoal || "SERIOUS",
+            isVisible: true,
+            profileCompleteness: 60,
+            ...profilePayload,
+          })
+          .select()
+          .single();
+        created = retry.data;
+        error = retry.error;
+      }
 
       if (error) console.warn("[upsertProfileInSupabase] Insert error:", error);
       return created;

@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
-import { Video, Calendar, MoreVertical, Paperclip, Send, Mic, MapPin, ArrowLeft } from "lucide-react";
+import { Video, Calendar, MoreVertical, Paperclip, Send, Mic, MapPin, ArrowLeft, User } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
 interface ChatMessage {
@@ -390,8 +390,11 @@ function MessagesContent() {
 
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeConvId, messages]);
+    const timer = setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [activeConvId, currentMessages.length, isPartnerTyping]);
 
   // Video call duration timer
   useEffect(() => {
@@ -1454,6 +1457,30 @@ function MessagesContent() {
 
               {/* Right: WhatsApp-Style Action Icons */}
               <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0, position: "relative" }}>
+                {/* 👤 Mon Compte / Profil direct */}
+                <Link
+                  href="/profil"
+                  style={{
+                    background: "#EFF6FF",
+                    border: "1.5px solid #BFDBFE",
+                    padding: "6px 12px",
+                    borderRadius: "100px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    color: "#1D4ED8",
+                    textDecoration: "none",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    transition: "all 0.15s ease",
+                  }}
+                  title="Accéder à mon profil et aux informations de mon compte"
+                  aria-label="Mon Profil"
+                >
+                  <User size={15} style={{ color: "#1D4ED8" }} />
+                  <span className="chat-account-label">Mon Profil</span>
+                </Link>
+
                 {/* 📹 Video Call Button */}
                 <button
                   type="button"
@@ -1534,12 +1561,32 @@ function MessagesContent() {
                       boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
                       border: "1px solid #E2E8F0",
                       padding: "8px 0",
-                      minWidth: "220px",
+                      minWidth: "240px",
                       zIndex: 100,
                       display: "flex",
                       flexDirection: "column",
                     }}
                   >
+                    <Link
+                      href="/profil"
+                      onClick={() => setChatMenuOpen(false)}
+                      style={{
+                        padding: "10px 16px",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#0B2559",
+                        textDecoration: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        background: "#F8FAFC",
+                      }}
+                    >
+                      <User size={16} style={{ color: "#2563EB" }} />
+                      <span>Mon Profil & Paramètres du compte</span>
+                    </Link>
+
+                    <div style={{ height: "1px", background: "#F1F5F9", margin: "4px 0" }} />
                     <button
                       type="button"
                       onClick={() => {
