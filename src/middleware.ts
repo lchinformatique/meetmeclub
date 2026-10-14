@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
   // 2. Authenticated → redirect away from auth pages
   if (isAuthRoute && session) {
     const url = request.nextUrl.clone();
-    url.pathname = session.status === "ONBOARDING" ? ONBOARDING_ROUTE : "/decouverte";
+    url.pathname = session.status === "ONBOARDING" ? ONBOARDING_ROUTE : "/messages";
     return NextResponse.redirect(url);
   }
 

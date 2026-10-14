@@ -1,5 +1,81 @@
 [
   {
+    "id": "prof_1792003261976",
+    "userId": "cmv8gh0r90004utvcdo8oz3su",
+    "firstName": "user_test_1792003258461",
+    "lastName": "",
+    "pseudo": "user_test_1792003258461",
+    "gender": "OTHER",
+    "age": 26,
+    "dateOfBirth": "2000-01-01T00:00:00.000Z",
+    "city": "Lomé",
+    "neighborhood": "Centre-ville",
+    "profession": "Professionnel(le)",
+    "educationLevel": "Supérieur",
+    "relationshipStatus": "Célibataire",
+    "height": null,
+    "hasChildren": false,
+    "languages": [
+      "Français"
+    ],
+    "email": "user_test_1792003258461@meetmeclub.net",
+    "bio": "Nouveau membre sur Meet Me Club.",
+    "relationshipGoal": "SERIOUS",
+    "plan": "FREE",
+    "partnersContacted": [],
+    "photos": [],
+    "interests": [],
+    "availabilities": [
+      {
+        "dayOfWeek": 5,
+        "startTime": "18:00",
+        "endTime": "22:00"
+      }
+    ],
+    "isVerified": true,
+    "isVisible": true,
+    "createdAt": "2026-10-14T18:41:01.977Z",
+    "updatedAt": "2026-10-14T18:41:01.977Z"
+  },
+  {
+    "id": "prof_1792003216036",
+    "userId": "cmv8gg0nz0000utvcggxcfp82",
+    "firstName": "testuser_1792003211618",
+    "lastName": "",
+    "pseudo": "testuser_1792003211618",
+    "gender": "OTHER",
+    "age": 26,
+    "dateOfBirth": "2000-01-01T00:00:00.000Z",
+    "city": "Lomé",
+    "neighborhood": "Centre-ville",
+    "profession": "Professionnel(le)",
+    "educationLevel": "Supérieur",
+    "relationshipStatus": "Célibataire",
+    "height": null,
+    "hasChildren": false,
+    "languages": [
+      "Français"
+    ],
+    "email": "testuser_1792003211618@meetmeclub.net",
+    "bio": "Nouveau membre sur Meet Me Club.",
+    "relationshipGoal": "SERIOUS",
+    "plan": "FREE",
+    "partnersContacted": [],
+    "photos": [],
+    "interests": [],
+    "availabilities": [
+      {
+        "dayOfWeek": 5,
+        "startTime": "18:00",
+        "endTime": "22:00"
+      }
+    ],
+    "isVerified": true,
+    "isVisible": true,
+    "createdAt": "2026-10-14T18:40:16.036Z",
+    "updatedAt": "2026-10-14T18:40:16.036Z"
+  },
+  {
     "id": "prof_victoire_lome",
     "userId": "user_victoire_lome",
     "firstName": "Victoire",
