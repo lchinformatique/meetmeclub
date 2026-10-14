@@ -33,11 +33,12 @@ export default function MobileBottomNav() {
     };
   }, [pathname]);
 
-  // Hide bottom nav on auth flow & onboarding wizards for clean UX
+  // Hide bottom nav on auth flow, onboarding & messaging for clean full-screen WhatsApp UX
   if (
     pathname === "/onboarding" ||
     pathname === "/inscription" ||
-    pathname === "/connexion"
+    pathname === "/connexion" ||
+    pathname.startsWith("/messages")
   ) {
     return null;
   }

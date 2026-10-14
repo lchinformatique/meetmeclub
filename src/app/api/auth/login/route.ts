@@ -61,6 +61,27 @@ export async function POST(req: NextRequest) {
       console.warn("[login] Supabase find error (fallback to local):", e);
     }
 
+    // ── 1.b Recherche directe dans Supabase (REST HTTPS) ─────────────────
+    if (!user) {
+      try {
+        const { findUserInSupabase } = await import("@/lib/supabase-server");
+        const supaResult = await findUserInSupabase(cleanInput);
+        if (supaResult?.user) {
+          const sUser = supaResult.user as any;
+          user = {
+            id: sUser.id,
+            email: sUser.email,
+            passwordHash: sUser.passwordHash,
+            role: sUser.role || "MEMBER",
+            status: sUser.status || "ACTIVE",
+            profile: supaResult.profile,
+          };
+        }
+      } catch (supaErr) {
+        console.warn("[login] Supabase REST search warning:", supaErr);
+      }
+    }
+
     // ── 2. Fallback : Recherche dans le store local ─────────────────────────
     // Couvre les comptes créés hors PostgreSQL et permet la reconnexion après déconnexion
     if (!user) {

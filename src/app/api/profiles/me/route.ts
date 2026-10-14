@@ -14,6 +14,45 @@ export async function GET() {
   let profile = getProfileByUserId(session.userId);
 
   if (!profile) {
+    // 1. Tenter Supabase REST en priorité pour persistence garantie
+    try {
+      const { getProfileFromSupabase } = await import('@/lib/supabase-server');
+      const supa = await getProfileFromSupabase(session.userId);
+      if (supa) {
+        profile = saveProfile({
+          userId: session.userId,
+          firstName: supa.firstName || 'Nouveau Membre',
+          pseudo: supa.pseudo || undefined,
+          email: session.email || undefined,
+          phone: supa.phone || session.phone || undefined,
+          gender: (supa.gender as any) || 'OTHER',
+          city: supa.city || 'Lomé',
+          neighborhood: supa.neighborhood || undefined,
+          profession: supa.profession || undefined,
+          relationshipStatus: supa.relationshipStatus || 'Célibataire',
+          hasChildren: supa.hasChildren ?? false,
+          religion: supa.religion || undefined,
+          height: supa.height || undefined,
+          languages: supa.languages || ['fr'],
+          bio: supa.bio || 'Nouveau membre sur Meet Me Club.',
+          relationshipGoal: (supa.relationshipGoal as any) || 'SERIOUS',
+          plan: 'FREE',
+          partnersContacted: [],
+          photos: (supa.photos && supa.photos.length > 0)
+            ? supa.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
+            : [],
+          interests: [],
+          availabilities: [{ dayOfWeek: 5, startTime: '18:00', endTime: '22:00' }],
+          isVerified: supa.isVerified ?? false,
+          isVisible: supa.isVisible ?? true,
+        });
+      }
+    } catch (supaErr) {
+      console.warn('[GET profile from Supabase]', supaErr);
+    }
+  }
+
+  if (!profile) {
     let dbUser: any = null;
     try {
       const { prisma } = await import('@/lib/prisma');
@@ -118,6 +157,30 @@ export async function PATCH(request: NextRequest) {
     const patchData = { ...body };
     if (coverUrl !== undefined) patchData.coverUrl = coverUrl;
     const saved = saveProfile({ ...patchData, userId: session.userId });
+
+    // ── Synchronisation Supabase directe (REST HTTPS) ────────
+    try {
+      const { upsertProfileInSupabase } = await import('@/lib/supabase-server');
+      await upsertProfileInSupabase(session.userId, {
+        firstName: body.firstName,
+        pseudo: body.pseudo,
+        gender: body.gender,
+        city: body.city,
+        neighborhood: body.neighborhood,
+        profession: body.profession,
+        bio: body.bio,
+        relationshipGoal: body.relationshipGoal,
+        relationshipStatus: body.relationshipStatus,
+        height: body.height,
+        religion: body.religion,
+        hasChildren: body.hasChildren,
+        languages: body.languages,
+        educationLevel: body.educationLevel,
+        phone: body.phone,
+      });
+    } catch (supaErr) {
+      console.warn('[PATCH supabase sync]', supaErr);
+    }
 
     // ── Synchronisation Prisma (best-effort) ──────────────────
     try {

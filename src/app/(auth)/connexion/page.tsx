@@ -2,7 +2,7 @@
 // src/app/(auth)/connexion/page.tsx
 // Login page — matches inscription white card design for brand consistency
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -25,7 +25,7 @@ import GoogleAuthButton from "@/components/GoogleAuthButton";
 function ConnexionForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") || "/decouverte";
+  const callbackUrl = params.get("callbackUrl") || "/messages";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +33,29 @@ function ConnexionForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focusField, setFocusField] = useState("");
+
+  // Vérifier si une session est déjà active pour rediriger automatiquement
+  useEffect(() => {
+    async function checkExistingSession() {
+      try {
+        const res = await fetch("/api/profiles/me");
+        if (res.ok) {
+          router.replace(callbackUrl);
+        }
+      } catch {}
+    }
+    checkExistingSession();
+  }, [callbackUrl, router]);
+
+  // Pré-remplir l'identifiant s'il a déjà été utilisé (évite de retaper son email à chaque fois)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("meetmeclub_saved_identifier");
+      if (saved && !email) {
+        setEmail(saved);
+      }
+    }
+  }, [email]);
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +85,10 @@ function ConnexionForm() {
       if (!res.ok) {
         setError(data.error || "Identifiants incorrects. Vérifiez votre e-mail ou pseudo et votre mot de passe.");
         return;
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("meetmeclub_saved_identifier", email.trim());
       }
 
       router.push(data.redirect || callbackUrl);

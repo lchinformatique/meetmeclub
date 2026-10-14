@@ -175,6 +175,14 @@ export async function POST(request: NextRequest) {
       console.warn("[photos POST] Prisma save failed (using local store):", prismaErr);
     }
 
+    // ── 1.b Synchronisation directe Supabase REST (HTTPS) ──────
+    try {
+      const { savePhotoInSupabase } = await import("@/lib/supabase-server");
+      await savePhotoInSupabase(session.userId, finalUrl, isMainPhoto);
+    } catch (supaErr) {
+      console.warn("[photos POST] Supabase REST save warning:", supaErr);
+    }
+
     // ── 2. Mise à jour immédiate du store local (toujours) ──────
     const updatedPhotos = [
       // Nouvelle photo avec le statut isMain demandé

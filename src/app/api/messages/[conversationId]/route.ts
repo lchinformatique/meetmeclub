@@ -21,40 +21,11 @@ export async function GET(
   const cursor = searchParams.get("cursor"); // message id for pagination
   const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
 
-  if (conversationId === "conv_victoire_welcome" || conversationId.includes("victoire")) {
-    return NextResponse.json({
-      messages: [
-        {
-          id: "msg_victoire_intro",
-          conversationId,
-          senderId: "user_victoire_lome",
-          body: "Coucou ! 👋 Bienvenue sur Meet Me Club Lomé. Je suis ravie de faire ta connaissance ! Comment s'est passée ta journée ? 😊",
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-          status: "DELIVERED",
-        },
-      ],
-      hasMore: false,
-    });
-  }
+  let messages: any[] = [];
 
+  // 1. Tenter via Prisma
   try {
-    // Verify caller is a participant
-    const conv = await (prisma as any).conversation.findFirst({
-      where: {
-        id: conversationId,
-        OR: [
-          { participantA: session.userId },
-          { participantB: session.userId },
-        ],
-        isBlockedBy: null,
-      },
-    });
-
-    if (!conv) {
-      return NextResponse.json({ error: "Conversation introuvable" }, { status: 404 });
-    }
-
-    const messages = await (prisma as any).message.findMany({
+    const dbMessages = await (prisma as any).message.findMany({
       where: {
         conversationId,
         deletedAt: null,
@@ -64,27 +35,49 @@ export async function GET(
       take: limit,
     });
 
-    // Mark delivered messages as READ for the other participant
-    const unreadIds = messages
-      .filter(
-        (m: { senderId: string; status: string }) =>
-          m.senderId !== session.userId && m.status !== "READ"
-      )
-      .map((m: { id: string }) => m.id);
-
-    if (unreadIds.length > 0) {
-      await (prisma as any).message.updateMany({
-        where: { id: { in: unreadIds } },
-        data: { status: "READ" },
-      });
+    if (Array.isArray(dbMessages) && dbMessages.length > 0) {
+      messages = dbMessages.reverse();
     }
-
-    return NextResponse.json({
-      messages: messages.reverse(), // chronological order
-      hasMore: messages.length === limit,
-    });
-  } catch (error) {
-    console.warn("[GET /api/messages/[conversationId]] DB not available:", error);
-    return NextResponse.json({ messages: [], hasMore: false });
+  } catch (err) {
+    // Prisma indisponible ou hors ligne
   }
+
+  // 2. Si aucun message trouvé via Prisma, interroger Supabase PostgREST
+  if (messages.length === 0) {
+    try {
+      const { getMessagesFromSupabase } = await import("@/lib/supabase-server");
+      const supaMessages = await getMessagesFromSupabase(conversationId);
+      if (Array.isArray(supaMessages) && supaMessages.length > 0) {
+        messages = supaMessages;
+      }
+    } catch {}
+  }
+
+  // 3. Fallback sur le store local (mémoire / JSON)
+  if (messages.length === 0) {
+    try {
+      const { getMessagesByConversationId } = await import("@/lib/db-store");
+      const localMsgs = getMessagesByConversationId(conversationId);
+      if (Array.isArray(localMsgs) && localMsgs.length > 0) {
+        messages = localMsgs;
+      }
+    } catch {}
+  }
+
+  // Formatage uniforme
+  const formatted = messages.map((m) => ({
+    id: m.id,
+    conversationId: m.conversationId || conversationId,
+    senderId: m.senderId,
+    body: m.body,
+    mediaUrl: m.mediaUrl || undefined,
+    createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : new Date().toISOString(),
+    status: m.status || "SENT",
+  }));
+
+  return NextResponse.json({
+    messages: formatted,
+    hasMore: formatted.length === limit,
+  });
 }
+

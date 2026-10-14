@@ -96,7 +96,7 @@ export async function GET() {
       })
     );
 
-    // Garantir que chaque utilisateur a une conversation d'accueil avec Victoire
+    // Conversation d'accueil avec Victoire
     const hasVictoire = enriched.some(
       (c) => c.participantId === "user_victoire_lome" || c.id === "conv_victoire_welcome"
     );
@@ -107,9 +107,9 @@ export async function GET() {
         firstName: "Victoire",
         pseudo: "@victoire_lome",
         photoUrl: "/victoire_profile.jpg",
-        lastMessage: "Coucou ! 👋 Ravie de faire ta connaissance sur Meet Me Club ! Comment s'est passée ta journée ? 😊",
+        lastMessage: "En ligne à Lomé · Écrivez-lui pour faire connaissance",
         lastMessageAt: new Date().toISOString(),
-        unreadCount: 1,
+        unreadCount: 0,
         isOnline: true,
         isVerified: true,
       });
@@ -117,23 +117,71 @@ export async function GET() {
 
     return NextResponse.json({ conversations: enriched });
   } catch (error) {
-    console.warn("[GET /api/conversations] DB error, returning Victoire welcome:", error);
-    return NextResponse.json({
-      conversations: [
-        {
+    console.warn("[GET /api/conversations] DB fallback to Supabase and db-store:", error);
+    try {
+      const { getConversationsFromSupabase } = await import("@/lib/supabase-server");
+      const { getConversationsForUser } = await import("@/lib/db-store");
+
+      const supaConvs = await getConversationsFromSupabase(session.userId);
+      const localConvs = getConversationsForUser(session.userId);
+
+      const allCombined = [...supaConvs, ...localConvs];
+      const seenIds = new Set<string>();
+      const result: any[] = [];
+
+      for (const conv of allCombined) {
+        if (!conv.id || seenIds.has(conv.id)) continue;
+        seenIds.add(conv.id);
+        const partnerId = conv.participantA === session.userId ? conv.participantB : conv.participantA;
+        const p = getProfileByUserId(partnerId);
+        result.push({
+          id: conv.id,
+          participantId: partnerId,
+          firstName: p?.firstName || "Membre",
+          pseudo: p?.pseudo || "@membre",
+          photoUrl: p?.photos?.[0]?.url || "",
+          lastMessage: conv.lastMessage || "Nouvelle conversation",
+          lastMessageAt: conv.lastMessageAt || new Date().toISOString(),
+          unreadCount: 0,
+          isOnline: true,
+          isVerified: p?.isVerified ?? true,
+        });
+      }
+
+      if (!result.some((c) => c.participantId === "user_victoire_lome")) {
+        result.unshift({
           id: "conv_victoire_welcome",
           participantId: "user_victoire_lome",
           firstName: "Victoire",
           pseudo: "@victoire_lome",
           photoUrl: "/victoire_profile.jpg",
-          lastMessage: "Coucou ! 👋 Ravie de faire ta connaissance sur Meet Me Club ! Comment s'est passée ta journée ? 😊",
+          lastMessage: "En ligne à Lomé · Écrivez-lui pour faire connaissance",
           lastMessageAt: new Date().toISOString(),
-          unreadCount: 1,
+          unreadCount: 0,
           isOnline: true,
           isVerified: true,
-        },
-      ],
-    });
+        });
+      }
+
+      return NextResponse.json({ conversations: result });
+    } catch {
+      return NextResponse.json({
+        conversations: [
+          {
+            id: "conv_victoire_welcome",
+            participantId: "user_victoire_lome",
+            firstName: "Victoire",
+            pseudo: "@victoire_lome",
+            photoUrl: "/victoire_profile.jpg",
+            lastMessage: "En ligne à Lomé · Écrivez-lui pour faire connaissance",
+            lastMessageAt: new Date().toISOString(),
+            unreadCount: 0,
+            isOnline: true,
+            isVerified: true,
+          },
+        ],
+      });
+    }
   }
 }
 
@@ -170,7 +218,7 @@ export async function POST(req: NextRequest) {
         firstName: "Victoire",
         pseudo: "@victoire_lome",
         photoUrl: "/victoire_profile.jpg",
-        lastMessage: "Coucou ! 👋 Ravie de faire ta connaissance sur Meet Me Club ! Comment s'est passée ta journée ? 😊",
+        lastMessage: "En ligne à Lomé · Écrivez-lui pour faire connaissance",
         lastMessageAt: new Date().toISOString(),
         unreadCount: 0,
         isOnline: true,
@@ -179,9 +227,11 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Tout utilisateur authentifie avec son Plan Gratuit ou superieur peut initier une conversation
-  const senderProfile = getProfileByUserId(session.userId);
-  const isIdVerified = Boolean(senderProfile?.idDocumentSubmitted || senderProfile?.idDocumentVerified);
+  // Obtenir infos partenaire
+  const localProfile = getProfileByUserId(targetUserId);
+  const partnerName = localProfile?.firstName || "Membre";
+  const partnerPseudo = localProfile?.pseudo || localProfile?.firstName || "@membre";
+  const partnerPhotoUrl = localProfile?.photos?.[0]?.url || "";
 
   try {
     // Check if conversation already exists (in either direction)
@@ -203,30 +253,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Get partner info
-    let partnerName = "Membre";
-    let partnerPseudo = "@membre";
-    let partnerPhotoUrl = "";
-
-    try {
-      const profile = await prisma.profile.findUnique({
-        where: { userId: targetUserId },
-        include: { photos: { where: { isMain: true }, take: 1 } },
-      });
-      if (profile) {
-        partnerName = profile.firstName;
-        partnerPseudo = profile.pseudo || profile.firstName;
-        partnerPhotoUrl = profile.photos?.[0]?.url || "";
-      }
-    } catch {
-      const localProfile = getProfileByUserId(targetUserId);
-      if (localProfile) {
-        partnerName = localProfile.firstName;
-        partnerPseudo = localProfile.pseudo || localProfile.firstName;
-        partnerPhotoUrl = localProfile.photos?.[0]?.url || "";
-      }
-    }
-
     return NextResponse.json({
       conversation: {
         id: conversation.id,
@@ -235,17 +261,60 @@ export async function POST(req: NextRequest) {
         pseudo: partnerPseudo,
         photoUrl: partnerPhotoUrl,
         lastMessage: "Nouvelle conversation",
-        lastMessageAt: conversation.lastMessageAt.toISOString(),
+        lastMessageAt: conversation.lastMessageAt ? new Date(conversation.lastMessageAt).toISOString() : new Date().toISOString(),
         unreadCount: 0,
         isOnline: true,
         isVerified: true,
       },
     });
   } catch (error) {
-    console.error("[POST /api/conversations]", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la création de la conversation." },
-      { status: 500 }
-    );
+    console.warn("[POST /api/conversations] Prisma fallback to Supabase and db-store:", error);
+    try {
+      const { findOrCreateConversationInSupabase } = await import("@/lib/supabase-server");
+      const { saveConversation } = await import("@/lib/db-store");
+
+      const supaConv = await findOrCreateConversationInSupabase(session.userId, targetUserId);
+      const convId = supaConv?.id || `conv_${Date.now()}`;
+
+      saveConversation({
+        id: convId,
+        participantA: session.userId,
+        participantB: targetUserId,
+        lastMessage: "Nouvelle conversation",
+        lastMessageAt: new Date().toISOString(),
+      });
+
+      return NextResponse.json({
+        conversation: {
+          id: convId,
+          participantId: targetUserId,
+          firstName: partnerName,
+          pseudo: partnerPseudo,
+          photoUrl: partnerPhotoUrl,
+          lastMessage: "Nouvelle conversation",
+          lastMessageAt: new Date().toISOString(),
+          unreadCount: 0,
+          isOnline: true,
+          isVerified: true,
+        },
+      });
+    } catch (e2) {
+      const fallbackId = `local_${targetUserId}`;
+      return NextResponse.json({
+        conversation: {
+          id: fallbackId,
+          participantId: targetUserId,
+          firstName: partnerName,
+          pseudo: partnerPseudo,
+          photoUrl: partnerPhotoUrl,
+          lastMessage: "Nouvelle conversation",
+          lastMessageAt: new Date().toISOString(),
+          unreadCount: 0,
+          isOnline: true,
+          isVerified: true,
+        },
+      });
+    }
   }
 }
+

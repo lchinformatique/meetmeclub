@@ -162,7 +162,11 @@ export default function InscriptionPage() {
         return;
       }
 
-      router.push(data.redirect || "/profil?welcome=1");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("meetmeclub_saved_identifier", cleanInput);
+      }
+
+      router.push(data.redirect || "/messages?welcome=1");
       router.refresh();
     } catch {
       setError("Erreur réseau. Vérifiez votre connexion et réessayez.");

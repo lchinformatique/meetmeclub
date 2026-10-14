@@ -2,10 +2,11 @@
 // src/app/profil/edit/page.tsx
 // Edit profile information
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { Camera, Loader2, Sparkles } from "lucide-react";
 
 interface ProfileData {
   firstName: string;
@@ -67,6 +68,14 @@ export default function ProfilEditPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [coverUrl, setCoverUrl] = useState<string>("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState<ProfileData>({
     firstName: "",
     lastName: "",
@@ -112,6 +121,9 @@ export default function ProfilEditPage() {
             bio: data.profile.bio || "",
             relationshipGoal: data.profile.relationshipGoal || "SERIOUS",
           });
+          const mainPic = data.profile.photos?.find((p: any) => p.isMain)?.url || data.profile.photos?.[0]?.url;
+          if (mainPic) setAvatarUrl(mainPic);
+          if (data.profile.coverUrl) setCoverUrl(data.profile.coverUrl);
         }
       } catch (err) {
         console.error("Erreur de chargement:", err);
@@ -121,6 +133,58 @@ export default function ProfilEditPage() {
     }
     loadProfile();
   }, [router]);
+
+  // Upload photo de profil
+  async function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        setAvatarUrl(base64);
+        const res = await fetch("/api/profiles/me/photos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64, isMain: true }),
+        });
+        if (res.ok) {
+          setMessage({ type: "success", text: "Photo de profil mise à jour avec succès !" });
+        }
+        setUploadingAvatar(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setUploadingAvatar(false);
+    }
+  }
+
+  // Upload bannière de couverture
+  async function handleCoverSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        setCoverUrl(base64);
+        const res = await fetch("/api/profiles/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ coverUrl: base64 }),
+        });
+        if (res.ok) {
+          setMessage({ type: "success", text: "Photo de couverture mise à jour !" });
+        }
+        setUploadingCover(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setUploadingCover(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -233,6 +297,135 @@ export default function ProfilEditPage() {
               {message.text}
             </div>
           )}
+
+          {/* ── Photo de couverture & Photo de profil ── */}
+          <div style={{ marginBottom: "28px" }}>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleCoverSelect}
+            />
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleAvatarSelect}
+            />
+
+            {/* Bannière de couverture */}
+            <div
+              onClick={() => coverInputRef.current?.click()}
+              style={{
+                height: "150px",
+                borderRadius: "16px",
+                background: coverUrl
+                  ? `url(${coverUrl}) center/cover no-repeat`
+                  : "linear-gradient(135deg, #0B2559 0%, #163B8A 60%, #1D4ED8 100%)",
+                position: "relative",
+                cursor: "pointer",
+                overflow: "hidden",
+                border: "1px solid #CBD5E1",
+              }}
+              title="Cliquez pour changer la photo de couverture"
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  coverInputRef.current?.click();
+                }}
+                style={{
+                  position: "absolute",
+                  top: "12px",
+                  right: "12px",
+                  background: "rgba(255,255,255,0.92)",
+                  color: "#0B2559",
+                  border: "none",
+                  borderRadius: "100px",
+                  padding: "6px 14px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                }}
+              >
+                {uploadingCover ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} /> : <Camera size={13} />}
+                <span>{uploadingCover ? "Chargement..." : "Changer couverture"}</span>
+              </button>
+            </div>
+
+            {/* Photo de profil (Avatar en superposition) */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "-40px", paddingInline: "16px" }}>
+              <div
+                onClick={() => avatarInputRef.current?.click()}
+                style={{
+                  width: "84px",
+                  height: "84px",
+                  borderRadius: "50%",
+                  border: "4px solid white",
+                  background: "#EEF2FB",
+                  overflow: "hidden",
+                  position: "relative",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+                title="Cliquez pour changer votre photo de profil"
+              >
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt="Photo de profil" width={84} height={84} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+                ) : (
+                  <span style={{ fontSize: "28px", fontWeight: 800, color: "#0B2559" }}>
+                    {(form.firstName || form.pseudo || "M").charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "rgba(0,0,0,0.3)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    opacity: uploadingAvatar ? 1 : 0.8,
+                  }}
+                >
+                  {uploadingAvatar ? <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} /> : <Camera size={20} />}
+                </div>
+              </div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#2563EB",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    padding: 0,
+                  }}
+                >
+                  Changer ma photo de profil
+                </button>
+                <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>
+                  JPEG, PNG ou WebP (max 8 Mo)
+                </div>
+              </div>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* Nom & Prénom */}

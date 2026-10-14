@@ -117,42 +117,23 @@ export default function DecouvertePage() {
   }, []);
 
   // Handle contact attempt with quota enforcement
-  const handleInitiateExchange = async (profile: ProfileItem, action: "CHAT" | "RDV") => {
+  const handleInitiateExchange = (profile: ProfileItem, action: "CHAT" | "RDV") => {
     const targetId = profile.userId || profile.id;
-    const contactedList: string[] = myProfile?.partnersContacted || [];
-    const isAlreadyContacted = contactedList.includes(targetId);
-    const plan = myProfile?.plan || "FREE";
-    const maxAllowed = plan === "FREE" ? 3 : Infinity;
-
-    // Check if free plan limit reached
-    if (!isAlreadyContacted && contactedList.length >= maxAllowed) {
-      setUpgradeModal({ open: true, targetName: profile.firstName });
-      return;
-    }
-
-    // Record contact on server
-    try {
-      const contactRes = await fetch("/api/partners/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId: targetId }),
-      });
-      if (contactRes.status === 403) {
-        setSecurityModalOpen(true);
-        return;
-      }
-      // Refresh myProfile locally
-      await loadMyProfile();
-    } catch (e) {
-      console.warn("Could not record partner contact:", e);
-    }
 
     if (action === "CHAT") {
       router.push(`/messages?contact=${targetId}`);
     } else {
       router.push(`/rendez-vous/nouveau?avec=${targetId}`);
     }
+
+    // Record contact asynchronously without blocking navigation
+    fetch("/api/partners/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetUserId: targetId }),
+    }).catch(() => {});
   };
+
 
   // Instant test upgrade for demonstration
   const handleTestUpgrade = async (plan: "ESSENTIAL" | "FREE") => {
@@ -202,15 +183,21 @@ export default function DecouvertePage() {
   }
 
   const filtered = useMemo(() => {
+    if (!Array.isArray(profiles)) return [];
     return profiles.filter((p) => {
+      if (!p) return false;
       if (genderFilter !== "ALL" && p.gender !== genderFilter) return false;
       if (goalFilter !== "ALL" && p.relationshipGoal !== goalFilter) return false;
       if (cityFilter !== "ALL" && p.city !== cityFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesName = p.firstName.toLowerCase().includes(q) || (p.pseudo && p.pseudo.toLowerCase().includes(q));
-        const matchesNeighborhood = p.neighborhood && p.neighborhood.toLowerCase().includes(q);
-        const matchesProfession = p.profession && p.profession.toLowerCase().includes(q);
+        const fName = (p.firstName || "").toLowerCase();
+        const pseudo = (p.pseudo || "").toLowerCase();
+        const neigh = (p.neighborhood || "").toLowerCase();
+        const prof = (p.profession || "").toLowerCase();
+        const matchesName = fName.includes(q) || pseudo.includes(q);
+        const matchesNeighborhood = neigh.includes(q);
+        const matchesProfession = prof.includes(q);
         if (!matchesName && !matchesNeighborhood && !matchesProfession) return false;
       }
       return true;

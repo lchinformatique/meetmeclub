@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
+import { Video, Calendar, MoreVertical, Paperclip, Send, Mic, MapPin, ArrowLeft } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
 interface ChatMessage {
@@ -49,26 +50,16 @@ export const VICTOIRE_CONVERSATION: Conversation = {
   firstName: "Victoire",
   pseudo: "@victoire_lome",
   photoUrl: "/victoire_profile.jpg",
-  lastMessage: "Coucou ! 👋 Ravie de faire ta connaissance sur Meet Me Club ! Comment s'est passée ta journée ? 😊",
+  lastMessage: "En ligne à Lomé · Cliquez pour lui écrire",
   lastMessageAt: new Date().toISOString(),
-  unreadCount: 1,
+  unreadCount: 0,
   isOnline: true,
   isVerified: true,
 };
 
 const INITIAL_CONVERSATIONS: Conversation[] = [VICTOIRE_CONVERSATION];
 
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
-  conv_victoire_welcome: [
-    {
-      id: "msg_victoire_intro",
-      senderId: "user_victoire_lome",
-      body: "Coucou ! 👋 Bienvenue sur Meet Me Club Lomé. Je suis ravie de faire ta connaissance ! Comment s'est passée ta journée ? 😊",
-      createdAt: new Date().toISOString(),
-      status: "DELIVERED",
-    },
-  ],
-};
+const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {};
 
 const LOME_SPOTS = [
   { name: "🏖️ Plage de Lomé (Boulevard du Mono)", lat: 6.1264, lng: 1.2255 },
@@ -76,15 +67,6 @@ const LOME_SPOTS = [
   { name: "🏨 Hôtel 2 Février Lomé (Place de l'Indépendance)", lat: 6.1305, lng: 1.2162 },
   { name: "☕ Tokoin — Café & Lounge Byblos", lat: 6.1450, lng: 1.2180 },
   { name: "🌴 Agoè-Nyivé (Carrefour 2 Lions)", lat: 6.2050, lng: 1.1980 },
-];
-
-const QUICK_REPLIES = [
-  "Bonjour ! 😊",
-  "Avec plaisir !",
-  "Je t'envoie un vocal 🎙️",
-  "Tu es dans quel quartier à Lomé ?",
-  "On fait un rapide appel vidéo ? 📹",
-  "Je te partage ma position 📍",
 ];
 
 function formatTime(iso: string): string {
@@ -104,11 +86,10 @@ function MessagesContent() {
 
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
   const [activeConvId, setActiveConvId] = useState<string>("conv_victoire_welcome");
-  const [mobileView, setMobileView] = useState<"list" | "chat">(contactParam ? "chat" : (isWelcome ? "chat" : "list"));
+  const [mobileView, setMobileView] = useState<"list" | "chat">(contactParam ? "chat" : "list");
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
   const [draft, setDraft] = useState("");
   const [myProfile, setMyProfile] = useState<any>(null);
-  const [showWelcomeBanner, setShowWelcomeBanner] = useState(isWelcome);
 
   // Modals
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -119,6 +100,7 @@ function MessagesContent() {
   const [vipModalOpen, setVipModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+  const [chatMenuOpen, setChatMenuOpen] = useState(false);
 
   // Video call state
   const [videoCallOpen, setVideoCallOpen] = useState(false);
@@ -232,15 +214,15 @@ function MessagesContent() {
     loadConversations();
   }, [contactParam]);
 
-  // Load messages for active conversation from API
+  // Load messages for active conversation from API with live 3-second auto-refresh
   useEffect(() => {
-    if (!activeConvId || activeConvId.startsWith("local_")) return;
+    if (!activeConvId) return;
     async function loadMessages() {
       try {
         const res = await fetch(`/api/messages/${activeConvId}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.messages) {
+          if (data.messages && Array.isArray(data.messages)) {
             setMessages((prev) => ({
               ...prev,
               [activeConvId]: data.messages.map((m: any) => {
@@ -271,6 +253,8 @@ function MessagesContent() {
       }
     }
     loadMessages();
+    const intervalTimer = setInterval(loadMessages, 3000);
+    return () => clearInterval(intervalTimer);
   }, [activeConvId]);
 
   // Handle auto-selection or creation from ?contact=...
@@ -1006,8 +990,10 @@ function MessagesContent() {
 
   return (
     <div style={{ minHeight: "100dvh", background: "#F8FAFC", display: "flex", flexDirection: "column" }}>
-      {/* ── Top Standardized Header ── */}
-      <Header />
+      {/* ── Top Standardized Header (masqué sur mobile pendant le chat pour plein écran WhatsApp) ── */}
+      <div className={mobileView === "chat" ? "hidden-on-mobile" : ""}>
+        <Header />
+      </div>
 
       {/* ── État non-connecté ── */}
       {isAuthenticated === false && (
@@ -1042,30 +1028,7 @@ function MessagesContent() {
         </div>
       )}
 
-      {/* ── Bannière de bienvenue pour nouveaux membres ── */}
-      {showWelcomeBanner && (
-        <div style={{
-          background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
-          color: "white",
-          textAlign: "center",
-          padding: "12px 16px",
-          fontWeight: 700,
-          fontSize: "14px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "10px",
-          position: "relative",
-        }}>
-          <span>🎉</span>
-          <span>Bienvenue sur Meet Me Club ! Victoire vous attend — dites bonjour ! 👋</span>
-          <button
-            onClick={() => setShowWelcomeBanner(false)}
-            aria-label="Fermer"
-            style={{ position: "absolute", right: "12px", background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: "18px", lineHeight: 1 }}
-          >×</button>
-        </div>
-      )}
+
 
       {/* ── Main Split View (Utilisateur connecté) ───────────── */}
       {isAuthenticated !== false && (
@@ -1155,8 +1118,29 @@ function MessagesContent() {
               type="search"
               placeholder="🔍 Filtrer les conversations..."
               className="input"
-              style={{ fontSize: "13px", height: "38px" }}
+              style={{ fontSize: "13px", height: "38px", marginBottom: "8px" }}
             />
+            <Link
+              href="/decouverte"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "8px 12px",
+                background: "#EEF2FB",
+                color: "#0B2559",
+                borderRadius: "10px",
+                fontSize: "12px",
+                fontWeight: 700,
+                textDecoration: "none",
+                transition: "background 0.15s ease",
+              }}
+            >
+              <span>🧭</span>
+              <span>Voir tous les membres & échanger</span>
+              <span style={{ color: "#2563EB" }}>→</span>
+            </Link>
           </div>
 
           {/* Online Members Horizontal Tray */}
@@ -1365,7 +1349,7 @@ function MessagesContent() {
             className={`messages-chat-pane ${mobileView === "list" ? "hidden-on-mobile" : ""}`}
             style={{ display: "flex", flexDirection: "column", overflow: "hidden", background: "#F8FAFC", flex: 1 }}
           >
-            {/* Active Contact Header with Video Call Button */}
+            {/* Active Contact Header (WhatsApp Style) */}
             <div
               style={{
                 background: "white",
@@ -1374,134 +1358,283 @@ function MessagesContent() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                boxShadow: "0 2px 6px rgba(0, 0, 0, 0.02)",
+                boxShadow: "0 1px 4px rgba(0, 0, 0, 0.03)",
+                minHeight: "62px",
+                position: "relative",
+                zIndex: 40,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {/* Left: Contact Info */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
                 {/* Bouton retour vers la liste sur smartphone */}
                 <button
                   type="button"
                   onClick={() => setMobileView("list")}
                   className="mobile-back-to-list-btn"
                   style={{
-                    background: "#F1F5F9",
+                    background: "transparent",
                     border: "none",
-                    borderRadius: "10px",
+                    borderRadius: "50%",
                     width: "36px",
                     height: "36px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "18px",
                     cursor: "pointer",
                     color: "#0F172A",
-                    fontWeight: 800,
+                    flexShrink: 0,
                   }}
                   title="Retour aux conversations"
                 >
-                  ←
+                  <ArrowLeft size={22} />
                 </button>
-                {activeConv.photoUrl && (activeConv.photoUrl.startsWith("http") || activeConv.photoUrl.startsWith("/")) ? (
-                  <Image
-                    src={activeConv.photoUrl}
-                    alt={activeConv.firstName}
-                    width={46}
-                    height={46}
-                    style={{
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      border: "2px solid #CBD5E1",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "46px",
-                      height: "46px",
-                      borderRadius: "50%",
-                      background: "#EEF2FB",
-                      color: "#0B2559",
-                      fontWeight: 800,
-                      fontSize: "17px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: "2px solid #CBD5E1",
-                    }}
-                  >
-                    {activeConv.firstName ? activeConv.firstName.charAt(0).toUpperCase() : "M"}
+
+                {/* Avatar with status indicator */}
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  {activeConv.photoUrl && (activeConv.photoUrl.startsWith("http") || activeConv.photoUrl.startsWith("/")) ? (
+                    <Image
+                      src={activeConv.photoUrl}
+                      alt={activeConv.firstName}
+                      width={44}
+                      height={44}
+                      style={{
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: "2px solid #CBD5E1",
+                        display: "block",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "44px",
+                        height: "44px",
+                        borderRadius: "50%",
+                        background: "#EEF2FB",
+                        color: "#0B2559",
+                        fontWeight: 800,
+                        fontSize: "17px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "2px solid #CBD5E1",
+                      }}
+                    >
+                      {activeConv.firstName ? activeConv.firstName.charAt(0).toUpperCase() : "M"}
+                    </div>
+                  )}
+                  {activeConv.isOnline && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        bottom: "1px",
+                        right: "1px",
+                        width: "11px",
+                        height: "11px",
+                        background: "#10B981",
+                        border: "2px solid white",
+                        borderRadius: "50%",
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Name & Presence */}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: "16px", color: "#0F172A", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <span>{activeConv.firstName}</span>
+                    <span style={{ fontSize: "11px", color: "#059669", fontWeight: 700, flexShrink: 0 }}>✓ Vérifié(e)</span>
                   </div>
-                )}
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: "17px", color: "#0F172A", display: "flex", alignItems: "center", gap: "6px" }}>
-                    {activeConv.firstName}
-                    <span style={{ fontSize: "12px", color: "#059669", fontWeight: 700 }}>✓ Vérifié(e)</span>
-                  </div>
-                  <div style={{ fontSize: "12px", color: activeConv.isOnline ? "#059669" : "#64748B", fontWeight: 600 }}>
-                    {activeConv.isOnline ? "● En ligne" : "● Vu récemment"} · Lomé, Togo
+                  <div style={{ fontSize: "12px", color: activeConv.isOnline ? "#059669" : "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span>{activeConv.isOnline ? "● En ligne" : "● Vu récemment"}</span>
+                    <span>· Lomé</span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons: Video Call & Rendez-vous & Règles */}
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                {/* 📜 Règles du Chat Button */}
-                <button
-                  type="button"
-                  onClick={() => setRulesModalOpen(true)}
-                  className="btn btn-sm"
-                  style={{
-                    background: "#F1F5F9",
-                    color: "#0B2559",
-                    fontWeight: 700,
-                    fontSize: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    padding: "8px 12px",
-                    borderRadius: "10px",
-                    border: "1px solid #CBD5E1",
-                    cursor: "pointer",
-                  }}
-                  title="Consulter les règles de respect et sécurité du chat"
-                >
-                  📜 Règles du Chat
-                </button>
-
-                {/* 📹 Video Call Button (VIP exclusif) */}
+              {/* Right: WhatsApp-Style Action Icons */}
+              <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0, position: "relative" }}>
+                {/* 📹 Video Call Button */}
                 <button
                   type="button"
                   onClick={startVideoCall}
-                  className="btn btn-sm"
                   style={{
-                    background: isVip ? "#059669" : "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
-                    color: "white",
-                    fontWeight: 800,
-                    fontSize: "13px",
+                    background: isVip ? "#ECFDF5" : "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 14px",
-                    borderRadius: "10px",
-                    boxShadow: isVip ? "0 2px 8px rgba(5, 150, 105, 0.3)" : "0 2px 8px rgba(217, 119, 6, 0.3)",
-                    border: "none",
+                    justifyContent: "center",
                     cursor: "pointer",
+                    color: isVip ? "#059669" : "#0B2559",
+                    transition: "all 0.15s ease",
                   }}
-                  title={isVip ? "Lancer un appel vidéo sécurisé" : "Appel vidéo réservé au Pack VIP"}
+                  title={isVip ? "Appel Vidéo sécurisé" : "Appel Vidéo (Pass VIP)"}
+                  aria-label="Appel Vidéo"
                 >
-                  📹 Appel Vidéo {!isVip && <span style={{ fontSize: "10px", background: "rgba(0,0,0,0.25)", padding: "2px 6px", borderRadius: "9999px" }}>👑 VIP</span>}
+                  <Video size={19} />
                 </button>
 
                 {/* 📅 Sortie / Rendez-vous */}
                 <Link
                   href={`/rendez-vous/nouveau?avec=${activeConv.participantId}`}
-                  className="btn btn-primary btn-sm"
-                  style={{ fontWeight: 700, paddingInline: "16px", borderRadius: "10px" }}
+                  style={{
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#0B2559",
+                    textDecoration: "none",
+                    transition: "all 0.15s ease",
+                  }}
+                  title="Proposer une sortie à Lomé"
+                  aria-label="Proposer une sortie"
                 >
-                  📅 Proposer une sortie
+                  <Calendar size={18} />
                 </Link>
+
+                {/* ⋮ WhatsApp 3-dots Menu Button */}
+                <button
+                  type="button"
+                  onClick={() => setChatMenuOpen(!chatMenuOpen)}
+                  style={{
+                    background: chatMenuOpen ? "#E2E8F0" : "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#0F172A",
+                    transition: "all 0.15s ease",
+                  }}
+                  title="Options de discussion"
+                  aria-label="Options de discussion"
+                >
+                  <MoreVertical size={19} />
+                </button>
+
+                {/* WhatsApp Dropdown Menu */}
+                {chatMenuOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "46px",
+                      right: "0",
+                      background: "white",
+                      borderRadius: "14px",
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+                      border: "1px solid #E2E8F0",
+                      padding: "8px 0",
+                      minWidth: "220px",
+                      zIndex: 100,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRulesModalOpen(true);
+                        setChatMenuOpen(false);
+                      }}
+                      style={{
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <span>📜</span> Règles du chat
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocationModalOpen(true);
+                        setChatMenuOpen(false);
+                      }}
+                      style={{
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <span>📍</span> Partager un lieu à Lomé
+                    </button>
+
+                    <Link
+                      href="/decouverte"
+                      onClick={() => setChatMenuOpen(false)}
+                      style={{
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        textDecoration: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <span>🔍</span> Découvrir d&apos;autres profils
+                    </Link>
+
+                    <div style={{ height: "1px", background: "#F1F5F9", margin: "4px 0" }} />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChatMenuOpen(false);
+                        alert("Signalement enregistré. Notre équipe de modération veille à votre sécurité.");
+                      }}
+                      style={{
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#DC2626",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <span>🚫</span> Bloquer ou signaler
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
+
 
             {/* Messages Container */}
             <div
@@ -1528,6 +1661,20 @@ function MessagesContent() {
                   🔒 Échanges chiffrés · Vocaux, Photos, GPS & Vidéo
                 </span>
               </div>
+
+              {currentMessages.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", margin: "auto 0" }}>
+                  <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "#EEF2FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px" }}>
+                    💬
+                  </div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
+                    Discussion avec {activeConv.firstName}
+                  </h3>
+                  <p style={{ fontSize: "13px", color: "#64748B", maxWidth: "340px", margin: 0, lineHeight: 1.5 }}>
+                    Prenez l&apos;initiative ! Envoyez un premier message ou une note vocale pour faire connaissance.
+                  </p>
+                </div>
+              )}
 
               {currentMessages.map((msg) => {
                 const isMe = msg.senderId === ME_ID;
@@ -1755,300 +1902,226 @@ function MessagesContent() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Quick Replies Bar */}
-            <div
-              style={{
-                padding: "8px 24px 0",
-                display: "flex",
-                gap: "8px",
-                overflowX: "auto",
-                scrollbarWidth: "none",
-              }}
-            >
-              {QUICK_REPLIES.map((qr) => (
-                <button
-                  key={qr}
-                  onClick={() => setDraft(qr)}
+            {/* WhatsApp Bottom Area (Input Bar) */}
+            <div style={{ background: "white", borderTop: "1px solid #E2E8F0", paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}>
+              {/* Chat Input Bar */}
+              <div style={{ padding: "8px 12px 8px" }}>
+                {/* Hidden file input for photos and videos */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*,video/*"
+                  onChange={handleMediaSelect}
+                  style={{ display: "none" }}
+                />
+
+                <div
                   style={{
-                    background: "white",
-                    border: "1px solid #CBD5E1",
-                    borderRadius: "9999px",
-                    padding: "6px 14px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    color: "#0B2559",
+                    display: "flex",
+                    gap: "8px",
+                    alignItems: "center",
+                    background: isRecordingVoice ? "#FEF2F2" : "#F1F5F9",
+                    borderRadius: "26px",
+                    border: isRecordingVoice ? "1.5px solid #EF4444" : "1px solid #E2E8F0",
+                    padding: "6px 10px",
+                    transition: "all 0.2s ease",
                   }}
                 >
-                  {qr}
-                </button>
-              ))}
-            </div>
-
-            {/* Security Verification Notice for Chat */}
-            {!isVerifiedForChat && (
-              <div
-                style={{
-                  margin: "10px 24px 0",
-                  padding: "10px 16px",
-                  background: "#F0FDF4",
-                  border: "1.5px solid #BBF7D0",
-                  borderRadius: "14px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "12px",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "20px" }}>🛡️</span>
-                  <div>
-                    <div style={{ fontSize: "13px", fontWeight: 700, color: "#166534" }}>
-                      Obtenez le badge Membre Vérifié ✓
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#15803D" }}>
-                      Rassurez vos correspondants à Lomé en certifiant votre profil avec un selfie sécurisé.
-                    </div>
-                  </div>
-                </div>
-                <Link
-                  href="/profil/securite"
-                  className="btn btn-sm"
-                  style={{
-                    fontWeight: 700,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                    background: "#16A34A",
-                    color: "white",
-                    padding: "6px 14px",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                >
-                  Vérifier mon profil
-                </Link>
-              </div>
-            )}
-
-            {/* Chat Input Bar: Photo, GPS, Audio Voice Notes & Text */}
-            <div style={{ padding: "14px 24px", background: "white", borderTop: "1px solid #E2E8F0" }}>
-              {/* Hidden file input for photos and videos */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/*,video/*"
-                onChange={handleMediaSelect}
-                style={{ display: "none" }}
-              />
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  alignItems: "center",
-                  background: isRecordingVoice ? "#FEF2F2" : "#F8FAFC",
-                  borderRadius: "16px",
-                  border: isRecordingVoice ? "1.5px solid #EF4444" : "1.5px solid #CBD5E1",
-                  padding: "8px 12px",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                {/* When LIVE VOICE RECORDING is active */}
-                {isRecordingVoice ? (
-                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "12px", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span
-                        style={{
-                          width: "12px",
-                          height: "12px",
-                          borderRadius: "50%",
-                          background: "#E10600",
-                          boxShadow: "0 0 10px #E10600",
-                        }}
-                      />
-                      <span style={{ fontWeight: 800, fontSize: "14px", color: "#991B1B" }}>
-                        Enregistrement vocal… {formatTimer(voiceRecordingSeconds)}
-                      </span>
-                    </div>
-
-                    {/* Animated sound wave bars */}
-                    <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
-                      {[15, 25, 12, 28, 18, 26, 14, 22].map((h, i) => (
-                        <div
-                          key={i}
+                  {/* When LIVE VOICE RECORDING is active */}
+                  {isRecordingVoice ? (
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "12px", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span
                           style={{
-                            width: "3px",
-                            height: `${h}px`,
+                            width: "12px",
+                            height: "12px",
+                            borderRadius: "50%",
                             background: "#E10600",
-                            borderRadius: "2px",
+                            boxShadow: "0 0 10px #E10600",
                           }}
                         />
-                      ))}
-                    </div>
+                        <span style={{ fontWeight: 800, fontSize: "14px", color: "#991B1B" }}>
+                          Vocal… {formatTimer(voiceRecordingSeconds)}
+                        </span>
+                      </div>
 
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      {/* Animated sound wave bars */}
+                      <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
+                        {[15, 25, 12, 28, 18, 26, 14, 22].map((h, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              width: "3px",
+                              height: `${h}px`,
+                              background: "#E10600",
+                              borderRadius: "2px",
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <button
+                          type="button"
+                          onClick={cancelVoiceRecording}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "#64748B",
+                            fontSize: "13px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            padding: "6px 8px",
+                          }}
+                        >
+                          ✕
+                        </button>
+                        <button
+                          type="button"
+                          onClick={finishVoiceRecording}
+                          style={{
+                            background: "#E10600",
+                            border: "none",
+                            color: "white",
+                            padding: "6px 14px",
+                            borderRadius: "20px",
+                            fontSize: "13px",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            boxShadow: "0 2px 8px rgba(225, 6, 0, 0.35)",
+                          }}
+                        >
+                          Envoyer ➤
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* 📎 Attachment / Photo Button */}
                       <button
                         type="button"
-                        onClick={cancelVoiceRecording}
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Envoyer une photo ou une vidéo"
                         style={{
                           background: "transparent",
                           border: "none",
-                          color: "#64748B",
-                          fontSize: "13px",
-                          fontWeight: 700,
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           cursor: "pointer",
-                          padding: "6px 10px",
+                          color: "#64748B",
+                          flexShrink: 0,
+                          transition: "color 0.15s ease",
                         }}
                       >
-                        ✕ Annuler
+                        <Paperclip size={20} />
                       </button>
+
+                      {/* 📍 Location Sharing Button */}
                       <button
                         type="button"
-                        onClick={finishVoiceRecording}
+                        onClick={() => setLocationModalOpen(true)}
+                        title="Partager un lieu à Lomé"
                         style={{
-                          background: "#E10600",
+                          background: "transparent",
                           border: "none",
-                          color: "white",
-                          padding: "8px 16px",
-                          borderRadius: "10px",
-                          fontSize: "13px",
-                          fontWeight: 800,
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           cursor: "pointer",
-                          boxShadow: "0 2px 8px rgba(225, 6, 0, 0.35)",
+                          color: "#64748B",
+                          flexShrink: 0,
+                          transition: "color 0.15s ease",
                         }}
                       >
-                        Envoyer le vocal ➤
+                        <MapPin size={20} />
                       </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {/* 📷 Photo / Video Upload Button */}
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      title="Envoyer une photo ou une vidéo depuis votre téléphone ou galerie"
-                      style={{
-                        background: "white",
-                        border: "1px solid #CBD5E1",
-                        borderRadius: "50%",
-                        width: "38px",
-                        height: "38px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "18px",
-                        cursor: "pointer",
-                        flexShrink: 0,
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                      }}
-                    >
-                      📷
-                    </button>
 
-                    {/* 📍 Location Sharing Button */}
-                    <button
-                      type="button"
-                      onClick={() => setLocationModalOpen(true)}
-                      title="Partager votre localisation (Lomé / GPS)"
-                      style={{
-                        background: "white",
-                        border: "1px solid #CBD5E1",
-                        borderRadius: "50%",
-                        width: "38px",
-                        height: "38px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "18px",
-                        cursor: "pointer",
-                        flexShrink: 0,
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                      }}
-                    >
-                      📍
-                    </button>
+                      {/* Textarea */}
+                      <textarea
+                        ref={inputRef}
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={`Message pour ${activeConv.firstName}…`}
+                        rows={1}
+                        style={{
+                          flex: 1,
+                          border: "none",
+                          outline: "none",
+                          background: "transparent",
+                          resize: "none",
+                          fontSize: "15px",
+                          lineHeight: "20px",
+                          color: "#0F172A",
+                          maxHeight: "100px",
+                          overflowY: "auto",
+                          padding: "6px 4px",
+                        }}
+                      />
 
-                    {/* 🎙️ Voice Message Button */}
-                    <button
-                      type="button"
-                      onClick={startVoiceRecording}
-                      title="Enregistrer un message vocal (audio)"
-                      style={{
-                        background: "white",
-                        border: "1.5px solid #0B2559",
-                        borderRadius: "50%",
-                        width: "38px",
-                        height: "38px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "18px",
-                        cursor: "pointer",
-                        flexShrink: 0,
-                        boxShadow: "0 2px 6px rgba(11, 37, 89, 0.15)",
-                      }}
-                    >
-                      🎙️
-                    </button>
-
-                    {/* Textarea */}
-                    <textarea
-                      ref={inputRef}
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder={`Écrire à ${activeConv.firstName}…`}
-                      rows={1}
-                      style={{
-                        flex: 1,
-                        border: "none",
-                        outline: "none",
-                        background: "transparent",
-                        resize: "none",
-                        fontSize: "15px",
-                        lineHeight: 1.5,
-                        color: "#0F172A",
-                        maxHeight: "120px",
-                        overflowY: "auto",
-                      }}
-                    />
-
-                    {/* Send Button */}
-                    <button
-                      onClick={handleSend}
-                      disabled={!draft.trim()}
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "50%",
-                        background: draft.trim() ? "#E10600" : "#CBD5E1",
-                        color: "white",
-                        border: "none",
-                        cursor: draft.trim() ? "pointer" : "default",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "18px",
-                        flexShrink: 0,
-                        fontWeight: 700,
-                      }}
-                    >
-                      ➤
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px", fontSize: "11px", color: "#64748B" }}>
-                <span>🔒 Chiffré de bout en bout</span>
-                <span>🎙️ Messages vocaux & 📷 Photos</span>
-                <span>📹 Appel vidéo direct</span>
+                      {/* Send or Mic Button */}
+                      {draft.trim() ? (
+                        <button
+                          type="button"
+                          onClick={handleSend}
+                          style={{
+                            width: "38px",
+                            height: "38px",
+                            borderRadius: "50%",
+                            background: "#059669",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            boxShadow: "0 2px 6px rgba(5, 150, 105, 0.25)",
+                            transition: "all 0.15s ease",
+                          }}
+                          title="Envoyer"
+                        >
+                          <Send size={17} />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={startVoiceRecording}
+                          style={{
+                            width: "38px",
+                            height: "38px",
+                            borderRadius: "50%",
+                            background: "#0B2559",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            boxShadow: "0 2px 6px rgba(11, 37, 89, 0.2)",
+                            transition: "all 0.15s ease",
+                          }}
+                          title="Enregistrer un message vocal"
+                        >
+                          <Mic size={18} />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
+
           </main>
+
         ) : (
           <main style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexDirection: "column", padding: "36px 24px", textAlign: "center", flex: 1, overflowY: "auto" }}>
             <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#EEF2FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px" }}>

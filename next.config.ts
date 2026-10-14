@@ -63,6 +63,21 @@ const nextConfig: NextConfig = {
         destination: "/legal/cgu",
         permanent: true,
       },
+      {
+        source: "/chat",
+        destination: "/messages",
+        permanent: false,
+      },
+      {
+        source: "/discuter",
+        destination: "/messages",
+        permanent: false,
+      },
+      {
+        source: "/messagerie",
+        destination: "/messages",
+        permanent: false,
+      },
     ];
   },
 

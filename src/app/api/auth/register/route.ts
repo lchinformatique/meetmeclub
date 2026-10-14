@@ -137,6 +137,21 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    // 4.b Synchronisation directe Supabase REST (HTTPS)
+    try {
+      const { upsertProfileInSupabase } = await import("@/lib/supabase-server");
+      await upsertProfileInSupabase(user.id, {
+        firstName: resolvedName,
+        pseudo: resolvedPseudo,
+        gender: resolvedGender as any,
+        city: "Lomé",
+        bio: "Nouveau membre sur Meet Me Club à Lomé.",
+        relationshipGoal: "SERIOUS",
+      });
+    } catch (supaErr) {
+      console.warn("[register] Supabase REST sync warning:", supaErr);
+    }
+
     // 5. Sauvegarde dans le store local avec profil neutre et sans fausse photo
     saveProfile({
       userId: user.id,

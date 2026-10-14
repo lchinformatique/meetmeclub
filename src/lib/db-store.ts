@@ -413,25 +413,16 @@ export interface StoredConversation {
 const MESSAGES_FILE = path.join(DATA_DIR, "messages.json");
 const CONVERSATIONS_FILE = path.join(DATA_DIR, "conversations.json");
 
-export const DEFAULT_MESSAGES: StoredMessage[] = [
-  {
-    id: "msg_victoire_intro",
-    conversationId: "conv_victoire_welcome",
-    senderId: "user_victoire_lome",
-    body: "Coucou ! 👋 Bienvenue sur Meet Me Club Lomé. Je suis ravie de faire ta connaissance ! Comment s'est passée ta journée ? 😊",
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-    status: "DELIVERED",
-  },
-];
+export const DEFAULT_MESSAGES: StoredMessage[] = [];
 
-let memoryMessages: StoredMessage[] = [...DEFAULT_MESSAGES];
+let memoryMessages: StoredMessage[] = [];
 let memoryConversations: StoredConversation[] = [];
 
 function ensureMessagesFile() {
   try {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     if (!fs.existsSync(MESSAGES_FILE)) {
-      fs.writeFileSync(MESSAGES_FILE, JSON.stringify(DEFAULT_MESSAGES, null, 2), "utf8");
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2), "utf8");
     }
   } catch {}
 }
@@ -453,12 +444,10 @@ export function getAllMessages(): StoredMessage[] {
 
 export function getMessagesByConversation(conversationId: string): StoredMessage[] {
   const all = getAllMessages();
-  const list = all.filter((m) => m.conversationId === conversationId);
-  if (conversationId === "conv_victoire_welcome" && !list.some((m) => m.id === "msg_victoire_intro")) {
-    list.unshift(DEFAULT_MESSAGES[0]);
-  }
-  return list;
+  return all.filter((m) => m.conversationId === conversationId);
 }
+
+export const getMessagesByConversationId = getMessagesByConversation;
 
 export function saveMessage(msg: StoredMessage): StoredMessage {
   const all = getAllMessages();
@@ -500,6 +489,11 @@ export function getAllConversations(): StoredConversation[] {
   return memoryConversations;
 }
 
+export function getConversationsForUser(userId: string): StoredConversation[] {
+  const all = getAllConversations();
+  return all.filter((c) => c.participantA === userId || c.participantB === userId);
+}
+
 export function saveConversation(conv: Partial<StoredConversation> & { id: string }): StoredConversation {
   const all = getAllConversations();
   const idx = all.findIndex((c) => c.id === conv.id);
@@ -531,4 +525,6 @@ export function saveConversation(conv: Partial<StoredConversation> & { id: strin
   } catch {}
   return updated;
 }
+
+
 
