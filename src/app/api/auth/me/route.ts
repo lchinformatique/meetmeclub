@@ -71,7 +71,11 @@ export async function GET() {
 
     const resolvedFirstName = local?.firstName || user?.profile?.firstName || session.email?.split("@")[0] || "Membre";
     const resolvedCity = local?.city || user?.profile?.city || "Lomé";
-    const resolvedAvatar = local?.photos?.find((p) => p.isMain)?.url || local?.photos?.[0]?.url || user?.profile?.photos?.[0]?.url || null;
+    const resolvedAvatar =
+      local?.photos?.find((p) => p.isMain)?.url ||
+      local?.photos?.[0]?.url ||
+      user?.profile?.photos?.[0]?.url ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedFirstName)}&backgroundColor=0b2559,1d4ed8&textColor=ffffff`;
     const resolvedPlan = local?.plan || "FREE";
 
     return NextResponse.json({

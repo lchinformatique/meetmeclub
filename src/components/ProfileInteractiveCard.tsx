@@ -324,6 +324,7 @@ export default function ProfileInteractiveCard({
                 src={mainPhoto.url}
                 alt={profile.firstName}
                 fill
+                unoptimized
                 style={{ objectFit: "cover" }}
                 sizes="96px"
                 priority

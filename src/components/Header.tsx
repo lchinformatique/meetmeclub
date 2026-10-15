@@ -363,6 +363,7 @@ export default function Header() {
                         alt={sessionUser.firstName}
                         width={28}
                         height={28}
+                        unoptimized
                         style={{ objectFit: "cover", width: "100%", height: "100%" }}
                       />
                     ) : (
@@ -636,7 +637,7 @@ export default function Header() {
                   }}
                 >
                   {sessionUser.avatarUrl ? (
-                    <Image src={sessionUser.avatarUrl} alt={sessionUser.firstName} width={36} height={36} style={{ objectFit: "cover" }} />
+                    <Image src={sessionUser.avatarUrl} alt={sessionUser.firstName} width={36} height={36} unoptimized style={{ objectFit: "cover" }} />
                   ) : (
                     <User size={16} style={{ color: "#0B2559" }} />
                   )}

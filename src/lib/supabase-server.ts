@@ -162,6 +162,7 @@ export async function findUserInSupabase(identifier: string) {
 }
 
 // ── Mise à jour ou création de profil dans Supabase ──────────
+// ── Mise à jour ou création de profil dans Supabase ──────────
 export async function upsertProfileInSupabase(userId: string, data: {
   firstName?: string;
   lastName?: string;
@@ -179,19 +180,33 @@ export async function upsertProfileInSupabase(userId: string, data: {
   languages?: string[];
   educationLevel?: string | null;
   phone?: string | null;
+  avatarUrl?: string | null;
   coverUrl?: string | null;
 }) {
   const admin = getSupabaseAdmin();
   try {
     // 1. Mettre à jour le téléphone dans users si présent
     if (data.phone) {
-      await admin
-        .from("users")
-        .update({ phone: data.phone })
-        .eq("id", userId);
+      try {
+        await admin
+          .from("users")
+          .update({ phone: data.phone })
+          .eq("id", userId);
+      } catch (phoneErr) {
+        console.warn("[upsertProfileInSupabase] Update phone warning:", phoneErr);
+      }
     }
 
-    // 2. Vérifier si un profil existe déjà
+    // 2. Si un avatarUrl est fourni, l'enregistrer directement comme photo principale
+    if (data.avatarUrl) {
+      try {
+        await savePhotoInSupabase(userId, data.avatarUrl, true);
+      } catch (avatarErr) {
+        console.warn("[upsertProfileInSupabase] Avatar sync warning:", avatarErr);
+      }
+    }
+
+    // 3. Vérifier si un profil existe déjà
     const { data: existing } = await admin
       .from("profiles")
       .select("id")
@@ -216,7 +231,6 @@ export async function upsertProfileInSupabase(userId: string, data: {
     if (data.hasChildren !== undefined) profilePayload.hasChildren = data.hasChildren;
     if (data.languages !== undefined) profilePayload.languages = data.languages;
     if (data.educationLevel !== undefined) profilePayload.educationLevel = data.educationLevel;
-    if (data.coverUrl !== undefined) profilePayload.coverUrl = data.coverUrl;
 
     if (existing?.id) {
       let { data: updated, error } = await admin
@@ -226,20 +240,26 @@ export async function upsertProfileInSupabase(userId: string, data: {
         .select()
         .single();
 
-      if (error && profilePayload.coverUrl) {
-        // Fallback if coverUrl column does not exist in schema
-        delete profilePayload.coverUrl;
+      if (error) {
+        console.warn("[upsertProfileInSupabase] Update error with full payload, trying core fields:", error);
+        // Fallback retry avec champs essentiels
+        const corePayload: Record<string, any> = {
+          firstName: data.firstName || "Membre",
+          pseudo: data.pseudo || null,
+          gender: data.gender || "OTHER",
+          city: data.city || "Lomé",
+          bio: data.bio || "Membre actif.",
+          relationshipGoal: data.relationshipGoal || "SERIOUS",
+          updatedAt: new Date().toISOString(),
+        };
         const retry = await admin
           .from("profiles")
-          .update(profilePayload)
+          .update(corePayload)
           .eq("id", existing.id)
           .select()
           .single();
         updated = retry.data;
-        error = retry.error;
       }
-
-      if (error) console.warn("[upsertProfileInSupabase] Update error:", error);
       return updated;
     } else {
       const newId = `prof_${Date.now()}`;
@@ -261,8 +281,8 @@ export async function upsertProfileInSupabase(userId: string, data: {
         .select()
         .single();
 
-      if (error && profilePayload.coverUrl) {
-        delete profilePayload.coverUrl;
+      if (error) {
+        console.warn("[upsertProfileInSupabase] Insert error with full payload, trying core fields:", error);
         const retry = await admin
           .from("profiles")
           .insert({
@@ -276,15 +296,12 @@ export async function upsertProfileInSupabase(userId: string, data: {
             relationshipGoal: data.relationshipGoal || "SERIOUS",
             isVisible: true,
             profileCompleteness: 60,
-            ...profilePayload,
+            updatedAt: new Date().toISOString(),
           })
           .select()
           .single();
         created = retry.data;
-        error = retry.error;
       }
-
-      if (error) console.warn("[upsertProfileInSupabase] Insert error:", error);
       return created;
     }
   } catch (err) {
@@ -343,6 +360,24 @@ export async function savePhotoInSupabase(userId: string, photoUrl: string, isMa
         .eq("profileId", profile.id);
     }
 
+    // Vérifier si cette photo existe déjà
+    const { data: existingPhoto } = await admin
+      .from("profile_photos")
+      .select("id")
+      .eq("profileId", profile.id)
+      .eq("url", photoUrl)
+      .maybeSingle();
+
+    if (existingPhoto?.id) {
+      const { data: updated } = await admin
+        .from("profile_photos")
+        .update({ isMain, updatedAt: new Date().toISOString() })
+        .eq("id", existingPhoto.id)
+        .select()
+        .single();
+      return updated;
+    }
+
     const photoId = `ph_${Date.now()}`;
     const { data: photo, error } = await admin
       .from("profile_photos")
@@ -364,6 +399,63 @@ export async function savePhotoInSupabase(userId: string, photoUrl: string, isMa
   } catch (err) {
     console.warn("[savePhotoInSupabase] Exception:", err);
     return null;
+  }
+}
+
+// ── Définir la photo principale dans Supabase ─────────────────
+export async function setMainPhotoInSupabase(userId: string, photoIdOrUrl: string) {
+  const admin = getSupabaseAdmin();
+  try {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("userId", userId)
+      .maybeSingle();
+
+    if (!profile?.id) return false;
+
+    // Démarquer toutes les photos du profil
+    await admin
+      .from("profile_photos")
+      .update({ isMain: false })
+      .eq("profileId", profile.id);
+
+    // Marquer la photo cible comme principale
+    await admin
+      .from("profile_photos")
+      .update({ isMain: true })
+      .eq("profileId", profile.id)
+      .or(`id.eq.${photoIdOrUrl},url.eq.${photoIdOrUrl}`);
+
+    return true;
+  } catch (err) {
+    console.warn("[setMainPhotoInSupabase] Exception:", err);
+    return false;
+  }
+}
+
+// ── Supprimer une photo dans Supabase ─────────────────────────
+export async function deletePhotoInSupabase(userId: string, photoIdOrUrl: string) {
+  const admin = getSupabaseAdmin();
+  try {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("userId", userId)
+      .maybeSingle();
+
+    if (!profile?.id) return false;
+
+    await admin
+      .from("profile_photos")
+      .delete()
+      .eq("profileId", profile.id)
+      .or(`id.eq.${photoIdOrUrl},url.eq.${photoIdOrUrl}`);
+
+    return true;
+  } catch (err) {
+    console.warn("[deletePhotoInSupabase] Exception:", err);
+    return false;
   }
 }
 

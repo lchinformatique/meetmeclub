@@ -17,9 +17,24 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
         hostname: "images.unsplash.com", // Demo profile photos
       },
+      {
+        protocol: "https",
+        hostname: "api.dicebear.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
     ],
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     formats: ["image/avif", "image/webp"],
     qualities: [75, 100],
   },

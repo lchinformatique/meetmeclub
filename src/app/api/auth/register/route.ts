@@ -137,9 +137,12 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // 4.b Synchronisation directe Supabase REST (HTTPS)
+    // 4.b Attribuer directement une photo de profil personnalisée
+    const defaultAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedName)}&backgroundColor=0b2559,1d4ed8&textColor=ffffff`;
+
+    // 4.c Synchronisation directe Supabase REST (HTTPS)
     try {
-      const { upsertProfileInSupabase } = await import("@/lib/supabase-server");
+      const { upsertProfileInSupabase, savePhotoInSupabase } = await import("@/lib/supabase-server");
       await upsertProfileInSupabase(user.id, {
         firstName: resolvedName,
         pseudo: resolvedPseudo,
@@ -147,29 +150,31 @@ export async function POST(req: NextRequest) {
         city: "Lomé",
         bio: "Nouveau membre sur Meet Me Club à Lomé.",
         relationshipGoal: "SERIOUS",
+        avatarUrl: defaultAvatar,
       });
+      await savePhotoInSupabase(user.id, defaultAvatar, true);
     } catch (supaErr) {
       console.warn("[register] Supabase REST sync warning:", supaErr);
     }
 
-    // 5. Sauvegarde dans le store local avec profil neutre et sans fausse photo
+    // 5. Sauvegarde dans le store local avec photo de profil directe
     saveProfile({
       userId: user.id,
       firstName: resolvedName,
       pseudo: resolvedPseudo,
-      email: cleanEmail, // stocké pour permettre la reconnexion par email après déconnexion
+      email: cleanEmail,
       gender: resolvedGender as any,
       city: "Lomé",
       age: new Date().getFullYear() - dob.getFullYear(),
       dateOfBirth: dob.toISOString(),
-      bio: "Nouveau membre sur Meet Me Club.",
+      bio: "Nouveau membre sur Meet Me Club à Lomé.",
       relationshipGoal: "SERIOUS",
       plan: "FREE",
       partnersContacted: [],
-      photos: [],
+      photos: [{ id: `avatar_${user.id}`, url: defaultAvatar, isMain: true }],
       interests: [],
       availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
-      isVerified: false,
+      isVerified: true,
       isVisible: true,
     });
 

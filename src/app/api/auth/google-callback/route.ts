@@ -138,6 +138,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Déterminer la photo de profil (Avatar Google ou Avatar initials personnalisé)
+    const finalAvatar = (avatarUrl as string) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(firstName)}&backgroundColor=0b2559,1d4ed8&textColor=ffffff`;
+
     // Synchronisation directe Supabase REST (HTTPS)
     try {
       const { upsertProfileInSupabase, savePhotoInSupabase } = await import("@/lib/supabase-server");
@@ -148,10 +151,9 @@ export async function POST(req: NextRequest) {
         city: "Lomé",
         bio: "Nouveau membre sur Meet Me Club à Lomé.",
         relationshipGoal: "SERIOUS",
+        avatarUrl: finalAvatar,
       });
-      if (avatarUrl) {
-        await savePhotoInSupabase(user.id, avatarUrl as string, true);
-      }
+      await savePhotoInSupabase(user.id, finalAvatar, true);
     } catch (supaErr) {
       console.warn("[google-callback] Supabase REST sync warning:", supaErr);
     }
@@ -171,9 +173,7 @@ export async function POST(req: NextRequest) {
         relationshipGoal: "SERIOUS",
         plan: "FREE",
         partnersContacted: [],
-        photos: avatarUrl
-          ? [{ id: `p_${user.id}`, url: avatarUrl as string, isMain: true }]
-          : [],
+        photos: [{ id: `p_${user.id}`, url: finalAvatar, isMain: true }],
         interests: ["Discussions", "Sorties"],
         availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,

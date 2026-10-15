@@ -244,6 +244,7 @@ export default function ProfilEditPage() {
         body: JSON.stringify({
           ...form,
           phone: finalPhone,
+          avatarUrl: avatarUrl || undefined,
           coverUrl: coverUrl || undefined,
           height: form.height ? Number(form.height) : null,
           pseudo: form.pseudo.trim() ? form.pseudo.trim() : null,
@@ -430,7 +431,7 @@ export default function ProfilEditPage() {
                 title="Cliquez pour changer votre photo de profil"
               >
                 {avatarUrl ? (
-                  <Image src={avatarUrl} alt="Photo de profil" width={84} height={84} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+                  <Image src={avatarUrl} alt="Photo de profil" width={84} height={84} unoptimized style={{ objectFit: "cover", width: "100%", height: "100%" }} />
                 ) : (
                   <span style={{ fontSize: "28px", fontWeight: 800, color: "#0B2559" }}>
                     {(form.firstName || form.pseudo || "M").charAt(0).toUpperCase()}
