@@ -52,15 +52,13 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   // 2. Récupérer ou initialiser le profil local
   let profile = getProfileByUserId(session.userId);
 
-  // Vérifier également Supabase REST pour garantir la persistance des photos et couverture
+  // Vérifier également Supabase REST pour garantir la persistance des photos, couverture et bio
   let supaProfile: any = null;
-  if (!profile || !profile.photos || profile.photos.length === 0 || !profile.coverUrl) {
-    try {
-      const { getProfileFromSupabase } = await import("@/lib/supabase-server");
-      supaProfile = await getProfileFromSupabase(session.userId);
-    } catch (supaErr) {
-      console.warn("Supabase profile lookup warning:", supaErr);
-    }
+  try {
+    const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+    supaProfile = await getProfileFromSupabase(session.userId);
+  } catch (supaErr) {
+    console.warn("Supabase profile lookup warning:", supaErr);
   }
 
   if (!profile) {
@@ -153,21 +151,31 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         isVisible: true,
       });
     }
-  } else {
-    // Si le profil existe déjà mais n'a pas de photo ou couverture, tenter de compléter avec Supabase
-    const updates: any = {};
-    if ((!profile.photos || profile.photos.length === 0) && supaProfile?.photos && supaProfile.photos.length > 0) {
-      updates.photos = supaProfile.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }));
-    }
-    if (!profile.coverUrl && supaProfile?.coverUrl) {
-      updates.coverUrl = supaProfile.coverUrl;
-    }
-    if (session.phone && !profile.phone) {
-      updates.phone = session.phone;
-    }
-    if (Object.keys(updates).length > 0) {
-      profile = saveProfile({ userId: session.userId, ...updates });
-    }
+  } else if (supaProfile) {
+    // Si le profil existe déjà, fusionner avec les données fraîches de Supabase
+    const supaPhotos = (supaProfile.photos && supaProfile.photos.length > 0)
+      ? supaProfile.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
+      : profile.photos;
+
+    profile = saveProfile({
+      ...profile,
+      userId: session.userId,
+      firstName: supaProfile.firstName || profile.firstName,
+      pseudo: supaProfile.pseudo || profile.pseudo,
+      bio: supaProfile.bio !== undefined ? supaProfile.bio : profile.bio,
+      coverUrl: supaProfile.coverUrl || profile.coverUrl,
+      city: supaProfile.city || profile.city,
+      neighborhood: supaProfile.neighborhood || profile.neighborhood,
+      profession: supaProfile.profession || profile.profession,
+      relationshipStatus: supaProfile.relationshipStatus || profile.relationshipStatus,
+      relationshipGoal: (supaProfile.relationshipGoal as any) || profile.relationshipGoal,
+      height: supaProfile.height !== undefined ? supaProfile.height : profile.height,
+      religion: supaProfile.religion || profile.religion,
+      hasChildren: supaProfile.hasChildren ?? profile.hasChildren,
+      languages: supaProfile.languages || profile.languages,
+      photos: supaPhotos && supaPhotos.length > 0 ? supaPhotos : profile.photos,
+      phone: session.phone || supaProfile.phone || profile.phone,
+    });
   }
 
   const planInfo = PLAN_LIMITS[profile.plan] || PLAN_LIMITS.FREE;

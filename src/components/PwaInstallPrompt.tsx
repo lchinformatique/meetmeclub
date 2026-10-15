@@ -1,27 +1,43 @@
 "use client";
 // src/components/PwaInstallPrompt.tsx
-// Guide d'installation de l'application Meet Me Club sur écran d'accueil (iOS iPhone & Android)
+// International Multilingual PWA Installation & Language Setup (iOS Safari & Android & Desktop)
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { Globe, Sparkles } from "lucide-react";
+import LanguageSelector from "./LanguageSelector";
+import { SupportedLanguage, getLanguage, setLanguage, t, LANGUAGES } from "@/lib/i18n";
 
 export default function PwaInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [currentLang, setCurrentLang] = useState<SupportedLanguage>("fr");
 
   useEffect(() => {
-    // 1. Ne rien afficher si l'utilisateur est déjà en mode PWA standalone (déjà installé)
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
+    setCurrentLang(getLanguage());
 
-    if (isStandalone) return;
+    const handleLangChange = (e: any) => {
+      if (e.detail?.lang) {
+        setCurrentLang(e.detail.lang);
+      }
+    };
+    window.addEventListener("mmclub_lang_changed", handleLangChange);
+
+    // 1. Détection mode PWA standalone (déjà installé)
+    const isStandalone =
+      typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true);
 
     // 2. Vérifier si l'utilisateur a fermé la bannière récemment (stocké 7 jours)
     const dismissedTime = localStorage.getItem("mmc_pwa_dismissed");
-    if (dismissedTime && Date.now() - parseInt(dismissedTime, 10) < 7 * 24 * 60 * 60 * 1000) {
-      return;
+    const isDismissed =
+      dismissedTime && Date.now() - parseInt(dismissedTime, 10) < 7 * 24 * 60 * 60 * 1000;
+
+    // Si déjà installé et dismissed, ne pas afficher
+    if (isStandalone && isDismissed) {
+      return () => window.removeEventListener("mmclub_lang_changed", handleLangChange);
     }
 
     // 3. Détection iOS / iPhone / iPad
@@ -38,16 +54,17 @@ export default function PwaInstallPrompt() {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstall);
 
-    // Sur iOS, afficher la bannière après un court délai pour laisser l'utilisateur explorer
-    if (isIosDevice) {
-      const timer = setTimeout(() => {
+    // Afficher sur iOS ou premier démarrage après 1.2s
+    const timer = setTimeout(() => {
+      if (!isDismissed) {
         setShowPrompt(true);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+      }
+    }, 1200);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("mmclub_lang_changed", handleLangChange);
+      clearTimeout(timer);
     };
   }, []);
 
@@ -73,24 +90,69 @@ export default function PwaInstallPrompt() {
     <div
       style={{
         position: "fixed",
-        bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
-        left: "14px",
-        right: "14px",
-        maxWidth: "460px",
+        bottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
+        left: "12px",
+        right: "12px",
+        maxWidth: "500px",
         margin: "0 auto",
         background: "rgba(11, 37, 89, 0.98)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
         color: "white",
-        borderRadius: "20px",
+        borderRadius: "22px",
         padding: "16px 18px",
-        boxShadow: "0 14px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15)",
+        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.18)",
         zIndex: 9998,
         animation: "fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
+      {/* ── 1. Sélecteur de Langue International Direct ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "12px",
+          paddingBottom: "10px",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <Globe size={15} color="#F59E0B" />
+          <span style={{ fontSize: "12px", fontWeight: 700, color: "#FDE047" }}>
+            {t("chooseLanguage", currentLang)}
+          </span>
+        </div>
+        <button
+          onClick={handleDismiss}
+          aria-label={t("close", currentLang)}
+          style={{
+            background: "rgba(255, 255, 255, 0.15)",
+            border: "none",
+            color: "white",
+            width: "24px",
+            height: "24px",
+            borderRadius: "50%",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "12px",
+            padding: 0,
+          }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Boutons de langues avec drapeaux */}
+      <div style={{ marginBottom: "14px" }}>
+        <LanguageSelector variant="pills" />
+      </div>
+
+      {/* ── 2. Instructions d'installation ── */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
-        {/* Icône officielle de l'application Meet Me Club */}
+        {/* Logo App */}
         <div
           style={{
             width: "50px",
@@ -100,7 +162,7 @@ export default function PwaInstallPrompt() {
             background: "white",
             padding: "3px",
             flexShrink: 0,
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)",
+            boxShadow: "0 4px 14px rgba(0, 0, 0, 0.3)",
             border: "2px solid #E10600",
             display: "flex",
             alignItems: "center",
@@ -109,86 +171,71 @@ export default function PwaInstallPrompt() {
         >
           <Image
             src="/apple-touch-icon.png"
-            alt="Icône Meet Me Club"
+            alt="Meet Me Club"
             width={44}
             height={44}
             style={{ objectFit: "contain", borderRadius: "10px" }}
           />
         </div>
 
-        {/* Contenu et instructions */}
+        {/* Textes & CTA */}
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-            <h4 style={{ fontSize: "15px", fontWeight: 800, color: "white", margin: 0 }}>
-              Installer l&apos;application
-            </h4>
-            <button
-              onClick={handleDismiss}
-              aria-label="Fermer"
-              style={{
-                background: "rgba(255, 255, 255, 0.15)",
-                border: "none",
-                color: "white",
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "12px",
-                padding: 0,
-              }}
-            >
-              ✕
-            </button>
-          </div>
+          <h4 style={{ fontSize: "15px", fontWeight: 800, color: "white", margin: "0 0 3px 0" }}>
+            {t("installApp", currentLang)}
+          </h4>
 
-          <p style={{ fontSize: "12.5px", color: "rgba(255, 255, 255, 0.85)", margin: "0 0 12px 0", lineHeight: 1.4 }}>
-            Ajoutez <strong>Meet Me Club</strong> sur votre écran d&apos;accueil pour y accéder en 1 clic comme une vraie application.
+          <p
+            style={{
+              fontSize: "12px",
+              color: "rgba(255, 255, 255, 0.88)",
+              margin: "0 0 10px 0",
+              lineHeight: 1.4,
+            }}
+          >
+            {t("installDesc", currentLang)}
           </p>
 
           {isIos ? (
-            /* Instructions pas-à-pas pour iPhone / Safari */
+            /* Guide pas-à-pas iOS Safari */
             <div
               style={{
-                background: "rgba(255, 255, 255, 0.08)",
+                background: "rgba(255, 255, 255, 0.10)",
                 borderRadius: "12px",
-                padding: "10px 12px",
+                padding: "8px 12px",
                 fontSize: "11.5px",
                 lineHeight: 1.5,
-                border: "1px solid rgba(255, 255, 255, 0.12)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                <span>1. Appuyez sur</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
+                <span>{t("iosStep1", currentLang)}</span>
                 <span
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    background: "rgba(255, 255, 255, 0.2)",
+                    gap: "4px",
+                    background: "rgba(255, 255, 255, 0.22)",
                     borderRadius: "6px",
                     padding: "2px 6px",
                     fontWeight: 700,
                   }}
                 >
-                  Partager
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: "4px" }}>
+                  {t("iosShare", currentLang)}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                     <polyline points="16 6 12 2 8 6" />
                     <line x1="12" y1="2" x2="12" y2="15" />
                   </svg>
                 </span>
-                <span>en bas de Safari</span>
+                <span>{t("iosInSafari", currentLang)}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span>2. Puis sélectionnez</span>
-                <strong style={{ color: "#F59E0B" }}>« Sur l&apos;écran d&apos;accueil » ➕</strong>
+              <div>
+                <span>{t("iosStep2", currentLang)} </span>
+                <strong style={{ color: "#F59E0B" }}>{t("iosAddToHome", currentLang)}</strong>
               </div>
             </div>
           ) : (
-            /* Bouton direct pour Android / Chrome */
+            /* Bouton Android / Chrome */
             <button
               onClick={handleInstallClick}
               style={{
@@ -196,14 +243,18 @@ export default function PwaInstallPrompt() {
                 color: "white",
                 border: "none",
                 borderRadius: "12px",
-                padding: "8px 16px",
+                padding: "9px 18px",
                 fontSize: "13px",
                 fontWeight: 800,
                 cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(225, 6, 0, 0.35)",
+                boxShadow: "0 4px 14px rgba(225, 6, 0, 0.38)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
               }}
             >
-              Ajouter à l&apos;écran d&apos;accueil
+              <Sparkles size={14} />
+              <span>{t("installButton", currentLang)}</span>
             </button>
           )}
         </div>

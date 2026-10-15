@@ -231,6 +231,8 @@ export async function upsertProfileInSupabase(userId: string, data: {
     if (data.hasChildren !== undefined) profilePayload.hasChildren = data.hasChildren;
     if (data.languages !== undefined) profilePayload.languages = data.languages;
     if (data.educationLevel !== undefined) profilePayload.educationLevel = data.educationLevel;
+    if (data.coverUrl !== undefined) profilePayload.coverUrl = data.coverUrl;
+    if (data.avatarUrl !== undefined) profilePayload.avatarUrl = data.avatarUrl;
 
     if (existing?.id) {
       let { data: updated, error } = await admin
@@ -252,6 +254,7 @@ export async function upsertProfileInSupabase(userId: string, data: {
           relationshipGoal: data.relationshipGoal || "SERIOUS",
           updatedAt: new Date().toISOString(),
         };
+        if (data.coverUrl) corePayload.coverUrl = data.coverUrl;
         const retry = await admin
           .from("profiles")
           .update(corePayload)

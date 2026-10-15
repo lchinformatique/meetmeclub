@@ -13,43 +13,45 @@ export async function GET() {
 
   let profile = getProfileByUserId(session.userId);
 
-  if (!profile) {
-    // 1. Tenter Supabase REST en priorité pour persistence garantie
-    try {
-      const { getProfileFromSupabase } = await import('@/lib/supabase-server');
-      const supa = await getProfileFromSupabase(session.userId);
-      if (supa) {
-        profile = saveProfile({
-          userId: session.userId,
-          firstName: supa.firstName || 'Nouveau Membre',
-          pseudo: supa.pseudo || undefined,
-          email: session.email || undefined,
-          phone: supa.phone || session.phone || undefined,
-          gender: (supa.gender as any) || 'OTHER',
-          city: supa.city || 'Lomé',
-          neighborhood: supa.neighborhood || undefined,
-          profession: supa.profession || undefined,
-          relationshipStatus: supa.relationshipStatus || 'Célibataire',
-          hasChildren: supa.hasChildren ?? false,
-          religion: supa.religion || undefined,
-          height: supa.height || undefined,
-          languages: supa.languages || ['fr'],
-          bio: supa.bio || 'Nouveau membre sur Meet Me Club.',
-          relationshipGoal: (supa.relationshipGoal as any) || 'SERIOUS',
-          plan: 'FREE',
-          partnersContacted: [],
-          photos: (supa.photos && supa.photos.length > 0)
-            ? supa.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
-            : [],
-          interests: [],
-          availabilities: [{ dayOfWeek: 5, startTime: '18:00', endTime: '22:00' }],
-          isVerified: supa.isVerified ?? false,
-          isVisible: supa.isVisible ?? true,
-        });
-      }
-    } catch (supaErr) {
-      console.warn('[GET profile from Supabase]', supaErr);
+  // Synchronisation Supabase REST en priorité pour persistence garantie
+  try {
+    const { getProfileFromSupabase } = await import('@/lib/supabase-server');
+    const supa = await getProfileFromSupabase(session.userId);
+    if (supa) {
+      const mergedPhotos = (supa.photos && supa.photos.length > 0)
+        ? supa.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
+        : (profile?.photos || []);
+
+      profile = saveProfile({
+        ...(profile || {}),
+        userId: session.userId,
+        firstName: supa.firstName || profile?.firstName || 'Nouveau Membre',
+        pseudo: supa.pseudo || profile?.pseudo || undefined,
+        email: session.email || profile?.email || undefined,
+        phone: supa.phone || session.phone || profile?.phone || undefined,
+        gender: (supa.gender as any) || profile?.gender || 'OTHER',
+        city: supa.city || profile?.city || 'Lomé',
+        neighborhood: supa.neighborhood || profile?.neighborhood || undefined,
+        profession: supa.profession || profile?.profession || undefined,
+        relationshipStatus: supa.relationshipStatus || profile?.relationshipStatus || 'Célibataire',
+        hasChildren: supa.hasChildren ?? profile?.hasChildren ?? false,
+        religion: supa.religion || profile?.religion || undefined,
+        height: supa.height || profile?.height || undefined,
+        languages: supa.languages || profile?.languages || ['fr'],
+        bio: supa.bio || profile?.bio || 'Nouveau membre sur Meet Me Club.',
+        relationshipGoal: (supa.relationshipGoal as any) || profile?.relationshipGoal || 'SERIOUS',
+        coverUrl: supa.coverUrl || profile?.coverUrl || undefined,
+        plan: profile?.plan || 'FREE',
+        partnersContacted: profile?.partnersContacted || [],
+        photos: mergedPhotos,
+        interests: profile?.interests || [],
+        availabilities: profile?.availabilities || [{ dayOfWeek: 5, startTime: '18:00', endTime: '22:00' }],
+        isVerified: supa.isVerified ?? profile?.isVerified ?? false,
+        isVisible: supa.isVisible ?? profile?.isVisible ?? true,
+      });
     }
+  } catch (supaErr) {
+    console.warn('[GET profile from Supabase]', supaErr);
   }
 
   if (!profile) {
@@ -221,7 +223,7 @@ export async function PATCH(request: NextRequest) {
 
     // ── 4. Synchronisation Supabase directe (REST HTTPS) ────────
     try {
-      const { upsertProfileInSupabase } = await import('@/lib/supabase-server');
+      const { upsertProfileInSupabase, savePhotoInSupabase } = await import('@/lib/supabase-server');
       await upsertProfileInSupabase(session.userId, {
         firstName: body.firstName || saved.firstName,
         lastName: body.lastName || saved.lastName,
@@ -240,7 +242,17 @@ export async function PATCH(request: NextRequest) {
         educationLevel: body.educationLevel !== undefined ? body.educationLevel : saved.educationLevel,
         phone: body.phone !== undefined ? body.phone : saved.phone,
         avatarUrl: finalAvatarUrl || undefined,
+        coverUrl: coverUrl !== undefined ? coverUrl : saved.coverUrl,
       });
+
+      // Synchroniser également toutes les photos supplémentaires
+      if (updatedPhotos && updatedPhotos.length > 0) {
+        for (const ph of updatedPhotos) {
+          try {
+            await savePhotoInSupabase(session.userId, ph.url, ph.isMain);
+          } catch {}
+        }
+      }
     } catch (supaErr) {
       console.warn('[PATCH supabase sync]', supaErr);
     }

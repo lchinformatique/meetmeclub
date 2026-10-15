@@ -21,6 +21,8 @@ import {
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
+import LanguageSelector from "./LanguageSelector";
+import { getLanguage, t, SupportedLanguage } from "@/lib/i18n";
 
 interface UserSession {
   id: string;
@@ -37,17 +39,27 @@ interface NavLinkItem {
   badge?: number;
 }
 
-const navLinks: NavLinkItem[] = [
-  { href: "/", label: "Accueil", Icon: Home },
-  { href: "/decouverte", label: "Découvrir", Icon: Compass },
-  { href: "/messages", label: "Messages", Icon: MessageSquare },
-  { href: "/rendez-vous", label: "Sorties", Icon: CalendarDays },
-  { href: "/tarifs", label: "Tarifs", Icon: Gem },
-];
-
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const [lang, setLang] = useState<SupportedLanguage>("fr");
+
+  useEffect(() => {
+    setLang(getLanguage());
+    const handleLang = (e: any) => {
+      if (e.detail?.lang) setLang(e.detail.lang);
+    };
+    window.addEventListener("mmclub_lang_changed", handleLang);
+    return () => window.removeEventListener("mmclub_lang_changed", handleLang);
+  }, []);
+
+  const navLinks: NavLinkItem[] = [
+    { href: "/", label: lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil", Icon: Home },
+    { href: "/decouverte", label: t("navDiscovery", lang), Icon: Compass },
+    { href: "/messages", label: t("navMessages", lang), Icon: MessageSquare },
+    { href: "/rendez-vous", label: t("navRendezVous", lang), Icon: CalendarDays },
+    { href: "/tarifs", label: t("navPricing", lang), Icon: Gem },
+  ];
   const [sessionUser, setSessionUser] = useState<UserSession | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -373,6 +385,9 @@ export default function Header() {
 
           {/* ── Auth Zone ───────────────────────── */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            {/* International Language Selector */}
+            <LanguageSelector variant="compact" />
+
             {!loadingUser && sessionUser ? (
               /* Logged-in */
               <>
@@ -653,6 +668,11 @@ export default function Header() {
 
         {/* Drawer Auth Zone (En premier sur mobile) */}
         <div style={{ padding: "16px 14px 12px", borderBottom: "1px solid #EEF2FB", background: "#FAFBFD" }}>
+          {/* Mobile Language Selector */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid #E2E8F0" }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>Langue / Language :</span>
+            <LanguageSelector variant="compact" />
+          </div>
           {!loadingUser && sessionUser ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <Link

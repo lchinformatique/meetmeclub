@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
-import { Video, Calendar, MoreVertical, Paperclip, Send, Mic, MapPin, ArrowLeft, User } from "lucide-react";
+import { Video, Calendar, MoreVertical, Paperclip, Send, Mic, MapPin, ArrowLeft, User, MessageSquare } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
 interface ChatMessage {
@@ -137,8 +137,13 @@ function MessagesContent() {
       firstName: string;
       pseudo?: string;
       photoUrl?: string;
+      coverUrl?: string;
+      photos?: Array<{ url: string; isMain?: boolean }>;
       city?: string;
       bio?: string;
+      profession?: string;
+      relationshipGoal?: string;
+      age?: number;
     }>
   >([]);
 
@@ -177,8 +182,13 @@ function MessagesContent() {
               firstName: p.firstName,
               pseudo: p.pseudo || p.firstName,
               photoUrl: p.photos?.find((ph: any) => ph.isMain)?.url || p.photos?.[0]?.url || "",
+              coverUrl: p.coverUrl || "",
+              photos: p.photos || [],
               city: p.city || "Lomé",
-              bio: p.bio || "Membre vérifié",
+              bio: p.bio || "Membre actif du club.",
+              profession: p.profession || "Membre",
+              relationshipGoal: p.relationshipGoal || "SERIOUS",
+              age: p.age || 26,
             }));
             setOnlineMembers(list);
           }
@@ -486,7 +496,23 @@ function MessagesContent() {
 
     try {
       if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Paramètres audio haute fidélité : réduction de bruit, annulation d'écho et contrôle de gain automatique
+        const audioConstraints: MediaStreamConstraints = {
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 44100,
+            channelCount: 1,
+          },
+        };
+
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
         audioStreamRef.current = stream;
 
         // Codecs compatibles iOS Safari, Android Chrome & Desktop
@@ -506,9 +532,19 @@ function MessagesContent() {
         }
         selectedAudioMimeRef.current = preferredMime || "audio/mp4";
 
-        const recorder = preferredMime
-          ? new MediaRecorder(stream, { mimeType: preferredMime })
-          : new MediaRecorder(stream);
+        const recorderOptions: MediaRecorderOptions = {
+          audioBitsPerSecond: 128000,
+        };
+        if (preferredMime) {
+          recorderOptions.mimeType = preferredMime;
+        }
+
+        let recorder: MediaRecorder;
+        try {
+          recorder = new MediaRecorder(stream, recorderOptions);
+        } catch {
+          recorder = new MediaRecorder(stream);
+        }
         mediaRecorderRef.current = recorder;
 
         recorder.ondataavailable = (event) => {
@@ -3458,160 +3494,180 @@ function MessagesContent() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header / Cover */}
-            <div
-              style={{
-                height: "120px",
-                background: "linear-gradient(135deg, #0B2559 0%, #163B8A 60%, #1D4ED8 100%)",
-                position: "relative",
-                display: "flex",
-                justifyContent: "flex-end",
-                padding: "12px",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setPartnerModalOpen(false)}
-                style={{
-                  background: "rgba(0,0,0,0.45)",
-                  border: "none",
-                  color: "white",
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                }}
-              >
-                ✕
-              </button>
-            </div>
+            {(() => {
+              const activePartner = onlineMembers.find(
+                (m) => m.userId === activeConv.participantId || m.id === activeConv.participantId
+              );
+              const partnerCover = activePartner?.coverUrl;
+              const partnerPhotos = (activePartner?.photos && activePartner.photos.length > 0)
+                ? activePartner.photos
+                : (activeConv.photoUrl ? [{ url: activeConv.photoUrl, isMain: true }] : [{ url: "/victoire_profile.jpg", isMain: true }]);
 
-            {/* Profile Avatar & Info */}
-            <div style={{ padding: "0 20px 24px", marginTop: "-44px" }}>
-              <div
-                style={{
-                  width: "88px",
-                  height: "88px",
-                  borderRadius: "50%",
-                  border: "4px solid white",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-                  overflow: "hidden",
-                  background: "#0B2559",
-                  position: "relative",
-                  marginBottom: "12px",
-                }}
-              >
-                {activeConv.photoUrl ? (
-                  <Image
-                    src={activeConv.photoUrl}
-                    alt={activeConv.firstName}
-                    fill
-                    unoptimized
-                    style={{ objectFit: "cover" }}
-                  />
-                ) : (
+              return (
+                <>
                   <div
                     style={{
-                      width: "100%",
-                      height: "100%",
+                      height: "140px",
+                      background: partnerCover
+                        ? `url(${partnerCover}) center/cover no-repeat`
+                        : "linear-gradient(135deg, #0B2559 0%, #163B8A 60%, #1D4ED8 100%)",
+                      position: "relative",
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                      fontSize: "30px",
-                      fontWeight: 800,
+                      justifyContent: "flex-end",
+                      padding: "12px",
+                      borderRadius: "24px 24px 0 0",
                     }}
                   >
-                    {activeConv.firstName?.charAt(0) || "M"}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                <div>
-                  <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span>{activeConv.firstName}</span>
-                    <span style={{ fontSize: "14px", color: "#059669" }}>✓</span>
-                  </h2>
-                  <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>
-                    {activeConv.pseudo || `@${activeConv.firstName.toLowerCase()}`}
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#ECFDF5", color: "#059669", padding: "4px 10px", borderRadius: "100px", fontSize: "12px", fontWeight: 700 }}>
-                  <span style={{ width: "7px", height: "7px", background: "#10B981", borderRadius: "50%" }} />
-                  En ligne à Lomé
-                </div>
-              </div>
-
-              {/* Badges & Critères */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", margin: "14px 0" }}>
-                <span style={{ background: "#EFF6FF", color: "#1D4ED8", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
-                  📍 Lomé, Togo
-                </span>
-                <span style={{ background: "#F1F5F9", color: "#334155", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
-                  🛡️ Identité vérifiée
-                </span>
-                <span style={{ background: "#FEF3C7", color: "#B45309", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
-                  ⭐ Relation sérieuse & Sorties
-                </span>
-              </div>
-
-              {/* Bio */}
-              <div style={{ background: "#F8FAFC", borderRadius: "14px", padding: "14px", border: "1px solid #E2E8F0", marginBottom: "16px" }}>
-                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
-                  À propos de {activeConv.firstName}
-                </div>
-                <p style={{ fontSize: "13.5px", color: "#334155", lineHeight: 1.6, margin: 0 }}>
-                  {activeConv.id.includes("victoire")
-                    ? "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖"
-                    : "Membre actif sur Meet Me Club Lomé. Disponible pour échanger en direct, partager des moments conviviaux et organiser une belle rencontre dans les meilleurs établissements de Lomé."}
-                </p>
-              </div>
-
-              {/* Galerie Photos */}
-              <div style={{ marginBottom: "20px" }}>
-                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>
-                  Photos du membre (cliquez pour agrandir)
-                </div>
-                <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
-                  {activeConv.photoUrl && (
                     <div
-                      onClick={() => setEnlargedImage(activeConv.photoUrl)}
                       style={{
-                        width: "80px",
-                        height: "80px",
-                        borderRadius: "12px",
-                        overflow: "hidden",
-                        border: "2px solid #E2E8F0",
-                        cursor: "pointer",
+                        position: "absolute",
+                        inset: 0,
+                        background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 100%)",
+                        borderRadius: "24px 24px 0 0",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setPartnerModalOpen(false)}
+                      style={{
                         position: "relative",
-                        flexShrink: 0,
+                        zIndex: 2,
+                        background: "rgba(0,0,0,0.55)",
+                        border: "none",
+                        color: "white",
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px",
+                        fontWeight: 700,
                       }}
                     >
-                      <Image src={activeConv.photoUrl} alt="Photo" fill unoptimized style={{ objectFit: "cover" }} />
-                    </div>
-                  )}
-                  <div
-                    onClick={() => setEnlargedImage(activeConv.photoUrl || "/victoire_profile.jpg")}
-                    style={{
-                      width: "80px",
-                      height: "80px",
-                      borderRadius: "12px",
-                      overflow: "hidden",
-                      border: "2px solid #E2E8F0",
-                      cursor: "pointer",
-                      position: "relative",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Image src="/victoire_profile.jpg" alt="Photo" fill unoptimized style={{ objectFit: "cover" }} />
+                      ✕
+                    </button>
                   </div>
-                </div>
-              </div>
+
+                  {/* Profile Avatar & Info */}
+                  <div style={{ padding: "0 20px 24px", marginTop: "-44px", position: "relative", zIndex: 3 }}>
+                    <div
+                      style={{
+                        width: "88px",
+                        height: "88px",
+                        borderRadius: "50%",
+                        border: "4px solid white",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                        overflow: "hidden",
+                        background: "#0B2559",
+                        position: "relative",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      {activeConv.photoUrl ? (
+                        <Image
+                          src={activeConv.photoUrl}
+                          alt={activeConv.firstName}
+                          fill
+                          unoptimized
+                          style={{ objectFit: "cover" }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            fontSize: "30px",
+                            fontWeight: 800,
+                          }}
+                        >
+                          {activeConv.firstName?.charAt(0) || "M"}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <div>
+                        <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span>{activeConv.firstName}</span>
+                          <span style={{ fontSize: "14px", color: "#059669" }}>✓</span>
+                        </h2>
+                        <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>
+                          {activeConv.pseudo || `@${activeConv.firstName.toLowerCase()}`}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#ECFDF5", color: "#059669", padding: "4px 10px", borderRadius: "100px", fontSize: "12px", fontWeight: 700 }}>
+                        <span style={{ width: "7px", height: "7px", background: "#10B981", borderRadius: "50%" }} />
+                        En ligne à Lomé
+                      </div>
+                    </div>
+
+                    {/* Badges & Critères */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", margin: "14px 0" }}>
+                      <span style={{ background: "#EFF6FF", color: "#1D4ED8", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
+                        📍 {activePartner?.city || "Lomé, Togo"}
+                      </span>
+                      {activePartner?.profession && (
+                        <span style={{ background: "#F1F5F9", color: "#334155", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
+                          💼 {activePartner.profession}
+                        </span>
+                      )}
+                      <span style={{ background: "#FEF3C7", color: "#B45309", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
+                        ⭐ {activePartner?.relationshipGoal === "MARRIAGE" ? "Mariage & Foyer" : activePartner?.relationshipGoal === "FRIENDSHIP" ? "Amitié & Échange" : "Relation sérieuse & Sorties"}
+                      </span>
+                      <span style={{ background: "#ECFDF5", color: "#047857", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
+                        🛡️ Identité vérifiée
+                      </span>
+                    </div>
+
+                    {/* Bio */}
+                    <div style={{ background: "#F8FAFC", borderRadius: "14px", padding: "14px", border: "1px solid #E2E8F0", marginBottom: "16px" }}>
+                      <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
+                        À propos de {activeConv.firstName}
+                      </div>
+                      <p style={{ fontSize: "13.5px", color: "#334155", lineHeight: 1.6, margin: 0 }}>
+                        {activePartner?.bio || (activeConv.id.includes("victoire")
+                          ? "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖"
+                          : "Membre actif sur Meet Me Club Lomé. Disponible pour échanger en direct, partager des moments conviviaux et organiser une belle rencontre dans les meilleurs établissements de Lomé.")}
+                      </p>
+                    </div>
+
+                    {/* Galerie Photos du membre */}
+                    <div style={{ marginBottom: "20px" }}>
+                      <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>
+                        Photos du membre ({partnerPhotos.length}) · Cliquez pour agrandir
+                      </div>
+                      <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
+                        {partnerPhotos.map((ph: any, idx: number) => (
+                          <div
+                            key={idx}
+                            onClick={() => setEnlargedImage(ph.url)}
+                            style={{
+                              width: "80px",
+                              height: "80px",
+                              borderRadius: "12px",
+                              overflow: "hidden",
+                              border: "2px solid #E2E8F0",
+                              cursor: "pointer",
+                              position: "relative",
+                              flexShrink: 0,
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                            }}
+                          >
+                            <Image src={ph.url} alt={`Photo ${idx + 1}`} fill unoptimized style={{ objectFit: "cover" }} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
               {/* Actions */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -3692,7 +3748,6 @@ function MessagesContent() {
               </div>
             </div>
           </div>
-        </div>
       )}
 
       {/* ── Enlarged Image Modal ─────────────────────────────── */}

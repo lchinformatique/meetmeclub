@@ -6,10 +6,21 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Compass, MessageSquare, Calendar, User } from "lucide-react";
+import { getLanguage, t, SupportedLanguage } from "@/lib/i18n";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [lang, setLang] = useState<SupportedLanguage>("fr");
+
+  useEffect(() => {
+    setLang(getLanguage());
+    const handleLang = (e: any) => {
+      if (e.detail?.lang) setLang(e.detail.lang);
+    };
+    window.addEventListener("mmclub_lang_changed", handleLang);
+    return () => window.removeEventListener("mmclub_lang_changed", handleLang);
+  }, []);
 
   // Check real authentication status
   useEffect(() => {
@@ -69,20 +80,20 @@ export default function MobileBottomNav() {
   }
 
   const navItems = [
-    { href: "/", label: "Accueil", Icon: Home },
-    { href: "/decouverte", label: "Découvrir", Icon: Compass },
+    { href: "/", label: t("appTitle", lang) === "Meet Me Club" ? (lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil") : "Accueil", Icon: Home },
+    { href: "/decouverte", label: t("navDiscovery", lang), Icon: Compass },
     {
       href: "/messages",
       activeHref: "/messages",
-      label: "Messages",
+      label: t("navMessages", lang),
       Icon: MessageSquare,
       badge: unreadCount > 0 ? unreadCount : undefined,
     },
-    { href: "/rendez-vous", label: "Sorties", Icon: Calendar },
+    { href: "/rendez-vous", label: t("navRendezVous", lang), Icon: Calendar },
     {
       href: "/profil",
       activeHref: "/profil",
-      label: "Profil",
+      label: t("navProfile", lang),
       Icon: User,
     },
   ];
