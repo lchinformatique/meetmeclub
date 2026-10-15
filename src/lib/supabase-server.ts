@@ -11,6 +11,7 @@ const supabaseUrl =
 const supabaseServiceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZm52a2VsdGhnYW52bWlzcWJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTc1MjM4OSwiZXhwIjoyMTA3MzI4Mzg5fQ.fDWsssdgxrz9tRbxzrmR9dKZe8t9ygHAQxNjmlBCKcw";
 
 let supabaseAdminInstance: SupabaseClient | null = null;

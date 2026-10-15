@@ -6,6 +6,7 @@ import { verifySessionToken } from "@/lib/session";
 
 const MEMBER_ROUTES = [
   "/profil",
+  "/messages",
   "/rendez-vous",
   "/paiements",
   "/notifications",
