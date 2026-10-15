@@ -12,6 +12,7 @@ import {
   MessageSquare,
   CalendarDays,
   Gem,
+  Crown,
   User,
   LogOut,
   LogIn,
@@ -56,6 +57,7 @@ export default function Header() {
   const navLinks: NavLinkItem[] = [
     { href: "/", label: lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil", Icon: Home },
     { href: "/decouverte", label: t("navDiscovery", lang), Icon: Compass },
+    { href: "/vip", label: "Mur VIP 👑", Icon: Crown },
     { href: "/messages", label: t("navMessages", lang), Icon: MessageSquare },
     { href: "/rendez-vous", label: t("navRendezVous", lang), Icon: CalendarDays },
     { href: "/tarifs", label: t("navPricing", lang), Icon: Gem },

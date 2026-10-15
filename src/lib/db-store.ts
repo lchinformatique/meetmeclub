@@ -4,6 +4,8 @@
 
 import fs from "fs";
 import path from "path";
+export { SASPAY_LINKS, type SubscriptionStatusInfo, type VipPost } from "./subscription-constants";
+import { SASPAY_LINKS, type SubscriptionStatusInfo, type VipPost } from "./subscription-constants";
 
 export interface StoredProfile {
   id: string;
@@ -31,6 +33,9 @@ export interface StoredProfile {
   bio: string;
   relationshipGoal: "FRIENDSHIP" | "SERIOUS" | "MARRIAGE" | "CASUAL" | "EXCHANGE";
   plan: "FREE" | "ESSENTIAL" | "COMPLICE" | "VIP";
+  subscriptionStartedAt?: string;
+  subscriptionExpiresAt?: string;
+  likesCount?: number;
   partnersContacted: string[]; // List of user IDs this user has initiated contact with
   photos: { id: string; url: string; isMain: boolean }[];
   interests: string[];
@@ -77,6 +82,9 @@ export const VICTOIRE_PROFILE: StoredProfile = {
   bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
   relationshipGoal: "SERIOUS",
   plan: "VIP",
+  subscriptionStartedAt: "2024-01-01T00:00:00.000Z",
+  subscriptionExpiresAt: "2028-12-31T23:59:59.000Z",
+  likesCount: 64,
   partnersContacted: [],
   photos: [
     { id: "p_victoire_1", url: "/victoire_profile.jpg", isMain: true }
@@ -181,9 +189,33 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
         computedAge = calcAge;
       }
     }
+    const old = profiles[index];
+    const plan = profileData.plan || old.plan || "FREE";
+    const planChanged = Boolean(profileData.plan && profileData.plan !== old.plan);
+
+    let subStarted = profileData.subscriptionStartedAt || old.subscriptionStartedAt;
+    let subExpires = profileData.subscriptionExpiresAt || old.subscriptionExpiresAt;
+
+    if (planChanged) {
+      subStarted = new Date().toISOString();
+      const durationDays = plan === "FREE" ? 7 : 30;
+      subExpires = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+    } else if (!subExpires) {
+      const isTrial = plan === "FREE";
+      subStarted = old.createdAt || new Date().toISOString();
+      const baseMs = new Date(subStarted).getTime();
+      subExpires = new Date(baseMs + (isTrial ? 7 : 30) * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    const likes = profileData.likesCount !== undefined ? profileData.likesCount : (old.likesCount ?? 12);
+
     updatedProfile = {
-      ...profiles[index],
+      ...old,
       ...profileData,
+      plan,
+      subscriptionStartedAt: subStarted,
+      subscriptionExpiresAt: subExpires,
+      likesCount: likes,
       age: computedAge,
       updatedAt: new Date().toISOString(),
     };
@@ -202,6 +234,13 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
         initialAge = calcAge;
       }
     }
+    const nowIso = new Date().toISOString();
+    const plan = profileData.plan || "FREE";
+    const isTrial = plan === "FREE";
+    const subStarted = profileData.subscriptionStartedAt || nowIso;
+    const subExpires = profileData.subscriptionExpiresAt || new Date(Date.now() + (isTrial ? 7 : 30) * 24 * 60 * 60 * 1000).toISOString();
+    const likes = profileData.likesCount !== undefined ? profileData.likesCount : 8;
+
     updatedProfile = {
       id: `prof_${Date.now()}`,
       userId: profileData.userId,
@@ -227,15 +266,18 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       passwordHash: profileData.passwordHash,
       bio: profileData.bio || "Membre actif de la communauté Meet Me Club à Lomé.",
       relationshipGoal: profileData.relationshipGoal || "SERIOUS",
-      plan: profileData.plan || "FREE",
+      plan,
+      subscriptionStartedAt: subStarted,
+      subscriptionExpiresAt: subExpires,
+      likesCount: likes,
       partnersContacted: profileData.partnersContacted || [],
       photos: Array.isArray(profileData.photos) ? profileData.photos : [],
       interests: profileData.interests || ["Discussions", "Sorties Lomé", "Cafés"],
       availabilities: profileData.availabilities || [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
       isVerified: true,
       isVisible: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
     profiles.unshift(updatedProfile);
   }
@@ -253,12 +295,6 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
 }
 
 // ── Quotas & Subscription check ──────────────────────────────────
-export const SASPAY_LINKS = {
-  ESSENTIAL: "https://link.saspay.me/dtpycov9i-k",
-  COMPLICE: "https://link.saspay.me/xiigac37eyq",
-  VIP: "https://link.saspay.me/ksev91xlvik",
-} as const;
-
 export const PLAN_LIMITS = {
   FREE: {
     maxPartners: 3,
@@ -553,6 +589,198 @@ export function saveConversation(conv: Partial<StoredConversation> & { id: strin
     fs.writeFileSync(CONVERSATIONS_FILE, JSON.stringify(all, null, 2), "utf8");
   } catch {}
   return updated;
+}
+
+// ── Calcul et gestion de l'expiration d'abonnement & compte à rebours ─────
+
+export function getSubscriptionStatus(profile?: StoredProfile | any): SubscriptionStatusInfo {
+  const plan = ((profile?.plan || "FREE") as string).toUpperCase() as "FREE" | "ESSENTIAL" | "COMPLICE" | "VIP";
+  const planConfig = PLAN_LIMITS[plan] || PLAN_LIMITS.FREE;
+  const isTrial = plan === "FREE";
+
+  const createdAt = profile?.createdAt ? new Date(profile.createdAt).getTime() : Date.now();
+  const startedAtMs = profile?.subscriptionStartedAt
+    ? new Date(profile.subscriptionStartedAt).getTime()
+    : createdAt;
+
+  let expiresAtMs: number;
+  if (profile?.subscriptionExpiresAt) {
+    expiresAtMs = new Date(profile.subscriptionExpiresAt).getTime();
+  } else {
+    const durationDays = isTrial ? 7 : 30;
+    expiresAtMs = startedAtMs + durationDays * 24 * 60 * 60 * 1000;
+  }
+
+  const now = Date.now();
+  const diffMs = expiresAtMs - now;
+  const isExpired = diffMs <= 0;
+
+  const totalDurationDays = isTrial ? 7 : 30;
+  const totalDurationMs = totalDurationDays * 24 * 60 * 60 * 1000;
+  const elapsedMs = Math.max(0, now - startedAtMs);
+  const progressPercent = Math.min(100, Math.max(0, Math.round((elapsedMs / totalDurationMs) * 100)));
+
+  const remainingSecondsTotal = Math.max(0, Math.floor(diffMs / 1000));
+  const daysRemaining = Math.floor(remainingSecondsTotal / 86400);
+  const hoursRemaining = Math.floor((remainingSecondsTotal % 86400) / 3600);
+  const minutesRemaining = Math.floor((remainingSecondsTotal % 3600) / 60);
+  const secondsRemaining = remainingSecondsTotal % 60;
+
+  return {
+    isExpired,
+    isTrial,
+    plan,
+    label: planConfig.label,
+    price: planConfig.price,
+    paymentUrl: planConfig.paymentUrl,
+    startedAt: new Date(startedAtMs).toISOString(),
+    expiresAt: new Date(expiresAtMs).toISOString(),
+    daysRemaining,
+    hoursRemaining,
+    minutesRemaining,
+    secondsRemaining,
+    totalDurationDays,
+    progressPercent,
+  };
+}
+
+/**
+ * Règle stricte de visibilité entre catégories :
+ * - VIP (15 000) : voit TOUS les membres sans exception.
+ * - Complice (6 000) : voit Complice (6000), Essentiel (3000) et Free (essai).
+ * - Essentiel (3 000) : voit Essentiel (3000) et Free (essai).
+ * - Gratuit : période d'essai 7 jours (voit Free et Essentiel).
+ */
+export function canViewMember(viewerPlan: string = "FREE", targetPlan: string = "FREE"): boolean {
+  const v = (viewerPlan || "FREE").toUpperCase();
+  const t = (targetPlan || "FREE").toUpperCase();
+
+  if (v === "VIP") return true;
+  if (v === "COMPLICE") return t === "COMPLICE" || t === "ESSENTIAL" || t === "FREE";
+  if (v === "ESSENTIAL") return t === "ESSENTIAL" || t === "FREE";
+  return t === "FREE" || t === "ESSENTIAL";
+}
+
+/**
+ * Classement des profils :
+ * - VIP en tête (+10 000 pts)
+ * - Complice (6 000) classé en haut selon leurs likes et engagement (+5 000 pts + likes * 10)
+ * - Essentiel (+1 000 pts + likes * 10)
+ * - Gratuit (+ likes * 10)
+ */
+export function sortProfilesByPriorityAndLikes<T extends { plan?: string; likesCount?: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const getScore = (item: T) => {
+      const p = (item.plan || "FREE").toUpperCase();
+      const likes = item.likesCount || 0;
+      let base = 0;
+      if (p === "VIP") base = 10000;
+      else if (p === "COMPLICE") base = 5000;
+      else if (p === "ESSENTIAL") base = 1000;
+      return base + likes * 10;
+    };
+    return getScore(b) - getScore(a);
+  });
+}
+
+// ── Espace VIP Exclusif (Feed / Mur de publications VIP) ─────────
+
+const VIP_POSTS_FILE = path.join(DATA_DIR, "vip_posts.json");
+
+const DEFAULT_VIP_POSTS: VipPost[] = [
+  {
+    id: "post_vip_welcome_1",
+    userId: "user_victoire_lome",
+    authorName: "Victoire Lawson",
+    authorAvatar: "/victoire_profile.jpg",
+    authorPseudo: "@victoire_lome",
+    title: "✨ Bienvenue dans le Club VIP Meet Me Club !",
+    content: "Ravie d'accueillir les membres VIP dans cet espace privilégié. Ici, nous partageons nos bons plans sorties à Lomé, nos coups de cœur, photos et événements exclusifs. N'hésitez pas à publier vos actualités et inviter pour de belles rencontres !",
+    mediaUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1000&auto=format&fit=crop&q=80",
+    mediaType: "IMAGE",
+    likesCount: 24,
+    commentsCount: 6,
+    createdAt: "2026-10-14T10:00:00.000Z",
+    updatedAt: "2026-10-14T10:00:00.000Z",
+  },
+  {
+    id: "post_vip_welcome_2",
+    userId: "user_victoire_lome",
+    authorName: "Victoire Lawson",
+    authorAvatar: "/victoire_profile.jpg",
+    authorPseudo: "@victoire_lome",
+    title: "🍸 Soirée Rooftop & Dégustation ce Samedi",
+    content: "Rendez-vous réservé aux membres VIP à l'Hôtel 2 Février pour une soirée cocktail et échanges chaleureux à partir de 19h30. Une belle opportunité pour briser la glace en direct !",
+    mediaUrl: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=1000&auto=format&fit=crop&q=80",
+    mediaType: "ARTICLE",
+    likesCount: 31,
+    commentsCount: 9,
+    createdAt: "2026-10-15T08:30:00.000Z",
+    updatedAt: "2026-10-15T08:30:00.000Z",
+  },
+];
+
+let memoryVipPosts: VipPost[] = [...DEFAULT_VIP_POSTS];
+
+function ensureVipPostsFile() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(VIP_POSTS_FILE)) {
+      fs.writeFileSync(VIP_POSTS_FILE, JSON.stringify(DEFAULT_VIP_POSTS, null, 2), "utf8");
+    }
+  } catch {}
+}
+
+export function getAllVipPosts(): VipPost[] {
+  ensureVipPostsFile();
+  try {
+    if (fs.existsSync(VIP_POSTS_FILE)) {
+      const raw = fs.readFileSync(VIP_POSTS_FILE, "utf8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryVipPosts = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return memoryVipPosts;
+}
+
+export function createVipPost(
+  post: Omit<VipPost, "id" | "createdAt" | "updatedAt" | "likesCount" | "commentsCount">
+): VipPost {
+  const all = getAllVipPosts();
+  const newPost: VipPost = {
+    ...post,
+    id: `post_vip_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    likesCount: 1,
+    commentsCount: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  all.unshift(newPost);
+  memoryVipPosts = all;
+  try {
+    ensureVipPostsFile();
+    fs.writeFileSync(VIP_POSTS_FILE, JSON.stringify(all, null, 2), "utf8");
+  } catch {}
+  return newPost;
+}
+
+export function likeVipPost(id: string): VipPost | null {
+  const all = getAllVipPosts();
+  const post = all.find((p) => p.id === id);
+  if (!post) return null;
+  post.likesCount = (post.likesCount || 0) + 1;
+  post.updatedAt = new Date().toISOString();
+  memoryVipPosts = all;
+  try {
+    ensureVipPostsFile();
+    fs.writeFileSync(VIP_POSTS_FILE, JSON.stringify(all, null, 2), "utf8");
+  } catch {}
+  return post;
 }
 
 

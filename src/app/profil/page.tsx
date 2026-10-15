@@ -6,10 +6,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { getProfileByUserId, saveProfile, PLAN_LIMITS } from "@/lib/db-store";
+import { getProfileByUserId, saveProfile, PLAN_LIMITS, getSubscriptionStatus } from "@/lib/db-store";
 import Header from "@/components/Header";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileInteractiveCard from "@/components/ProfileInteractiveCard";
+import SubscriptionCountdown from "@/components/SubscriptionCountdown";
 import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock, MessageSquare } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -265,6 +266,12 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
             />
           </div>
         </div>
+
+        {/* ── Compteur Animé d'expiration d'abonnement & Statistiques ── */}
+        <SubscriptionCountdown
+          initialStatus={getSubscriptionStatus(profile)}
+          profile={profile}
+        />
 
         <div className="profil-layout-grid">
 

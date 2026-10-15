@@ -144,10 +144,14 @@ export async function GET() {
   }
 
   const planInfo = PLAN_LIMITS[profile.plan] || PLAN_LIMITS.FREE;
+  const { getSubscriptionStatus } = await import('@/lib/db-store');
+  const subscriptionStatus = getSubscriptionStatus(profile);
+
   return NextResponse.json({
     profile: {
       ...profile,
       planInfo,
+      subscriptionStatus,
       contactsRemaining: Math.max(0, (planInfo.maxPartners || 3) - (profile.partnersContacted?.length || 0)),
     },
   });

@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
-import { Video, Calendar, MoreVertical, Paperclip, Send, Mic, MapPin, ArrowLeft, User, MessageSquare } from "lucide-react";
+import { Video, Phone, PhoneCall, PhoneOff, Volume2, MicOff, Calendar, MoreVertical, Paperclip, Send, Mic, MapPin, ArrowLeft, User, MessageSquare } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
 interface ChatMessage {
@@ -110,6 +110,14 @@ function MessagesContent() {
   const [isCameraOff, setIsCameraOff] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+
+  // Audio call state (WhatsApp style direct call)
+  const [audioCallOpen, setAudioCallOpen] = useState(false);
+  const [audioCallDuration, setAudioCallDuration] = useState(0);
+  const [audioCallRinging, setAudioCallRinging] = useState(true);
+  const [isAudioCallMuted, setIsAudioCallMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+  const audioCallStreamRef = useRef<MediaStream | null>(null);
 
   // Voice recording state
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
@@ -421,8 +429,68 @@ function MessagesContent() {
     return () => clearInterval(timer);
   }, [videoCallOpen]);
 
+  // Audio Call Timer
+  useEffect(() => {
+    let timer: any;
+    if (audioCallOpen && !audioCallRinging) {
+      timer = setInterval(() => {
+        setAudioCallDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setAudioCallDuration(0);
+    }
+    return () => clearInterval(timer);
+  }, [audioCallOpen, audioCallRinging]);
+
   // Start Video Call - Réservé exclusivement au Pack VIP
   const isVip = myProfile?.plan === "VIP" || myProfile?.subscriptionTier === "VIP";
+
+  const startAudioCall = async () => {
+    if (!isVip) {
+      setVipModalOpen(true);
+      return;
+    }
+    setAudioCallOpen(true);
+    setAudioCallRinging(true);
+    setTimeout(() => setAudioCallRinging(false), 2200);
+    try {
+      if (navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioCallStreamRef.current = stream;
+      }
+    } catch (e) {
+      console.warn("Audio mic access:", e);
+    }
+  };
+
+  const endAudioCall = () => {
+    if (audioCallStreamRef.current) {
+      audioCallStreamRef.current.getTracks().forEach((track) => track.stop());
+      audioCallStreamRef.current = null;
+    }
+    setAudioCallOpen(false);
+    setAudioCallRinging(false);
+
+    const msg: ChatMessage = {
+      id: `call-audio-${Date.now()}`,
+      senderId: ME_ID,
+      body: `📞 Appel vocal terminé · Durée : ${Math.floor(audioCallDuration / 60)}m ${audioCallDuration % 60}s · Échange audio sécurisé ✓`,
+      createdAt: new Date().toISOString(),
+      status: "SENT",
+    };
+    setMessages((prev) => ({
+      ...prev,
+      [activeConvId]: [...(prev[activeConvId] ?? []), msg],
+    }));
+  };
+
+  const toggleAudioCallMute = () => {
+    setIsAudioCallMuted(!isAudioCallMuted);
+    if (audioCallStreamRef.current) {
+      audioCallStreamRef.current.getAudioTracks().forEach((t) => (t.enabled = isAudioCallMuted));
+    }
+  };
+
   const startVideoCall = async () => {
     if (!isVip) {
       setVipModalOpen(true);
@@ -1606,13 +1674,13 @@ function MessagesContent() {
                   )}
                 </Link>
 
-                {/* 📹 Video Call Button */}
+                {/* 📞 WhatsApp Audio Call Button */}
                 <button
                   type="button"
-                  onClick={startVideoCall}
+                  onClick={startAudioCall}
                   style={{
                     background: isVip ? "#ECFDF5" : "#F8FAFC",
-                    border: "1px solid #E2E8F0",
+                    border: isVip ? "1.5px solid #10B981" : "1px solid #E2E8F0",
                     width: "38px",
                     height: "38px",
                     borderRadius: "50%",
@@ -1620,10 +1688,33 @@ function MessagesContent() {
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: isVip ? "#059669" : "#0B2559",
+                    color: isVip ? "#059669" : "#64748B",
                     transition: "all 0.15s ease",
                   }}
-                  title={isVip ? "Appel Vidéo sécurisé" : "Appel Vidéo (Pass VIP)"}
+                  title={isVip ? "Appel vocal WhatsApp sécurisé" : "Appel vocal direct (Pass VIP requis)"}
+                  aria-label="Appel vocal"
+                >
+                  <Phone size={18} />
+                </button>
+
+                {/* 📹 WhatsApp Video Call Button */}
+                <button
+                  type="button"
+                  onClick={startVideoCall}
+                  style={{
+                    background: isVip ? "#ECFDF5" : "#F8FAFC",
+                    border: isVip ? "1.5px solid #10B981" : "1px solid #E2E8F0",
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: isVip ? "#059669" : "#64748B",
+                    transition: "all 0.15s ease",
+                  }}
+                  title={isVip ? "Appel Vidéo WhatsApp sécurisé" : "Appel Vidéo direct (Pass VIP requis)"}
                   aria-label="Appel Vidéo"
                 >
                   <Video size={19} />
@@ -2706,6 +2797,163 @@ function MessagesContent() {
         </div>
       )}
 
+      {/* ── WhatsApp Audio Call Modal ─────────────────────────── */}
+      {audioCallOpen && activeConv && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "linear-gradient(180deg, #111B21 0%, #0B141A 100%)",
+            zIndex: 1200,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "40px 20px",
+            color: "white",
+          }}
+        >
+          {/* Header */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#8696A0", marginBottom: "8px" }}>
+              <span>🔒</span>
+              <span>Chiffré de bout en bout · WhatsApp Audio</span>
+            </div>
+            <h2 style={{ fontSize: "24px", fontWeight: 800, color: "white", margin: "0 0 6px" }}>
+              {activeConv.firstName}
+            </h2>
+            <div style={{ fontSize: "14px", color: audioCallRinging ? "#25D366" : "#8696A0", fontWeight: 700 }}>
+              {audioCallRinging ? "Sonnerie en cours..." : formatTimer(audioCallDuration)}
+            </div>
+          </div>
+
+          {/* Center Avatar with Pulsing Rings */}
+          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {audioCallRinging && (
+              <div
+                style={{
+                  position: "absolute",
+                  width: "180px",
+                  height: "180px",
+                  borderRadius: "50%",
+                  border: "2px solid rgba(37,211,102,0.4)",
+                  animation: "ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite",
+                }}
+              />
+            )}
+            <div
+              style={{
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "4px solid #25D366",
+                boxShadow: "0 10px 30px rgba(37,211,102,0.3)",
+                position: "relative",
+              }}
+            >
+              {activeConv.photoUrl ? (
+                <Image
+                  src={activeConv.photoUrl}
+                  alt={activeConv.firstName}
+                  width={120}
+                  height={120}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <div style={{ width: "100%", height: "100%", background: "#0B2559", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px", fontWeight: 800 }}>
+                  {activeConv.firstName.charAt(0)}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Animated sound wave simulation */}
+          {!audioCallRinging && (
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", height: "30px" }}>
+              {[12, 24, 16, 28, 20, 14, 26, 18, 22, 16].map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: "4px",
+                    height: `${h}px`,
+                    background: "#25D366",
+                    borderRadius: "2px",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Action buttons (Mute, Speaker, Hang Up) */}
+          <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+            {/* Mute Button */}
+            <button
+              type="button"
+              onClick={toggleAudioCallMute}
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: isAudioCallMuted ? "#EF4444" : "rgba(255,255,255,0.15)",
+                border: "none",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+              title={isAudioCallMuted ? "Activer micro" : "Couper micro"}
+            >
+              {isAudioCallMuted ? <MicOff size={24} /> : <Mic size={24} />}
+            </button>
+
+            {/* Hang Up Button */}
+            <button
+              type="button"
+              onClick={endAudioCall}
+              style={{
+                width: "68px",
+                height: "68px",
+                borderRadius: "50%",
+                background: "#EA0038",
+                border: "none",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 8px 24px rgba(234,0,56,0.4)",
+              }}
+              title="Raccrocher"
+            >
+              <PhoneOff size={30} />
+            </button>
+
+            {/* Speaker Button */}
+            <button
+              type="button"
+              onClick={() => setIsSpeakerOn(!isSpeakerOn)}
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: isSpeakerOn ? "#25D366" : "rgba(255,255,255,0.15)",
+                border: "none",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+              title="Haut-parleur"
+            >
+              <Volume2 size={24} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Live Video Call Modal ─────────────────────────────── */}
       {videoCallOpen && activeConv && (
         <div
@@ -3139,11 +3387,11 @@ function MessagesContent() {
             </div>
 
             <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
-              Appel vidéo réservé au Pack VIP
+              Appels Audio & Vidéo WhatsApp réservés au VIP
             </h3>
 
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "20px" }}>
-              Les appels vidéo en direct sont une fonctionnalité exclusive réservée aux membres du <strong>Pack VIP Premium</strong>.
+            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "16px" }}>
+              Les appels audio et vidéo en direct style WhatsApp sont une exclusivité réservée aux membres du <strong>Club VIP (15 000 FCFA)</strong>.
             </p>
 
             <div
@@ -3156,23 +3404,26 @@ function MessagesContent() {
                 marginBottom: "20px",
                 fontSize: "13px",
                 color: "#334155",
-                lineHeight: 1.6,
+                lineHeight: 1.7,
               }}
             >
               <div style={{ fontWeight: 700, color: "#0B2559", marginBottom: "6px" }}>
-                ✓ Vos fonctionnalités incluses dans votre pack :
+                👑 Avantages exclusifs VIP (15 000 FCFA / mois) :
               </div>
-              <div>💬 Messages écrits illimités</div>
-              <div>📸 Partage de photos sécurisées</div>
-              <div>🎙️ Notes vocales audio haute fidélité</div>
+              <div>📞 <strong>Appels audio & vidéo WhatsApp</strong> en haute fidélité</div>
+              <div>🌍 <strong>Accès total</strong> à tous les membres inscrits sur la plateforme</div>
+              <div>📰 <strong>Mur VIP exclusif</strong> pour publier photos, vidéos et articles</div>
+              <div>⚡ <strong>Profil classé au sommet</strong> des recherches et suggestions</div>
               <div style={{ marginTop: "8px", color: "#B45309", fontWeight: 600 }}>
-                👑 Pour débloquer l&apos;appel vidéo en direct, passez au Pack VIP.
+                ✓ Votre pack actuel vous permet déjà les messages écrits, photos et notes vocales audio.
               </div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <Link
-                href="/tarifs"
+              <a
+                href="https://link.saspay.me/ksev91xlvik"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn btn-primary"
                 style={{
                   width: "100%",
@@ -3185,15 +3436,31 @@ function MessagesContent() {
                   textDecoration: "none",
                   borderRadius: "14px",
                   boxShadow: "0 4px 14px rgba(217, 119, 6, 0.35)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                Découvrir le Pack VIP 👑
+                <span>👑 Activer le Pack VIP (15 000 FCFA)</span>
+              </a>
+              <Link
+                href="/vip"
+                style={{
+                  color: "#D97706",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  textDecoration: "underline",
+                  textAlign: "center",
+                  padding: "4px",
+                }}
+              >
+                Explorer le Mur de publications VIP →
               </Link>
               <button
                 type="button"
                 onClick={() => setVipModalOpen(false)}
                 className="btn btn-ghost"
-                style={{ color: "#64748B", fontSize: "13px", padding: "10px" }}
+                style={{ color: "#64748B", fontSize: "13px", padding: "8px" }}
               >
                 Continuer avec messages, photos & audio
               </button>

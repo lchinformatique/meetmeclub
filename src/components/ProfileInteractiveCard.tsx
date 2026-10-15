@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Camera, Edit3, Loader2, Check, Sparkles } from "lucide-react";
-import { StoredProfile } from "@/lib/db-store";
+import type { StoredProfile } from "@/lib/db-store";
 
 interface ProfileInteractiveCardProps {
   profile: StoredProfile;

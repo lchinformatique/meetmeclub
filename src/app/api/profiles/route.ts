@@ -179,7 +179,8 @@ export async function GET(req: NextRequest) {
       bio: p.bio,
       coverUrl: p.coverUrl,
       relationshipGoal: p.relationshipGoal,
-      plan: p.plan,
+      plan: p.plan || "FREE",
+      likesCount: p.likesCount !== undefined ? p.likesCount : 10,
       profileCompleteness: 90,
       photos: p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain })),
       interests: p.interests.map((name) => ({ interest: { name, icon: "✨" } })),
@@ -188,7 +189,15 @@ export async function GET(req: NextRequest) {
       isVerified: p.isVerified,
     }));
 
-    return NextResponse.json({ profiles: formatted });
+    // Application stricte des rôles de tarifs (visibilité entre catégories) et classement par likes
+    const { getProfileByUserId, canViewMember, sortProfilesByPriorityAndLikes } = await import("@/lib/db-store");
+    const myProfile = getProfileByUserId(session.userId);
+    const viewerPlan = myProfile?.plan || "FREE";
+
+    const visibleProfiles = formatted.filter((p) => canViewMember(viewerPlan, p.plan));
+    const sorted = sortProfilesByPriorityAndLikes(visibleProfiles);
+
+    return NextResponse.json({ profiles: sorted });
   } catch (error) {
     console.error("[GET /api/profiles] Error:", error);
     return NextResponse.json({ profiles: [] });

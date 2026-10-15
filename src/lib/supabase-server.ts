@@ -182,6 +182,10 @@ export async function getProfileFromSupabase(userId: string) {
       age: profile.age || age,
       phone: user?.phone || undefined,
       email: user?.email || undefined,
+      plan: profile.plan || undefined,
+      subscriptionStartedAt: profile.subscriptionStartedAt || undefined,
+      subscriptionExpiresAt: profile.subscriptionExpiresAt || undefined,
+      likesCount: profile.likesCount !== undefined ? profile.likesCount : undefined,
       avatarUrl,
       coverUrl,
       photos: albumPhotos,
@@ -217,6 +221,10 @@ export async function upsertProfileInSupabase(
     dateOfBirth?: string | null;
     placeOfBirth?: string | null;
     age?: number | null;
+    plan?: string;
+    subscriptionStartedAt?: string | null;
+    subscriptionExpiresAt?: string | null;
+    likesCount?: number | null;
   }
 ) {
   const admin = getSupabaseAdmin();
@@ -309,6 +317,10 @@ export async function upsertProfileInSupabase(
       if (data.lastName !== undefined) extendedUpdate.lastName = data.lastName;
       if (data.coverUrl !== undefined) extendedUpdate.coverUrl = data.coverUrl;
       if (data.placeOfBirth !== undefined) extendedUpdate.placeOfBirth = data.placeOfBirth;
+      if (data.plan !== undefined) extendedUpdate.plan = data.plan;
+      if (data.subscriptionExpiresAt !== undefined) extendedUpdate.subscriptionExpiresAt = data.subscriptionExpiresAt;
+      if (data.subscriptionStartedAt !== undefined) extendedUpdate.subscriptionStartedAt = data.subscriptionStartedAt;
+      if (data.likesCount !== undefined) extendedUpdate.likesCount = data.likesCount;
 
       let { data: updated, error: updateError } = await admin
         .from("profiles")
@@ -661,7 +673,10 @@ export async function getPublicProfilesFromSupabase(currentUserId?: string) {
         bio: p.bio || undefined,
         coverUrl,
         relationshipGoal: p.relationshipGoal || "SERIOUS",
-        plan: "FREE",
+        plan: p.plan || "FREE",
+        likesCount: p.likesCount !== undefined ? p.likesCount : 12,
+        subscriptionExpiresAt: p.subscriptionExpiresAt || undefined,
+        subscriptionStartedAt: p.subscriptionStartedAt || undefined,
         photos: galleryPhotos.map((ph: any) => ({
           id: ph.id,
           url: ph.url,
@@ -783,5 +798,66 @@ export async function saveMessageInSupabase(msg: {
   } catch (err) {
     console.warn("[saveMessageInSupabase] Exception:", err);
     return null;
+  }
+}
+
+// ── Publications VIP dans Supabase ───────────────────────────
+export async function getVipPostsFromSupabase() {
+  const admin = getSupabaseAdmin();
+  try {
+    const { data, error } = await admin
+      .from("vip_posts")
+      .select("*")
+      .order("createdAt", { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      const { getAllVipPosts } = await import("@/lib/db-store");
+      return getAllVipPosts();
+    }
+    return data;
+  } catch {
+    const { getAllVipPosts } = await import("@/lib/db-store");
+    return getAllVipPosts();
+  }
+}
+
+export async function createVipPostInSupabase(post: {
+  userId: string;
+  authorName: string;
+  authorAvatar?: string;
+  authorPseudo?: string;
+  title?: string;
+  content: string;
+  mediaUrl?: string;
+  mediaType: "IMAGE" | "VIDEO" | "ARTICLE";
+}) {
+  const admin = getSupabaseAdmin();
+  const { createVipPost } = await import("@/lib/db-store");
+  const localPost = createVipPost(post);
+
+  try {
+    const { data } = await admin
+      .from("vip_posts")
+      .insert({
+        id: localPost.id,
+        userId: post.userId,
+        authorName: post.authorName,
+        authorAvatar: post.authorAvatar || null,
+        authorPseudo: post.authorPseudo || null,
+        title: post.title || null,
+        content: post.content,
+        mediaUrl: post.mediaUrl || null,
+        mediaType: post.mediaType || "IMAGE",
+        likesCount: 1,
+        commentsCount: 0,
+        createdAt: localPost.createdAt,
+        updatedAt: localPost.updatedAt,
+      })
+      .select()
+      .maybeSingle();
+
+    return data || localPost;
+  } catch {
+    return localPost;
   }
 }
