@@ -258,11 +258,14 @@ export default function ProfilEditPage() {
       }
 
       setMessage({ type: "success", text: "Profil mis à jour avec succès !" });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("mmclub_profile_updated", { detail: { ...form, avatarUrl, coverUrl } }));
+      }
       router.refresh();
       setTimeout(() => {
         router.push("/profil");
         router.refresh();
-      }, 1000);
+      }, 700);
     } catch {
       setMessage({ type: "error", text: "Erreur réseau. Veuillez réessayer." });
     } finally {

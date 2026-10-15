@@ -55,6 +55,52 @@ export default function Header() {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
 
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // Listen to profile updates from ProfileInteractiveCard or Edit page
+  useEffect(() => {
+    const handleProfileUpdate = (e: any) => {
+      const updated = e.detail;
+      if (updated) {
+        const newAvatar = updated.photos?.find((p: any) => p.isMain)?.url || updated.photos?.[0]?.url;
+        setSessionUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                firstName: updated.firstName || prev.firstName,
+                avatarUrl: newAvatar || prev.avatarUrl,
+              }
+            : prev
+        );
+      }
+    };
+    window.addEventListener("mmclub_profile_updated", handleProfileUpdate);
+    return () => window.removeEventListener("mmclub_profile_updated", handleProfileUpdate);
+  }, []);
+
+  // Poll unread messages for desktop & drawer header
+  useEffect(() => {
+    let isMounted = true;
+    async function loadUnread() {
+      try {
+        const res = await fetch("/api/conversations");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.conversations)) {
+            const total = data.conversations.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0);
+            if (isMounted) setUnreadCount(total);
+          }
+        }
+      } catch {}
+    }
+    loadUnread();
+    const interval = setInterval(loadUnread, 6000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   // Fetch session on route change
   useEffect(() => {
     let isMounted = true;
@@ -78,6 +124,10 @@ export default function Header() {
     checkAuth();
     return () => { isMounted = false; };
   }, [pathname]);
+
+  const dynamicNavLinks = navLinks.map((item) =>
+    item.href === "/messages" ? { ...item, badge: unreadCount > 0 ? unreadCount : undefined } : item
+  );
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -261,7 +311,7 @@ export default function Header() {
             }}
             className="header-desktop-nav"
           >
-            {navLinks.map((item) => {
+            {dynamicNavLinks.map((item) => {
               const active = isActive(item.href);
               const Icon = item.Icon;
               return (
@@ -746,7 +796,7 @@ export default function Header() {
           aria-label="Navigation mobile"
           style={{ flex: 1, padding: "4px 12px 12px" }}
         >
-          {navLinks.map((item) => {
+          {dynamicNavLinks.map((item) => {
             const active = isActive(item.href);
             const Icon = item.Icon;
 

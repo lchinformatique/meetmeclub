@@ -22,7 +22,17 @@ export default function ProfileInteractiveCard({
   const [profile, setProfile] = useState<StoredProfile>(initialProfile);
 
   useEffect(() => {
-    setProfile(initialProfile);
+    setProfile((prev) => {
+      const prevMain = prev.photos?.find((p) => p.isMain)?.url;
+      const initialMain = initialProfile.photos?.find((p) => p.isMain)?.url;
+      const prevCover = prev.coverUrl;
+      const initialCover = initialProfile.coverUrl;
+      return {
+        ...initialProfile,
+        photos: (prevMain && !initialMain) ? prev.photos : (initialProfile.photos?.length ? initialProfile.photos : prev.photos),
+        coverUrl: (prevCover && !initialCover) ? prevCover : (initialCover || prevCover),
+      };
+    });
   }, [initialProfile]);
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -90,6 +100,9 @@ export default function ProfileInteractiveCard({
 
         setProfile(updatedProfile);
         if (onProfileUpdated) onProfileUpdated(updatedProfile);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("mmclub_profile_updated", { detail: updatedProfile }));
+        }
         router.refresh();
         showToast("Photo de profil mise à jour avec succès ! ✓");
         setUploadingAvatar(false);
@@ -143,6 +156,9 @@ export default function ProfileInteractiveCard({
 
         setProfile(updatedProfile);
         if (onProfileUpdated) onProfileUpdated(updatedProfile);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("mmclub_profile_updated", { detail: updatedProfile }));
+        }
         router.refresh();
         showToast("Photo de couverture mise à jour ! ✓");
         setUploadingCover(false);

@@ -1,10 +1,11 @@
 "use client";
 // src/app/messages/error.tsx
-// Dedicated Messages Error Boundary — auto-recovers and opens chat instantly
+// Dedicated Messages Error Boundary — auto-recovers and opens chat instantly with MeetMe Club branding
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { MessageSquare, RefreshCw, User } from "lucide-react";
+import { MessageSquare, RefreshCw, User, Home } from "lucide-react";
 
 export default function MessagesError({
   error,
@@ -43,19 +44,26 @@ export default function MessagesError({
       >
         <div
           style={{
-            width: "60px",
-            height: "60px",
+            width: "68px",
+            height: "68px",
             borderRadius: "50%",
             background: "#EFF6FF",
-            color: "#1D4ED8",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 16px",
-            fontSize: "26px",
+            padding: "8px",
+            border: "2px solid #DBEAFE",
           }}
         >
-          💬
+          <Image
+            src="/logo.png"
+            alt="Meet Me Club"
+            width={48}
+            height={48}
+            style={{ objectFit: "contain" }}
+            priority
+          />
         </div>
 
         <h2
@@ -77,13 +85,19 @@ export default function MessagesError({
             margin: "0 0 24px",
           }}
         >
-          Chargement direct de vos conversations. Cliquez ci-dessous pour ouvrir votre messagerie instantanément.
+          Chargement de vos conversations en direct. Cliquez ci-dessous pour ouvrir votre messagerie instantanément.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <button
             type="button"
-            onClick={() => reset()}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.location.reload();
+              } else {
+                reset();
+              }
+            }}
             style={{
               display: "flex",
               alignItems: "center",
@@ -99,29 +113,53 @@ export default function MessagesError({
               cursor: "pointer",
             }}
           >
-            <RefreshCw size={16} />
-            <span>Ouvrir ma boîte de réception</span>
+            <RefreshCw size={15} />
+            <span>Ouvrir la messagerie</span>
           </button>
 
-          <Link
-            href="/profil"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              padding: "12px",
-              borderRadius: "12px",
-              background: "#F1F5F9",
-              color: "#0F172A",
-              fontWeight: 700,
-              fontSize: "14px",
-              textDecoration: "none",
-            }}
-          >
-            <User size={16} />
-            <span>Mon Profil & Coordonnées</span>
-          </Link>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <Link
+              href="/profil"
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "11px",
+                borderRadius: "12px",
+                background: "#F1F5F9",
+                color: "#0F172A",
+                fontWeight: 600,
+                fontSize: "13px",
+                textDecoration: "none",
+              }}
+            >
+              <User size={15} />
+              <span>Mon Profil</span>
+            </Link>
+
+            <Link
+              href="/"
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "11px",
+                borderRadius: "12px",
+                background: "#F1F5F9",
+                color: "#0F172A",
+                fontWeight: 600,
+                fontSize: "13px",
+                textDecoration: "none",
+              }}
+            >
+              <Home size={15} />
+              <span>Accueil</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

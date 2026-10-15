@@ -98,6 +98,7 @@ function MessagesContent() {
   const [quotaModalOpen, setQuotaModalOpen] = useState(false);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [vipModalOpen, setVipModalOpen] = useState(false);
+  const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
@@ -116,6 +117,7 @@ function MessagesContent() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const selectedAudioMimeRef = useRef<string>("audio/mp4");
   const voiceTimerRef = useRef<any>(null);
 
   // Voice playback state
@@ -483,18 +485,38 @@ function MessagesContent() {
     }, 1000);
 
     try {
-      if (navigator.mediaDevices?.getUserMedia) {
+      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         audioStreamRef.current = stream;
-        const recorder = new MediaRecorder(stream);
+
+        // Codecs compatibles iOS Safari, Android Chrome & Desktop
+        let preferredMime = "";
+        const testTypes = [
+          "audio/mp4;codecs=mp4a.40.2",
+          "audio/mp4",
+          "audio/aac",
+          "audio/webm;codecs=opus",
+          "audio/webm",
+        ];
+        for (const t of testTypes) {
+          if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) {
+            preferredMime = t;
+            break;
+          }
+        }
+        selectedAudioMimeRef.current = preferredMime || "audio/mp4";
+
+        const recorder = preferredMime
+          ? new MediaRecorder(stream, { mimeType: preferredMime })
+          : new MediaRecorder(stream);
         mediaRecorderRef.current = recorder;
 
         recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
+          if (event.data && event.data.size > 0) {
             audioChunksRef.current.push(event.data);
           }
         };
-        recorder.start();
+        recorder.start(100);
       }
     } catch (e) {
       console.warn("Audio mic permission not granted (simulation mode active):", e);
@@ -514,11 +536,12 @@ function MessagesContent() {
   const finishVoiceRecording = () => {
     if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
     const recordedSec = voiceRecordingSeconds || 4;
+    const mime = selectedAudioMimeRef.current || "audio/mp4";
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.onstop = () => {
         try {
-          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          const audioBlob = new Blob(audioChunksRef.current, { type: mime });
           if (audioStreamRef.current) {
             audioStreamRef.current.getTracks().forEach((t) => t.stop());
             audioStreamRef.current = null;
@@ -530,7 +553,7 @@ function MessagesContent() {
           };
           reader.readAsDataURL(audioBlob);
         } catch {
-          const blobUrl = URL.createObjectURL(new Blob(audioChunksRef.current, { type: "audio/webm" }));
+          const blobUrl = URL.createObjectURL(new Blob(audioChunksRef.current, { type: mime }));
           dispatchVoiceMessage(blobUrl, recordedSec);
         }
       };
@@ -540,7 +563,7 @@ function MessagesContent() {
         audioStreamRef.current.getTracks().forEach((t) => t.stop());
         audioStreamRef.current = null;
       }
-      dispatchVoiceMessage("voice_recording_url", recordedSec);
+      dispatchVoiceMessage("synth_note", recordedSec);
     }
 
     setIsRecordingVoice(false);
@@ -694,17 +717,19 @@ function MessagesContent() {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(587, ctx.currentTime + 0.3);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + duration);
+        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 harmonic chime
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.16);
+          gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.16);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.16 + 0.45);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + idx * 0.16);
+          osc.stop(ctx.currentTime + idx * 0.16 + 0.5);
+        });
       }
     } catch {}
   };
@@ -809,7 +834,7 @@ function MessagesContent() {
     }
   }, [draft, activeConvId, isFreePlan, conversations, activeConv]);
 
-  // Send Photo or Video from Device
+  // Send Photo, Video or Document from Device
   const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -821,7 +846,8 @@ function MessagesContent() {
     }
 
     const isVideo = file.type.startsWith("video/");
-    const mediaLabel = isVideo ? "🎥 Vidéo partagée" : "📷 Photo partagée";
+    const isDoc = file.type.includes("pdf") || file.type.includes("document") || file.type.includes("text") || file.name.match(/\.(pdf|docx?|txt)$/i);
+    const mediaLabel = isVideo ? "🎥 Vidéo partagée" : isDoc ? `📄 Document : ${file.name}` : "📷 Photo partagée";
 
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -1466,43 +1492,82 @@ function MessagesContent() {
                   )}
                 </div>
 
-                {/* Name & Presence */}
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: "16px", color: "#0F172A", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {/* Name & Presence (Clickable to open Interlocutor criteria/photos) */}
+                <div
+                  onClick={() => setPartnerModalOpen(true)}
+                  style={{ minWidth: 0, cursor: "pointer", flex: 1 }}
+                  title="Voir le profil complet et les photos"
+                >
+                  <div style={{ fontWeight: 800, fontSize: "15px", color: "#0F172A", display: "flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     <span>{activeConv.firstName}</span>
-                    <span style={{ fontSize: "11px", color: "#059669", fontWeight: 700, flexShrink: 0 }}>✓ Vérifié(e)</span>
+                    <span style={{ fontSize: "11px", color: "#059669", fontWeight: 700, flexShrink: 0 }}>✓</span>
                   </div>
-                  <div style={{ fontSize: "12px", color: activeConv.isOnline ? "#059669" : "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
-                    <span>{activeConv.isOnline ? "● En ligne" : "● Vu récemment"}</span>
-                    <span>· Lomé</span>
+                  <div style={{ fontSize: "11.5px", color: activeConv.isOnline ? "#059669" : "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
+                    <span style={{ whiteSpace: "nowrap" }}>{activeConv.isOnline ? "● En ligne" : "● Vu récemment"}</span>
+                    <span style={{ whiteSpace: "nowrap", fontWeight: 700 }}>· Lomé</span>
                   </div>
                 </div>
               </div>
 
               {/* Right: WhatsApp-Style Action Icons */}
               <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0, position: "relative" }}>
-                {/* 👤 Mon Compte / Profil direct */}
-                <Link
-                  href="/profil"
+                {/* 👤 Profil Partenaire (Critères & Galerie) */}
+                <button
+                  type="button"
+                  onClick={() => setPartnerModalOpen(true)}
                   style={{
                     background: "#EFF6FF",
                     border: "1.5px solid #BFDBFE",
-                    padding: "6px 12px",
-                    borderRadius: "100px",
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
-                    gap: "6px",
+                    justifyContent: "center",
                     color: "#1D4ED8",
-                    textDecoration: "none",
-                    fontWeight: 700,
-                    fontSize: "12px",
+                    cursor: "pointer",
                     transition: "all 0.15s ease",
                   }}
-                  title="Accéder à mon profil et aux informations de mon compte"
-                  aria-label="Mon Profil"
+                  title="Voir les critères, bio et photos de ce profil"
+                  aria-label="Profil du partenaire"
                 >
-                  <User size={15} style={{ color: "#1D4ED8" }} />
-                  <span className="chat-account-label">Mon Profil</span>
+                  <User size={16} />
+                </button>
+
+                {/* 👤 Mon Compte (Fixé en haut avec photo pour référence directe) */}
+                <Link
+                  href="/profil"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: "2px solid #0B2559",
+                    background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+                    color: "white",
+                    fontWeight: 800,
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    flexShrink: 0,
+                  }}
+                  title="Mon Compte & Réglages"
+                  aria-label="Mon Compte"
+                >
+                  {myProfile?.photos?.find((p: any) => p.isMain)?.url || myProfile?.photos?.[0]?.url ? (
+                    <Image
+                      src={myProfile.photos.find((p: any) => p.isMain)?.url || myProfile.photos[0].url}
+                      alt="Mon Profil"
+                      width={36}
+                      height={36}
+                      unoptimized
+                      style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                    />
+                  ) : (
+                    <span>{(myProfile?.firstName || "M").charAt(0).toUpperCase()}</span>
+                  )}
                 </Link>
 
                 {/* 📹 Video Call Button */}
@@ -1748,7 +1813,11 @@ function MessagesContent() {
               )}
 
               {currentMessages.map((msg) => {
-                const isMe = msg.senderId === ME_ID;
+                const myId = myProfile?.userId || myProfile?.id;
+                const isMe =
+                  msg.senderId === ME_ID ||
+                  (Boolean(myId) && msg.senderId === myId) ||
+                  (Boolean(activeConv?.participantId) && msg.senderId !== activeConv.participantId && msg.senderId !== "user_victoire_lome");
                 const isPlaying = playingAudioId === msg.id;
 
                 // Extraction des coordonnées pour la carte Google Map interactive
@@ -1786,6 +1855,8 @@ function MessagesContent() {
                     {/* Avatar partenaire pour les messages reçus (Style WhatsApp authentique) */}
                     {!isMe && (
                       <div
+                        onClick={() => setPartnerModalOpen(true)}
+                        title="Voir le profil du membre"
                         style={{
                           width: "32px",
                           height: "32px",
@@ -1795,6 +1866,7 @@ function MessagesContent() {
                           marginBottom: "4px",
                           border: "1.5px solid #CBD5E1",
                           boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                          cursor: "pointer",
                         }}
                       >
                         {activeConv.photoUrl ? (
@@ -1836,32 +1908,32 @@ function MessagesContent() {
                     >
                       <div
                         style={{
-                          background: isMe
-                            ? "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)"
-                            : "#FFFFFF",
-                          color: isMe ? "#FFFFFF" : "#0F172A",
-                          padding: "12px 16px",
-                          borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                          background: isMe ? "#D9FDD3" : "#FFFFFF",
+                          color: "#111B21",
+                          padding: "10px 14px",
+                          borderRadius: isMe ? "16px 16px 2px 16px" : "16px 16px 16px 2px",
                           fontSize: "14.5px",
                           lineHeight: 1.5,
                           boxShadow: isMe
-                            ? "0 4px 14px rgba(11, 37, 89, 0.22)"
-                            : "0 2px 10px rgba(0, 0, 0, 0.05)",
-                          border: isMe ? "none" : "1.5px solid #E2E8F0",
+                            ? "0 1px 2px rgba(11, 20, 26, 0.12)"
+                            : "0 1px 2px rgba(11, 20, 26, 0.08)",
+                          border: isMe ? "none" : "1px solid #E2E8F0",
                           wordBreak: "break-word",
-                          fontWeight: 500,
+                          fontWeight: 450,
                           position: "relative",
                         }}
                       >
                         {/* Prénom de l'expéditeur si message reçu */}
                         {!isMe && (
                           <div
+                            onClick={() => setPartnerModalOpen(true)}
                             style={{
                               fontSize: "12px",
                               fontWeight: 800,
-                              color: "#E10600",
-                              marginBottom: "4px",
+                              color: "#008069",
+                              marginBottom: "3px",
                               letterSpacing: "-0.2px",
+                              cursor: "pointer",
                             }}
                           >
                             {activeConv.firstName}
@@ -1892,8 +1964,8 @@ function MessagesContent() {
                                 width: "42px",
                                 height: "42px",
                                 borderRadius: "50%",
-                                background: isMe ? "white" : "#0B2559",
-                                color: isMe ? "#0B2559" : "white",
+                                background: isMe ? "#008069" : "#0B2559",
+                                color: "white",
                                 border: "none",
                                 fontSize: "16px",
                                 display: "flex",
@@ -2058,9 +2130,53 @@ function MessagesContent() {
                           </div>
                         )}
 
+                        {/* Document partagé */}
+                        {msg.body?.startsWith("📄") && (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              background: isMe ? "rgba(0,0,0,0.06)" : "#F1F5F9",
+                              padding: "10px 12px",
+                              borderRadius: "12px",
+                              margin: "4px 0",
+                            }}
+                          >
+                            <span style={{ fontSize: "22px" }}>📄</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: "13px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {msg.body.replace("📄 Document :", "").trim()}
+                              </div>
+                              <span style={{ fontSize: "11px", color: "#64748B" }}>Document prêt à consulter</span>
+                            </div>
+                            {msg.imageUrl && (
+                              <a
+                                href={msg.imageUrl}
+                                download="document_meetmeclub"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  padding: "5px 11px",
+                                  background: "#0B2559",
+                                  color: "white",
+                                  borderRadius: "8px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  textDecoration: "none",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                Ouvrir
+                              </a>
+                            )}
+                          </div>
+                        )}
+
                         {/* Plain text body if not just an attachment title or map link */}
                         {(!msg.imageUrl || msg.body !== "📷 Photo partagée") &&
                           (!msg.videoUrl || msg.body !== "🎥 Vidéo partagée") &&
+                          (!msg.body?.startsWith("📄")) &&
                           (!msg.audioUrl || !msg.body.startsWith("🎙️ Note vocale")) &&
                           (!mapCoords || (!msg.body.startsWith("📍 Localisation") && !msg.body.includes("maps.google.com"))) && (
                             <div>{msg.body}</div>
@@ -2084,7 +2200,7 @@ function MessagesContent() {
                           <span
                             style={{
                               fontSize: "12px",
-                              color: msg.status === "READ" ? "#3B82F6" : "#94A3B8",
+                              color: msg.status === "READ" ? "#53BDEB" : "#8696A0",
                               fontWeight: 800,
                               lineHeight: 1,
                             }}
@@ -2128,7 +2244,7 @@ function MessagesContent() {
                 <input
                   type="file"
                   ref={fileInputRef}
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,.pdf,.doc,.docx"
                   onChange={handleMediaSelect}
                   style={{ display: "none" }}
                 />
@@ -3305,6 +3421,275 @@ function MessagesContent() {
               >
                 Fermer
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Partner Profile & Criteria Modal ── */}
+      {partnerModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10, 20, 45, 0.75)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            animation: "fadeIn 0.2s ease-out",
+          }}
+          onClick={() => setPartnerModalOpen(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "24px",
+              maxWidth: "460px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 25px 60px rgba(0,0,0,0.3)",
+              border: "1px solid #E2E8F0",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header / Cover */}
+            <div
+              style={{
+                height: "120px",
+                background: "linear-gradient(135deg, #0B2559 0%, #163B8A 60%, #1D4ED8 100%)",
+                position: "relative",
+                display: "flex",
+                justifyContent: "flex-end",
+                padding: "12px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setPartnerModalOpen(false)}
+                style={{
+                  background: "rgba(0,0,0,0.45)",
+                  border: "none",
+                  color: "white",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Profile Avatar & Info */}
+            <div style={{ padding: "0 20px 24px", marginTop: "-44px" }}>
+              <div
+                style={{
+                  width: "88px",
+                  height: "88px",
+                  borderRadius: "50%",
+                  border: "4px solid white",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                  overflow: "hidden",
+                  background: "#0B2559",
+                  position: "relative",
+                  marginBottom: "12px",
+                }}
+              >
+                {activeConv.photoUrl ? (
+                  <Image
+                    src={activeConv.photoUrl}
+                    alt={activeConv.firstName}
+                    fill
+                    unoptimized
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontSize: "30px",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {activeConv.firstName?.charAt(0) || "M"}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                <div>
+                  <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span>{activeConv.firstName}</span>
+                    <span style={{ fontSize: "14px", color: "#059669" }}>✓</span>
+                  </h2>
+                  <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>
+                    {activeConv.pseudo || `@${activeConv.firstName.toLowerCase()}`}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#ECFDF5", color: "#059669", padding: "4px 10px", borderRadius: "100px", fontSize: "12px", fontWeight: 700 }}>
+                  <span style={{ width: "7px", height: "7px", background: "#10B981", borderRadius: "50%" }} />
+                  En ligne à Lomé
+                </div>
+              </div>
+
+              {/* Badges & Critères */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", margin: "14px 0" }}>
+                <span style={{ background: "#EFF6FF", color: "#1D4ED8", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
+                  📍 Lomé, Togo
+                </span>
+                <span style={{ background: "#F1F5F9", color: "#334155", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
+                  🛡️ Identité vérifiée
+                </span>
+                <span style={{ background: "#FEF3C7", color: "#B45309", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
+                  ⭐ Relation sérieuse & Sorties
+                </span>
+              </div>
+
+              {/* Bio */}
+              <div style={{ background: "#F8FAFC", borderRadius: "14px", padding: "14px", border: "1px solid #E2E8F0", marginBottom: "16px" }}>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
+                  À propos de {activeConv.firstName}
+                </div>
+                <p style={{ fontSize: "13.5px", color: "#334155", lineHeight: 1.6, margin: 0 }}>
+                  {activeConv.id.includes("victoire")
+                    ? "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖"
+                    : "Membre actif sur Meet Me Club Lomé. Disponible pour échanger en direct, partager des moments conviviaux et organiser une belle rencontre dans les meilleurs établissements de Lomé."}
+                </p>
+              </div>
+
+              {/* Galerie Photos */}
+              <div style={{ marginBottom: "20px" }}>
+                <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>
+                  Photos du membre (cliquez pour agrandir)
+                </div>
+                <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
+                  {activeConv.photoUrl && (
+                    <div
+                      onClick={() => setEnlargedImage(activeConv.photoUrl)}
+                      style={{
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "12px",
+                        overflow: "hidden",
+                        border: "2px solid #E2E8F0",
+                        cursor: "pointer",
+                        position: "relative",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Image src={activeConv.photoUrl} alt="Photo" fill unoptimized style={{ objectFit: "cover" }} />
+                    </div>
+                  )}
+                  <div
+                    onClick={() => setEnlargedImage(activeConv.photoUrl || "/victoire_profile.jpg")}
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      border: "2px solid #E2E8F0",
+                      cursor: "pointer",
+                      position: "relative",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Image src="/victoire_profile.jpg" alt="Photo" fill unoptimized style={{ objectFit: "cover" }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPartnerModalOpen(false);
+                    inputRef.current?.focus();
+                  }}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "12px",
+                    background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: "14px",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <MessageSquare size={16} />
+                  <span>Discuter avec {activeConv.firstName}</span>
+                </button>
+
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <Link
+                    href={`/rendez-vous/nouveau?avec=${activeConv.participantId}`}
+                    style={{
+                      flex: 1,
+                      padding: "11px",
+                      borderRadius: "12px",
+                      background: "#EFF6FF",
+                      color: "#1D4ED8",
+                      fontWeight: 700,
+                      fontSize: "13px",
+                      border: "1px solid #BFDBFE",
+                      textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <Calendar size={15} />
+                    <span>Proposer Sortie</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPartnerModalOpen(false);
+                      startVideoCall();
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "11px",
+                      borderRadius: "12px",
+                      background: "#F8FAFC",
+                      color: "#0F172A",
+                      fontWeight: 700,
+                      fontSize: "13px",
+                      border: "1px solid #CBD5E1",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <Video size={15} />
+                    <span>Appel Vidéo</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

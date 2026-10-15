@@ -144,63 +144,63 @@ export default function CustomerSupportWidget() {
       {/* ── Deux boutons flottants verticaux (WhatsApp + Robot) ── */}
       {!isOpen && (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-end" }}>
-          {/* 1. Bouton Assistant WhatsApp avec Icône Chat */}
+          {/* 1. Bouton Discuter / Support Meet Me Club aux couleurs officielles */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Contacter l'Assistant WhatsApp (Opérationnel)"
-              title="Assistant WhatsApp (Opérationnel)"
+              aria-label="Discuter avec l'équipe Meet Me Club"
+              title="Discuter avec le Club (Direct)"
               onMouseEnter={() => setHoveredButton("whatsapp")}
               onMouseLeave={() => setHoveredButton(null)}
-              className="whatsapp-chat-btn-pulse"
               style={{
-                width: "50px",
-                height: "50px",
+                width: "52px",
+                height: "52px",
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
+                background: "linear-gradient(135deg, #0B2559 0%, #163B8A 55%, #1E3A8A 100%)",
                 color: "white",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 8px 22px rgba(37, 211, 102, 0.45)",
+                boxShadow: "0 8px 24px rgba(11, 37, 89, 0.45), 0 2px 6px rgba(217, 119, 6, 0.25)",
                 textDecoration: "none",
                 position: "relative",
-                transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                border: "2px solid rgba(245, 158, 11, 0.6)",
+                transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease",
                 flexShrink: 0,
               }}
             >
-              {/* Icône de Chat professionnelle */}
+              {/* Icône de Discussion Professionnelle MeetMe Club */}
               <svg
-                width="26"
-                height="26"
+                width="24"
+                height="24"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth="2.1"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden="true"
               >
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                <circle cx="8.5" cy="12" r="1.1" fill="currentColor" />
-                <circle cx="12" cy="12" r="1.1" fill="currentColor" />
-                <circle cx="15.5" cy="12" r="1.1" fill="currentColor" />
+                <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
+                <path d="M8 12h.01" strokeWidth="3" />
+                <path d="M12 12h.01" strokeWidth="3" />
+                <path d="M16 12h.01" strokeWidth="3" />
               </svg>
 
               {/* Indicateur vert En Ligne */}
               <span
                 style={{
                   position: "absolute",
-                  top: "1px",
-                  right: "1px",
+                  top: "2px",
+                  right: "2px",
                   width: "12px",
                   height: "12px",
                   borderRadius: "50%",
                   background: "#10B981",
-                  border: "2px solid white",
-                  boxShadow: "0 0 5px rgba(16, 185, 129, 0.8)",
+                  border: "2px solid #0B2559",
+                  boxShadow: "0 0 6px rgba(16, 185, 129, 0.9)",
                 }}
                 aria-hidden="true"
               />

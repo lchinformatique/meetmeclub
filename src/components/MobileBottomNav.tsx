@@ -33,6 +33,31 @@ export default function MobileBottomNav() {
     };
   }, [pathname]);
 
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  // Poll unread messages count for live notification badge
+  useEffect(() => {
+    let isMounted = true;
+    async function loadUnread() {
+      try {
+        const res = await fetch("/api/conversations");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.conversations)) {
+            const total = data.conversations.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0);
+            if (isMounted) setUnreadCount(total);
+          }
+        }
+      } catch {}
+    }
+    loadUnread();
+    const timer = setInterval(loadUnread, 6000);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
+  }, []);
+
   // Hide bottom nav on auth flow, onboarding & messaging for clean full-screen WhatsApp UX
   if (
     pathname === "/onboarding" ||
@@ -51,7 +76,7 @@ export default function MobileBottomNav() {
       activeHref: "/messages",
       label: "Messages",
       Icon: MessageSquare,
-      badge: undefined,
+      badge: unreadCount > 0 ? unreadCount : undefined,
     },
     { href: "/rendez-vous", label: "Sorties", Icon: Calendar },
     {

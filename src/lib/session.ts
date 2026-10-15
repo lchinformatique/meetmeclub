@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import type { UserRole, UserStatus } from "@prisma/client";
 
 const SESSION_COOKIE = "mmclub_session";
-const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+const SESSION_TTL_SECONDS = 90 * 24 * 60 * 60; // 90 days persistent session
 
 export interface SessionPayload {
   userId: string;

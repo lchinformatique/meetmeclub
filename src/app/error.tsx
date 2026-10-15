@@ -3,6 +3,7 @@
 // Global Error Boundary — prevents "This page couldn't load" and auto-recovers seamlessly
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { MessageSquare, RefreshCw, Home, User } from "lucide-react";
 
@@ -42,19 +43,26 @@ export default function GlobalError({
       >
         <div
           style={{
-            width: "64px",
-            height: "64px",
+            width: "68px",
+            height: "68px",
             borderRadius: "50%",
             background: "#EEF2FB",
-            color: "#0B2559",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 16px",
-            fontSize: "28px",
+            padding: "8px",
+            border: "2px solid #DBEAFE",
           }}
         >
-          ✨
+          <Image
+            src="/logo.png"
+            alt="Meet Me Club"
+            width={48}
+            height={48}
+            style={{ objectFit: "contain" }}
+            priority
+          />
         </div>
 
         <h1
