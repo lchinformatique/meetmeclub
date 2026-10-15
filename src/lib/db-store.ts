@@ -16,6 +16,7 @@ export interface StoredProfile {
   gender: "MALE" | "FEMALE" | "OTHER";
   age: number;
   dateOfBirth?: string;
+  placeOfBirth?: string;
   phone?: string;
   city: string;
   neighborhood?: string;
@@ -167,13 +168,40 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
   let updatedProfile: StoredProfile;
 
   if (index >= 0) {
+    let computedAge = profileData.age ?? profiles[index].age;
+    if (profileData.dateOfBirth) {
+      const dob = new Date(profileData.dateOfBirth);
+      if (!isNaN(dob.getTime())) {
+        const today = new Date();
+        let calcAge = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+          calcAge--;
+        }
+        computedAge = calcAge;
+      }
+    }
     updatedProfile = {
       ...profiles[index],
       ...profileData,
+      age: computedAge,
       updatedAt: new Date().toISOString(),
     };
     profiles[index] = updatedProfile;
   } else {
+    let initialAge = profileData.age || 25;
+    if (profileData.dateOfBirth) {
+      const dob = new Date(profileData.dateOfBirth);
+      if (!isNaN(dob.getTime())) {
+        const today = new Date();
+        let calcAge = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+          calcAge--;
+        }
+        initialAge = calcAge;
+      }
+    }
     updatedProfile = {
       id: `prof_${Date.now()}`,
       userId: profileData.userId,
@@ -181,8 +209,9 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       lastName: profileData.lastName || "",
       pseudo: profileData.pseudo || profileData.firstName || "Membre",
       gender: profileData.gender || "OTHER",
-      age: profileData.age || 25,
+      age: initialAge,
       dateOfBirth: profileData.dateOfBirth,
+      placeOfBirth: profileData.placeOfBirth,
       phone: profileData.phone,
       city: profileData.city || "Lomé",
       neighborhood: profileData.neighborhood || "Centre-ville",

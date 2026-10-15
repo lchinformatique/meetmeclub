@@ -161,7 +161,11 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
       ...profile,
       userId: session.userId,
       firstName: supaProfile.firstName || profile.firstName,
+      lastName: supaProfile.lastName !== undefined ? supaProfile.lastName : profile.lastName,
       pseudo: supaProfile.pseudo || profile.pseudo,
+      dateOfBirth: supaProfile.dateOfBirth || profile.dateOfBirth,
+      placeOfBirth: supaProfile.placeOfBirth || profile.placeOfBirth,
+      age: supaProfile.age || profile.age,
       bio: supaProfile.bio !== undefined ? supaProfile.bio : profile.bio,
       coverUrl: supaProfile.coverUrl || profile.coverUrl,
       city: supaProfile.city || profile.city,
@@ -648,6 +652,20 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                       : "Français"}
                   </strong>
                 </div>
+                {profile.placeOfBirth && (
+                  <div>
+                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Lieu de naissance</span>
+                    <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.placeOfBirth}</strong>
+                  </div>
+                )}
+                {profile.dateOfBirth && (
+                  <div>
+                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Date de naissance</span>
+                    <strong style={{ fontSize: "14px", color: "#0F172A" }}>
+                      {String(profile.dateOfBirth).split("T")[0]} ({profile.age || 25} ans)
+                    </strong>
+                  </div>
+                )}
                 {profile.religion && (
                   <div>
                     <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Religion</span>
@@ -655,6 +673,55 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Album Photos du profil (Jusqu'a 8 photos) */}
+            <div className="card card-padded" style={{ background: "white", borderRadius: "var(--radius-xl)", border: "1px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <div>
+                  <h2 style={{ fontSize: "20px", fontWeight: 800, color: "var(--color-blue)", margin: "0 0 4px" }}>
+                    Album Photos ({profile.photos?.length || 0}/8)
+                  </h2>
+                  <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
+                    Consultable et visualisable par les membres en ligne lors du chat.
+                  </p>
+                </div>
+                <Link href="/profil/edit" className="btn btn-outline-blue btn-sm" style={{ fontWeight: 700 }}>
+                  Gérer mes photos
+                </Link>
+              </div>
+
+              {profile.photos && profile.photos.length > 0 ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "12px" }}>
+                  {profile.photos.map((ph, idx) => (
+                    <div
+                      key={ph.id || idx}
+                      style={{
+                        position: "relative",
+                        aspectRatio: "1/1",
+                        borderRadius: "14px",
+                        overflow: "hidden",
+                        border: ph.isMain ? "3px solid #2563EB" : "1.5px solid #E2E8F0",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      <img src={ph.url} alt={`Photo ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      {ph.isMain && (
+                        <div style={{ position: "absolute", top: "6px", left: "6px", background: "#2563EB", color: "white", padding: "2px 8px", borderRadius: "100px", fontSize: "10px", fontWeight: 800 }}>
+                          ★ Profil
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: "center", padding: "24px", background: "#F8FAFC", borderRadius: "12px", border: "1.5px dashed #CBD5E1" }}>
+                  <p style={{ color: "#64748B", fontSize: "14px", margin: "0 0 10px" }}>Aucune photo dans votre album pour le moment.</p>
+                  <Link href="/profil/edit" className="btn btn-primary btn-sm" style={{ fontWeight: 800 }}>
+                    + Ajouter des photos à mon album
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Relationship Goal & Intentions */}

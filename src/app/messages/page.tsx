@@ -3612,6 +3612,11 @@ function MessagesContent() {
                       <span style={{ background: "#EFF6FF", color: "#1D4ED8", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
                         📍 {activePartner?.city || "Lomé, Togo"}
                       </span>
+                      {activePartner?.age && (
+                        <span style={{ background: "#FDF2F8", color: "#BE185D", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 700 }}>
+                          🎂 {activePartner.age} ans
+                        </span>
+                      )}
                       {activePartner?.profession && (
                         <span style={{ background: "#F1F5F9", color: "#334155", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
                           💼 {activePartner.profession}
@@ -3621,7 +3626,7 @@ function MessagesContent() {
                         ⭐ {activePartner?.relationshipGoal === "MARRIAGE" ? "Mariage & Foyer" : activePartner?.relationshipGoal === "FRIENDSHIP" ? "Amitié & Échange" : "Relation sérieuse & Sorties"}
                       </span>
                       <span style={{ background: "#ECFDF5", color: "#047857", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
-                        🛡️ Identité vérifiée
+                        🛡️ Identité vérifiée (18+)
                       </span>
                     </div>
 

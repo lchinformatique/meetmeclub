@@ -26,10 +26,14 @@ export async function GET() {
         ...(profile || {}),
         userId: session.userId,
         firstName: supa.firstName || profile?.firstName || 'Nouveau Membre',
+        lastName: supa.lastName || profile?.lastName || undefined,
         pseudo: supa.pseudo || profile?.pseudo || undefined,
         email: session.email || profile?.email || undefined,
         phone: supa.phone || session.phone || profile?.phone || undefined,
         gender: (supa.gender as any) || profile?.gender || 'OTHER',
+        dateOfBirth: supa.dateOfBirth || profile?.dateOfBirth || undefined,
+        placeOfBirth: supa.placeOfBirth || profile?.placeOfBirth || undefined,
+        age: supa.age || profile?.age || undefined,
         city: supa.city || profile?.city || 'Lomé',
         neighborhood: supa.neighborhood || profile?.neighborhood || undefined,
         profession: supa.profession || profile?.profession || undefined,
@@ -168,7 +172,30 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // ── 1. Gestion upload photo de couverture ────────────────────
+    // 1. Validation obligatoire de la date de naissance (18+ ans)
+    let calculatedAge: number | undefined = undefined;
+    if (body.dateOfBirth) {
+      const dob = new Date(body.dateOfBirth);
+      if (isNaN(dob.getTime())) {
+        return NextResponse.json({ error: 'Date de naissance invalide.' }, { status: 400 });
+      }
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      if (age < 18) {
+        return NextResponse.json(
+          { error: "Vous devez avoir au moins 18 ans pour utiliser Meet Me Club. L'accès aux personnes mineures est strictement interdit." },
+          { status: 400 }
+        );
+      }
+      calculatedAge = age;
+      body.age = calculatedAge;
+    }
+
+    // 2. Gestion upload photo de couverture
     let coverUrl = body.coverUrl;
     if (coverUrl && coverUrl.startsWith('data:image/')) {
       try {
@@ -180,12 +207,42 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    // ── 2. Gestion directe de la photo de profil (Avatar) ────────
-    let finalAvatarUrl = body.avatarUrl || body.photoUrl;
+    // 3. Gestion album photo complet (jusqu'a 8 photos) et Avatar
     const existingProfile = getProfileByUserId(session.userId);
     let updatedPhotos = existingProfile?.photos ? [...existingProfile.photos] : [];
+    let finalAvatarUrl = body.avatarUrl || body.photoUrl;
 
-    if (finalAvatarUrl) {
+    if (Array.isArray(body.photos)) {
+      const processedPhotos: Array<{ id: string; url: string; isMain: boolean }> = [];
+      for (let i = 0; i < Math.min(body.photos.length, 8); i++) {
+        const item = body.photos[i];
+        let url = item.url;
+        if (url && url.startsWith('data:image/')) {
+          try {
+            const { uploadProfilePhoto } = await import('@/lib/cloudinary');
+            const base64Data = url.replace(/^data:image\/\w+;base64,/, '');
+            const buffer = Buffer.from(base64Data, 'base64');
+            const result = await uploadProfilePhoto(buffer, session.userId);
+            url = result.url;
+          } catch {
+            console.warn('[PATCH] Photo upload to Cloudinary failed, keeping base64');
+          }
+        }
+        processedPhotos.push({
+          id: item.id || `photo_${Date.now()}_${i}`,
+          url,
+          isMain: Boolean(item.isMain),
+        });
+      }
+      if (processedPhotos.length > 0 && !processedPhotos.some((p) => p.isMain)) {
+        processedPhotos[0].isMain = true;
+      }
+      updatedPhotos = processedPhotos;
+      const mainPhoto = updatedPhotos.find((p) => p.isMain) || updatedPhotos[0];
+      if (mainPhoto) {
+        finalAvatarUrl = mainPhoto.url;
+      }
+    } else if (finalAvatarUrl) {
       if (finalAvatarUrl.startsWith('data:image/')) {
         try {
           const { uploadProfilePhoto } = await import('@/lib/cloudinary');
@@ -198,37 +255,32 @@ export async function PATCH(request: NextRequest) {
         }
       }
 
-      // Mettre à jour la liste des photos locales
       const newPhotoObj = { id: `photo_${Date.now()}`, url: finalAvatarUrl, isMain: true };
       updatedPhotos = [
         newPhotoObj,
         ...updatedPhotos.filter((p) => p.url !== finalAvatarUrl).map((p) => ({ ...p, isMain: false })),
-      ];
-
-      // Enregistrer directement dans Supabase profile_photos
-      try {
-        const { savePhotoInSupabase } = await import('@/lib/supabase-server');
-        await savePhotoInSupabase(session.userId, finalAvatarUrl, true);
-      } catch (supaPhotoErr) {
-        console.warn('[PATCH] Supabase photo sync warning:', supaPhotoErr);
-      }
+      ].slice(0, 8);
     }
 
-    // ── 3. Mise à jour immédiate du store local ─────────────────
+    // 4. Mise a jour immediate du store local
     const patchData: Record<string, any> = { ...body };
     if (coverUrl !== undefined) patchData.coverUrl = coverUrl;
     if (updatedPhotos.length > 0) patchData.photos = updatedPhotos;
+    if (calculatedAge !== undefined) patchData.age = calculatedAge;
 
     const saved = saveProfile({ ...patchData, userId: session.userId });
 
-    // ── 4. Synchronisation Supabase directe (REST HTTPS) ────────
+    // 5. Synchronisation Supabase directe (REST HTTPS)
     try {
       const { upsertProfileInSupabase, savePhotoInSupabase } = await import('@/lib/supabase-server');
       await upsertProfileInSupabase(session.userId, {
         firstName: body.firstName || saved.firstName,
-        lastName: body.lastName || saved.lastName,
+        lastName: body.lastName !== undefined ? body.lastName : saved.lastName,
         pseudo: body.pseudo !== undefined ? body.pseudo : saved.pseudo,
         gender: body.gender || saved.gender,
+        dateOfBirth: body.dateOfBirth !== undefined ? body.dateOfBirth : saved.dateOfBirth,
+        placeOfBirth: body.placeOfBirth !== undefined ? body.placeOfBirth : saved.placeOfBirth,
+        age: calculatedAge !== undefined ? calculatedAge : saved.age,
         city: body.city || saved.city,
         neighborhood: body.neighborhood !== undefined ? body.neighborhood : saved.neighborhood,
         profession: body.profession !== undefined ? body.profession : saved.profession,
@@ -245,7 +297,7 @@ export async function PATCH(request: NextRequest) {
         coverUrl: coverUrl !== undefined ? coverUrl : saved.coverUrl,
       });
 
-      // Synchroniser également toutes les photos supplémentaires
+      // Synchroniser toutes les photos vers Supabase
       if (updatedPhotos && updatedPhotos.length > 0) {
         for (const ph of updatedPhotos) {
           try {

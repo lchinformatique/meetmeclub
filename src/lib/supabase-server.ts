@@ -161,11 +161,10 @@ export async function findUserInSupabase(identifier: string) {
   }
 }
 
-// ── Mise à jour ou création de profil dans Supabase ──────────
-// ── Mise à jour ou création de profil dans Supabase ──────────
+// Mise a jour ou creation de profil dans Supabase
 export async function upsertProfileInSupabase(userId: string, data: {
   firstName?: string;
-  lastName?: string;
+  lastName?: string | null;
   pseudo?: string | null;
   gender?: string;
   city?: string;
@@ -182,18 +181,24 @@ export async function upsertProfileInSupabase(userId: string, data: {
   phone?: string | null;
   avatarUrl?: string | null;
   coverUrl?: string | null;
+  dateOfBirth?: string | null;
+  placeOfBirth?: string | null;
+  age?: number | null;
 }) {
   const admin = getSupabaseAdmin();
   try {
-    // 1. Mettre à jour le téléphone dans users si présent
-    if (data.phone) {
+    // 1. Mettre à jour le téléphone et la date de naissance dans users si présent
+    if (data.phone || data.dateOfBirth) {
       try {
-        await admin
-          .from("users")
-          .update({ phone: data.phone })
-          .eq("id", userId);
+        const userUpdates: Record<string, any> = {};
+        if (data.phone) userUpdates.phone = data.phone;
+        if (data.dateOfBirth) {
+          userUpdates.dateOfBirth = data.dateOfBirth;
+          userUpdates.isAdult = true;
+        }
+        await admin.from("users").update(userUpdates).eq("id", userId);
       } catch (phoneErr) {
-        console.warn("[upsertProfileInSupabase] Update phone warning:", phoneErr);
+        console.warn("[upsertProfileInSupabase] Update user warning:", phoneErr);
       }
     }
 
@@ -218,8 +223,12 @@ export async function upsertProfileInSupabase(userId: string, data: {
     };
 
     if (data.firstName !== undefined) profilePayload.firstName = data.firstName;
+    if (data.lastName !== undefined) profilePayload.lastName = data.lastName;
     if (data.pseudo !== undefined) profilePayload.pseudo = data.pseudo;
     if (data.gender !== undefined) profilePayload.gender = data.gender;
+    if (data.dateOfBirth !== undefined) profilePayload.dateOfBirth = data.dateOfBirth;
+    if (data.placeOfBirth !== undefined) profilePayload.placeOfBirth = data.placeOfBirth;
+    if (data.age !== undefined) profilePayload.age = data.age;
     if (data.city !== undefined) profilePayload.city = data.city;
     if (data.neighborhood !== undefined) profilePayload.neighborhood = data.neighborhood;
     if (data.profession !== undefined) profilePayload.profession = data.profession;
@@ -254,7 +263,11 @@ export async function upsertProfileInSupabase(userId: string, data: {
           relationshipGoal: data.relationshipGoal || "SERIOUS",
           updatedAt: new Date().toISOString(),
         };
+        if (data.lastName) corePayload.lastName = data.lastName;
         if (data.coverUrl) corePayload.coverUrl = data.coverUrl;
+        if (data.avatarUrl) corePayload.avatarUrl = data.avatarUrl;
+        if (data.dateOfBirth) corePayload.dateOfBirth = data.dateOfBirth;
+        if (data.placeOfBirth) corePayload.placeOfBirth = data.placeOfBirth;
         const retry = await admin
           .from("profiles")
           .update(corePayload)
@@ -272,13 +285,17 @@ export async function upsertProfileInSupabase(userId: string, data: {
           id: newId,
           userId,
           firstName: data.firstName || "Membre",
+          lastName: data.lastName || null,
           pseudo: data.pseudo || null,
           gender: data.gender || "OTHER",
           city: data.city || "Lomé",
           bio: data.bio || "Nouveau membre sur Meet Me Club.",
           relationshipGoal: data.relationshipGoal || "SERIOUS",
+          dateOfBirth: data.dateOfBirth || null,
+          placeOfBirth: data.placeOfBirth || null,
+          age: data.age || null,
           isVisible: true,
-          profileCompleteness: 60,
+          profileCompleteness: 80,
           ...profilePayload,
         })
         .select()
