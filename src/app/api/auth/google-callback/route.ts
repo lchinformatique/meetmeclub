@@ -138,44 +138,68 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Déterminer la photo de profil (Avatar Google ou Avatar initials personnalisé)
+    // Déterminer la photo de profil par défaut
     const finalAvatar = (avatarUrl as string) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(firstName)}&backgroundColor=0b2559,1d4ed8&textColor=ffffff`;
 
-    // Synchronisation directe Supabase REST (HTTPS)
+    // ── 3. Synchronisation Supabase REST intelligente ───────────────────────
+    // Ne jamais écraser un profil existant avec des valeurs par défaut !
+    let currentProfile: any = null;
     try {
-      const { upsertProfileInSupabase, savePhotoInSupabase } = await import("@/lib/supabase-server");
-      await upsertProfileInSupabase(user.id, {
-        firstName,
-        pseudo: cleanPseudo,
-        gender: "OTHER",
-        city: "Lomé",
-        bio: "Nouveau membre sur Meet Me Club à Lomé.",
-        relationshipGoal: "SERIOUS",
-        avatarUrl: finalAvatar,
-      });
-      await savePhotoInSupabase(user.id, finalAvatar, true);
+      const { getProfileFromSupabase, upsertProfileInSupabase, savePhotoInSupabase } = await import("@/lib/supabase-server");
+      
+      // Chercher d'abord avec user.id puis avec supabaseId
+      currentProfile = await getProfileFromSupabase(user.id);
+      if (!currentProfile && supabaseId !== user.id) {
+        currentProfile = await getProfileFromSupabase(supabaseId);
+      }
+
+      if (!currentProfile) {
+        // Premier enregistrement uniquement : création du profil initial
+        await upsertProfileInSupabase(user.id, {
+          firstName,
+          pseudo: cleanPseudo,
+          gender: "OTHER",
+          city: "Lomé",
+          bio: "Nouveau membre sur Meet Me Club à Lomé.",
+          relationshipGoal: "SERIOUS",
+          avatarUrl: finalAvatar,
+        });
+        await savePhotoInSupabase(user.id, finalAvatar, true);
+      }
     } catch (supaErr) {
       console.warn("[google-callback] Supabase REST sync warning:", supaErr);
     }
 
-    // Sauvegarde store local (non-bloquante)
+    // Sauvegarde / synchronisation store local sans écraser les données réelles
     try {
       saveProfile({
         userId: user.id,
-        firstName,
-        pseudo: cleanPseudo,
+        firstName: currentProfile?.firstName || firstName,
+        lastName: currentProfile?.lastName || undefined,
+        pseudo: currentProfile?.pseudo || cleanPseudo,
         email: cleanEmail,
-        gender: "OTHER",
-        city: "Lomé",
-        age: 25,
-        dateOfBirth: "2000-01-01",
-        bio: "Nouveau membre sur Meet Me Club à Lomé.",
-        relationshipGoal: "SERIOUS",
-        plan: "FREE",
-        partnersContacted: [],
-        photos: [{ id: `p_${user.id}`, url: finalAvatar, isMain: true }],
-        interests: ["Discussions", "Sorties"],
-        availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
+        gender: currentProfile?.gender || "OTHER",
+        city: currentProfile?.city || "Lomé",
+        neighborhood: currentProfile?.neighborhood || undefined,
+        profession: currentProfile?.profession || undefined,
+        relationshipStatus: currentProfile?.relationshipStatus || "Célibataire",
+        hasChildren: currentProfile?.hasChildren ?? false,
+        religion: currentProfile?.religion || undefined,
+        height: currentProfile?.height || null,
+        languages: currentProfile?.languages || ["fr", "en"],
+        age: currentProfile?.age || 25,
+        dateOfBirth: currentProfile?.dateOfBirth || "2000-01-01",
+        placeOfBirth: currentProfile?.placeOfBirth || undefined,
+        bio: currentProfile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+        relationshipGoal: currentProfile?.relationshipGoal || "SERIOUS",
+        plan: currentProfile?.plan || "FREE",
+        partnersContacted: currentProfile?.partnersContacted || [],
+        photos: (currentProfile?.photos && currentProfile.photos.length > 0)
+          ? currentProfile.photos
+          : [{ id: `p_${user.id}`, url: finalAvatar, isMain: true }],
+        coverUrl: currentProfile?.coverUrl || undefined,
+        interests: currentProfile?.interests || ["Discussions", "Sorties"],
+        availabilities: currentProfile?.availabilities || [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,
         isVisible: true,
       });

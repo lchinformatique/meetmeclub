@@ -195,37 +195,46 @@ export async function PATCH(request: NextRequest) {
       body.age = calculatedAge;
     }
 
-    // 2. Gestion upload photo de couverture
+    // 2. Gestion upload photo de couverture via Supabase Storage
     let coverUrl = body.coverUrl;
     if (coverUrl && coverUrl.startsWith('data:image/')) {
       try {
-        const { uploadPhoto } = await import('@/lib/cloudinary');
-        const result = await uploadPhoto(coverUrl, `meetmeclub/covers/${session.userId}`);
-        coverUrl = result.secure_url;
-      } catch {
-        console.warn('[PATCH] Cover upload to Cloudinary failed, keeping base64');
+        const { uploadToSupabaseStorage } = await import('@/lib/supabase-storage');
+        const uploadRes = await uploadToSupabaseStorage(session.userId, 'cover', coverUrl, 'image/webp', 'cover');
+        coverUrl = uploadRes.url;
+      } catch (stErr) {
+        console.warn('[PATCH] Cover upload to Supabase Storage warning, trying fallback:', stErr);
+        try {
+          const { uploadPhoto } = await import('@/lib/cloudinary');
+          const result = await uploadPhoto(coverUrl, `meetmeclub/covers/${session.userId}`);
+          coverUrl = result.secure_url;
+        } catch {}
       }
     }
 
-    // 3. Gestion album photo complet (jusqu'a 8 photos) et Avatar
+    // 3. Gestion album photo complet (jusqu'a 8 photos) et Avatar via Supabase Storage
     const existingProfile = getProfileByUserId(session.userId);
     let updatedPhotos = existingProfile?.photos ? [...existingProfile.photos] : [];
     let finalAvatarUrl = body.avatarUrl || body.photoUrl;
 
     if (Array.isArray(body.photos)) {
       const processedPhotos: Array<{ id: string; url: string; isMain: boolean }> = [];
+      const { uploadToSupabaseStorage } = await import('@/lib/supabase-storage');
       for (let i = 0; i < Math.min(body.photos.length, 8); i++) {
         const item = body.photos[i];
         let url = item.url;
         if (url && url.startsWith('data:image/')) {
           try {
-            const { uploadProfilePhoto } = await import('@/lib/cloudinary');
-            const base64Data = url.replace(/^data:image\/\w+;base64,/, '');
-            const buffer = Buffer.from(base64Data, 'base64');
-            const result = await uploadProfilePhoto(buffer, session.userId);
-            url = result.url;
-          } catch {
-            console.warn('[PATCH] Photo upload to Cloudinary failed, keeping base64');
+            const uploadRes = await uploadToSupabaseStorage(
+              session.userId,
+              item.isMain ? 'avatar' : 'gallery',
+              url,
+              'image/webp',
+              `photo_${i + 1}`
+            );
+            url = uploadRes.url;
+          } catch (stErr) {
+            console.warn('[PATCH] Photo upload to Supabase Storage warning:', stErr);
           }
         }
         processedPhotos.push({
@@ -245,13 +254,17 @@ export async function PATCH(request: NextRequest) {
     } else if (finalAvatarUrl) {
       if (finalAvatarUrl.startsWith('data:image/')) {
         try {
-          const { uploadProfilePhoto } = await import('@/lib/cloudinary');
-          const base64Data = finalAvatarUrl.replace(/^data:image\/\w+;base64,/, '');
-          const buffer = Buffer.from(base64Data, 'base64');
-          const result = await uploadProfilePhoto(buffer, session.userId);
-          finalAvatarUrl = result.url;
-        } catch {
-          console.warn('[PATCH] Avatar upload to Cloudinary failed, keeping base64');
+          const { uploadToSupabaseStorage } = await import('@/lib/supabase-storage');
+          const uploadRes = await uploadToSupabaseStorage(
+            session.userId,
+            'avatar',
+            finalAvatarUrl,
+            'image/webp',
+            'avatar'
+          );
+          finalAvatarUrl = uploadRes.url;
+        } catch (stErr) {
+          console.warn('[PATCH] Avatar upload to Supabase Storage warning:', stErr);
         }
       }
 
@@ -272,7 +285,7 @@ export async function PATCH(request: NextRequest) {
 
     // 5. Synchronisation Supabase directe (REST HTTPS)
     try {
-      const { upsertProfileInSupabase, savePhotoInSupabase } = await import('@/lib/supabase-server');
+      const { upsertProfileInSupabase, syncAlbumPhotosInSupabase, savePhotoInSupabase } = await import('@/lib/supabase-server');
       await upsertProfileInSupabase(session.userId, {
         firstName: body.firstName || saved.firstName,
         lastName: body.lastName !== undefined ? body.lastName : saved.lastName,
@@ -297,13 +310,9 @@ export async function PATCH(request: NextRequest) {
         coverUrl: coverUrl !== undefined ? coverUrl : saved.coverUrl,
       });
 
-      // Synchroniser toutes les photos vers Supabase
+      // Synchroniser toutes les photos vers Supabase Storage & Database
       if (updatedPhotos && updatedPhotos.length > 0) {
-        for (const ph of updatedPhotos) {
-          try {
-            await savePhotoInSupabase(session.userId, ph.url, ph.isMain);
-          } catch {}
-        }
+        await syncAlbumPhotosInSupabase(session.userId, updatedPhotos);
       }
     } catch (supaErr) {
       console.warn('[PATCH supabase sync]', supaErr);

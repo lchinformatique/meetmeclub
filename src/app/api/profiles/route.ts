@@ -105,10 +105,56 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ profiles: [...formatted, ...extraLocal] });
       }
     } catch (dbErr) {
-      console.warn("[GET /api/profiles] Supabase query fallback to local store:", dbErr);
+      console.warn("[GET /api/profiles] Prisma query fallback to Supabase REST and local store:", dbErr);
     }
 
-    // 2. Fallback to local store
+    // 2. Fetch live profiles directly from Supabase REST
+    try {
+      const { getPublicProfilesFromSupabase } = await import("@/lib/supabase-server");
+      const supaProfiles = await getPublicProfilesFromSupabase(session.userId);
+      if (supaProfiles && supaProfiles.length > 0) {
+        let filteredSupa = supaProfiles;
+        if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) {
+          filteredSupa = filteredSupa.filter((p: any) => p.gender === gender);
+        }
+        if (city) {
+          filteredSupa = filteredSupa.filter((p: any) => p.city?.toLowerCase().includes(city.toLowerCase()));
+        }
+        if (goal) {
+          filteredSupa = filteredSupa.filter((p: any) => p.relationshipGoal === goal);
+        }
+
+        const supaUserIds = new Set(filteredSupa.map((p: any) => p.userId));
+        const extraLocal = getAllProfiles()
+          .filter((lp) => lp.isVisible && lp.userId !== session.userId && !supaUserIds.has(lp.userId))
+          .map((p) => ({
+            id: p.id,
+            userId: p.userId,
+            firstName: p.firstName,
+            pseudo: p.pseudo || p.firstName,
+            gender: p.gender,
+            city: p.city,
+            neighborhood: p.neighborhood || "Lomé",
+            profession: p.profession,
+            bio: p.bio,
+            coverUrl: p.coverUrl,
+            relationshipGoal: p.relationshipGoal,
+            plan: p.plan,
+            profileCompleteness: 90,
+            photos: p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain })),
+            interests: p.interests.map((name) => ({ interest: { name, icon: "✨" } })),
+            verifications: p.isVerified ? [{ type: "PHONE" }, { type: "SELFIE" }] : [],
+            age: p.age,
+            isVerified: p.isVerified,
+          }));
+
+        return NextResponse.json({ profiles: [...filteredSupa, ...extraLocal] });
+      }
+    } catch (supaErr) {
+      console.warn("[GET /api/profiles] Supabase REST fallback warning:", supaErr);
+    }
+
+    // 3. Fallback to local store
     let profiles = getAllProfiles().filter((p) => p.isVisible && p.userId !== session.userId);
 
     if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) {

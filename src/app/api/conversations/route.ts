@@ -62,13 +62,24 @@ export async function GET() {
             isVerified = true;
           }
         } catch {
-          // Fallback to local store
+          // Fallback to local store or Supabase
           const localProfile = getProfileByUserId(partnerId);
           if (localProfile) {
             partnerName = localProfile.firstName;
             partnerPseudo = localProfile.pseudo || localProfile.firstName;
             partnerPhotoUrl = localProfile.photos?.[0]?.url || "";
             isVerified = localProfile.isVerified;
+          } else {
+            try {
+              const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+              const supa = await getProfileFromSupabase(partnerId);
+              if (supa) {
+                partnerName = supa.firstName || partnerName;
+                partnerPseudo = supa.pseudo || supa.firstName || partnerPseudo;
+                partnerPhotoUrl = supa.avatarUrl || supa.photos?.[0]?.url || "";
+                isVerified = true;
+              }
+            } catch {}
           }
         }
 
@@ -229,9 +240,23 @@ export async function POST(req: NextRequest) {
 
   // Obtenir infos partenaire
   const localProfile = getProfileByUserId(targetUserId);
-  const partnerName = localProfile?.firstName || "Membre";
-  const partnerPseudo = localProfile?.pseudo || localProfile?.firstName || "@membre";
-  const partnerPhotoUrl = localProfile?.photos?.[0]?.url || "";
+  let partnerName = localProfile?.firstName || "Membre";
+  let partnerPseudo = localProfile?.pseudo || localProfile?.firstName || "@membre";
+  let partnerPhotoUrl = localProfile?.photos?.[0]?.url || "";
+
+  if (!localProfile || !partnerPhotoUrl) {
+    try {
+      const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+      const supaPartner = await getProfileFromSupabase(targetUserId);
+      if (supaPartner) {
+        if (supaPartner.firstName) partnerName = supaPartner.firstName;
+        if (supaPartner.pseudo || supaPartner.firstName) partnerPseudo = supaPartner.pseudo || supaPartner.firstName;
+        if (supaPartner.avatarUrl || supaPartner.photos?.[0]?.url) {
+          partnerPhotoUrl = supaPartner.avatarUrl || supaPartner.photos?.[0]?.url || partnerPhotoUrl;
+        }
+      }
+    } catch {}
+  }
 
   try {
     // Check if conversation already exists (in either direction)

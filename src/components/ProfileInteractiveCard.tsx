@@ -149,9 +149,12 @@ export default function ProfileInteractiveCard({
           return;
         }
 
+        const data = await res.json().catch(() => ({}));
+        const cdnCoverUrl = data.profile?.coverUrl || base64;
+
         const updatedProfile: StoredProfile = {
           ...profile,
-          coverUrl: base64,
+          coverUrl: cdnCoverUrl,
         };
 
         setProfile(updatedProfile);

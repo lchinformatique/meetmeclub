@@ -136,74 +136,40 @@ export async function POST(request: NextRequest) {
       base64Input = `data:${file.type};base64,${b64}`;
     }
 
-    // ── 1. Tentative Cloudinary + Prisma ────────────────────────
+    // ── 1. Upload vers Supabase Storage bucket 'profile-media' ──────────
     let finalUrl = base64Input;
     let finalThumbnail = base64Input;
-    let photoId = `local_${Date.now()}`;
+    let photoId = `ph_${Date.now()}`;
 
-    try {
-      const { uploadProfilePhoto } = await import("@/lib/cloudinary");
-      if (!buffer) throw new Error("no buffer");
-      const uploaded = await uploadProfilePhoto(buffer, session.userId);
-      finalUrl = uploaded.url;
-      finalThumbnail = uploaded.thumbnailUrl || uploaded.url;
-    } catch (cloudErr) {
-      console.warn("[photos POST] Cloudinary failed or skipped, using base64 URL:", cloudErr);
+    if (buffer) {
+      try {
+        const { uploadToSupabaseStorage } = await import("@/lib/supabase-storage");
+        const uploadRes = await uploadToSupabaseStorage(
+          session.userId,
+          isMainPhoto ? "avatar" : "gallery",
+          buffer,
+          "image/webp",
+          `photo_${Date.now()}`
+        );
+        finalUrl = uploadRes.url;
+        finalThumbnail = uploadRes.url;
+        photoId = uploadRes.path;
+      } catch (storageErr) {
+        console.warn("[photos POST] Supabase Storage upload failed, trying Cloudinary fallback:", storageErr);
+        try {
+          const { uploadProfilePhoto } = await import("@/lib/cloudinary");
+          const uploaded = await uploadProfilePhoto(buffer, session.userId);
+          finalUrl = uploaded.url;
+          finalThumbnail = uploaded.thumbnailUrl || uploaded.url;
+        } catch {}
+      }
     }
 
-    try {
-      const { prisma } = await import("@/lib/prisma");
-      // Assure que le profil Prisma existe
-      let prismaProfile = await prisma.profile.findUnique({
-        where: { userId: session.userId },
-        include: { photos: true },
-      });
-
-      if (!prismaProfile) {
-        const lp = localProfile;
-        prismaProfile = await prisma.profile.create({
-          data: {
-            userId: session.userId,
-            firstName: lp?.firstName || session.email?.split("@")[0] || "Membre",
-            gender: (lp?.gender as any) || "OTHER",
-            city: lp?.city || "Lomé",
-            bio: lp?.bio || "Membre Meet Me Club.",
-            relationshipGoal: (lp?.relationshipGoal as any) || "SERIOUS",
-            isVisible: true,
-            pseudo: lp?.pseudo || null,
-          },
-          include: { photos: true },
-        });
-      }
-
-      // Si définie comme photo principale, démoter les anciennes photos
-      if (isMainPhoto) {
-        await prisma.profilePhoto.updateMany({
-          where: { profileId: prismaProfile.id },
-          data: { isMain: false },
-        });
-      }
-
-      const dbPhoto = await prisma.profilePhoto.create({
-        data: {
-          profileId: prismaProfile.id,
-          url: finalUrl,
-          thumbnailUrl: finalThumbnail,
-          publicId: photoId,
-          isMain: isMainPhoto,
-          order: prismaProfile.photos.length,
-          status: "APPROVED",
-        },
-      });
-      photoId = dbPhoto.id;
-    } catch (prismaErr) {
-      console.warn("[photos POST] Prisma save failed (using local store):", prismaErr);
-    }
-
-    // ── 1.b Synchronisation directe Supabase REST (HTTPS) ──────
+    // ── 1.b Synchronisation directe Supabase Database (profile_photos) ──
     try {
       const { savePhotoInSupabase } = await import("@/lib/supabase-server");
-      await savePhotoInSupabase(session.userId, finalUrl, isMainPhoto);
+      const saved = await savePhotoInSupabase(session.userId, finalUrl, isMainPhoto, existingCount + 1);
+      if (saved?.id) photoId = saved.id;
     } catch (supaErr) {
       console.warn("[photos POST] Supabase REST save warning:", supaErr);
     }

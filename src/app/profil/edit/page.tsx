@@ -259,6 +259,10 @@ export default function ProfilEditPage() {
           body: JSON.stringify({ coverUrl: base64 }),
         });
         if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data.profile?.coverUrl) {
+            setCoverUrl(data.profile.coverUrl);
+          }
           setMessage({ type: "success", text: "Photo de couverture enregistrée avec succès !" });
         }
         setUploadingCover(false);
@@ -427,11 +431,24 @@ export default function ProfilEditPage() {
         return;
       }
 
+      if (data.profile) {
+        if (data.profile.coverUrl) setCoverUrl(data.profile.coverUrl);
+        if (Array.isArray(data.profile.photos)) setPhotos(data.profile.photos);
+        const mainPic = data.profile.photos?.find((p: any) => p.isMain)?.url;
+        if (mainPic) setAvatarUrl(mainPic);
+      }
+
       setMessage({ type: "success", text: "Votre profil Supabase a été mis à jour avec succès !" });
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("mmclub_profile_updated", {
-            detail: { ...form, age: computedAge, avatarUrl, coverUrl, photos },
+            detail: {
+              ...form,
+              age: computedAge,
+              avatarUrl: data.profile?.avatarUrl || avatarUrl,
+              coverUrl: data.profile?.coverUrl || coverUrl,
+              photos: data.profile?.photos || photos,
+            },
           })
         );
       }
