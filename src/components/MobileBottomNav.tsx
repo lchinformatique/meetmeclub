@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, MessageSquare, Calendar, User } from "lucide-react";
+import { Home, Compass, MessageSquare, Calendar, User, Gem } from "lucide-react";
 import { getLanguage, t, SupportedLanguage } from "@/lib/i18n";
 
 export default function MobileBottomNav() {
@@ -82,6 +82,8 @@ export default function MobileBottomNav() {
   const navItems = [
     { href: "/", label: t("appTitle", lang) === "Meet Me Club" ? (lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil") : "Accueil", Icon: Home },
     { href: "/decouverte", label: t("navDiscovery", lang), Icon: Compass },
+    { href: "/tarifs", label: "Plans d'accès", Icon: Gem },
+    { href: "/rendez-vous", label: "Packs & Sorties", Icon: Calendar },
     {
       href: "/messages",
       activeHref: "/messages",
@@ -89,7 +91,6 @@ export default function MobileBottomNav() {
       Icon: MessageSquare,
       badge: unreadCount > 0 ? unreadCount : undefined,
     },
-    { href: "/rendez-vous", label: t("navRendezVous", lang), Icon: Calendar },
     {
       href: "/profil",
       activeHref: "/profil",

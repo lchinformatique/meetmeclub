@@ -7,6 +7,8 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CommunityStatsWidget from "@/components/CommunityStatsWidget";
+import HeroLiveStatsCard from "@/components/HeroLiveStatsCard";
+import UnifiedPricingCards from "@/components/UnifiedPricingCards";
 import {
   ShieldCheck,
   CheckCircle2,
@@ -360,147 +362,9 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Column: Floating Live Trust Card (Positioned to highlight the couple) */}
-            <div
-              className="hero-right-column"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                alignItems: "flex-end",
-                minHeight: "420px",
-              }}
-            >
-              {/* Floating Live Badge Top Right */}
-              <div
-                style={{
-                  background: "rgba(11, 46, 107, 0.70)",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRadius: "var(--radius-full)",
-                  padding: "8px 18px",
-                  color: "white",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-                }}
-              >
-                <span
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: "#10B981",
-                    boxShadow: "0 0 10px #10B981",
-                  }}
-                />
-                <span>Membres en ligne à Lomé</span>
-              </div>
-
-              {/* Floating Bottom Card: Real Stats & Quick Action */}
-              <div
-                style={{
-                  background: "rgba(11, 46, 107, 0.65)",
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
-                  borderRadius: "var(--radius-2xl)",
-                  padding: "24px",
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
-                  maxWidth: "380px",
-                  width: "100%",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                  <div
-                    style={{
-                      width: "38px",
-                      height: "38px",
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                      border: "2px solid rgba(255, 255, 255, 0.4)",
-                      background: "white",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Image src="/logo.png" alt="Logo" width={38} height={38} style={{ objectFit: "cover" }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "14px", fontWeight: 800, color: "white" }}>
-                      Meet Me Club Lomé
-                    </div>
-                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)" }}>
-                      Plateforme n°1 de rendez-vous
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "10px",
-                    marginBottom: "18px",
-                  }}
-                >
-                  {[
-                    { value: "1 200+", label: "Membres inscrits" },
-                    { value: "12", label: "Lieux partenaires" },
-                    { value: "340+", label: "Rendez-vous réussis" },
-                    { value: "4.7★", label: "Note moyenne" },
-                  ].map((s) => (
-                    <div
-                      key={s.label}
-                      style={{
-                        background: "rgba(255,255,255,0.12)",
-                        borderRadius: "var(--radius-md)",
-                        padding: "12px 10px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "20px",
-                          fontWeight: 800,
-                          color: "white",
-                        }}
-                      >
-                        {s.value}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "rgba(255,255,255,0.8)",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {s.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <Link
-                  href="/inscription"
-                  className="btn btn-primary"
-                  style={{
-                    width: "100%",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    borderRadius: "var(--radius-md)",
-                  }}
-                >
-                  Commencer maintenant →
-                </Link>
-              </div>
+            {/* Right Column: Live Dynamic Database Stats */}
+            <div className="hero-right-column">
+              <HeroLiveStatsCard />
             </div>
           </div>
         </div>
@@ -702,7 +566,7 @@ export default function HomePage() {
                 textShadow: "0 2px 10px rgba(0, 0, 0, 0.35)",
               }}
             >
-              Choisissez votre pack
+              Nos Plans d&apos;Accès &amp; Formules Officielles
             </h2>
             <p
               style={{
@@ -716,137 +580,11 @@ export default function HomePage() {
                 textShadow: "0 1px 6px rgba(0, 0, 0, 0.25)",
               }}
             >
-              De la rencontre simple au dîner privatif — en FCFA
+              Du Plan Gratuit d&apos;essai 7 jours au Club VIP Prestige d&apos;exception
             </p>
           </div>
 
-          <div className="home-packs-grid">
-            {PACKS.map((pack) => (
-              <div
-                key={pack.name}
-                style={{
-                  background: pack.popular ? "white" : "rgba(255,255,255,0.08)",
-                  border: pack.popular ? `3px solid var(--color-red)` : "1px solid rgba(255,255,255,0.15)",
-                  borderRadius: "var(--radius-xl)",
-                  padding: "26px 18px",
-                  position: "relative",
-                  backdropFilter: pack.popular ? "none" : "blur(8px)",
-                  transition: "transform var(--transition-base)",
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "100%",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  {pack.popular && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "-14px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        background: "var(--gradient-red)",
-                        color: "white",
-                        padding: "4px 16px",
-                        borderRadius: "var(--radius-full)",
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      ⭐ Le plus populaire
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      width: "48px",
-                      height: "6px",
-                      background: pack.color,
-                      borderRadius: "var(--radius-full)",
-                      marginBottom: "16px",
-                    }}
-                  />
-                  <h3
-                    style={{
-                      fontSize: "19px",
-                      fontWeight: 800,
-                      color: pack.popular ? "var(--color-blue)" : "white",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {pack.name}
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: "13px",
-                      color: pack.popular ? "var(--color-gray-500)" : "rgba(255,255,255,0.7)",
-                      marginBottom: "18px",
-                      minHeight: "36px",
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {pack.description}
-                  </p>
-                  <div
-                    style={{
-                      fontSize: "26px",
-                      fontWeight: 800,
-                      color: pack.popular ? pack.color : "white",
-                      marginBottom: "18px",
-                    }}
-                  >
-                    {pack.price}{" "}
-                    <span style={{ fontSize: "13px", fontWeight: 400, opacity: 0.75 }}>
-                      FCFA
-                    </span>
-                  </div>
-                  <ul style={{ listStyle: "none", marginBottom: "22px", padding: 0 }}>
-                    {pack.features.map((f) => (
-                      <li
-                        key={f}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontSize: "13px",
-                          color: pack.popular ? "var(--color-gray-600)" : "rgba(255,255,255,0.85)",
-                          marginBottom: "8px",
-                          lineHeight: 1.3,
-                        }}
-                      >
-                        <span style={{ color: pack.popular ? "var(--color-red)" : "#FFD700", fontWeight: "bold" }}>✓</span>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <Link
-                  href="/inscription"
-                  className={`btn ${pack.popular ? "btn-primary" : "btn-outline-red"}`}
-                  style={{
-                    width: "100%",
-                    marginTop: "auto",
-                    ...(pack.popular ? {} : { borderColor: "rgba(255,255,255,0.4)", color: "white" }),
-                  }}
-                >
-                  Choisir ce pack
-                </Link>
-              </div>
-            ))}
-          </div>
-
-          <p
-            style={{
-              textAlign: "center",
-              marginTop: "32px",
-              fontSize: "14px",
-              color: "rgba(255,255,255,0.6)",
-            }}
-          >
-            * Tarifs configurables. Paiement sécurisé T-Money · Flooz · Carte bancaire
-          </p>
+          <UnifiedPricingCards showTitle={false} />
         </div>
         <div
           aria-hidden

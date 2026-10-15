@@ -37,9 +37,8 @@ export async function GET() {
         const maleCount = genders.filter((g: { gender: string }) => g.gender === "MALE").length;
         const femaleCount = genders.filter((g: { gender: string }) => g.gender === "FEMALE").length;
 
-        // Real-time online approximation based on local Lomé time (UTC+0)
-        const hour = new Date().getUTCHours();
-        const onlineNow = Math.max(12, Math.floor(totalProfiles * 0.35) + (hour >= 18 && hour <= 23 ? 28 : 8));
+        // Real counts from Supabase
+        const onlineNow = totalProfiles;
 
         supabaseStats = {
           totalMembers: totalUsers,
@@ -50,7 +49,7 @@ export async function GET() {
           maleMembers: maleCount,
           femaleMembers: femaleCount,
           verifiedSelfieMembers: totalVerifications,
-          organizedDates: Math.max(totalAppointments, Math.floor(totalProfiles * 0.8)),
+          organizedDates: totalAppointments,
           onlineNow,
           lastUpdated: new Date().toISOString(),
         };

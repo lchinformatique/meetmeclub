@@ -57,10 +57,10 @@ export default function Header() {
   const navLinks: NavLinkItem[] = [
     { href: "/", label: lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil", Icon: Home },
     { href: "/decouverte", label: t("navDiscovery", lang), Icon: Compass },
+    { href: "/tarifs", label: "Nos plans d'accès", Icon: Gem },
+    { href: "/rendez-vous", label: "Nos packs & Sorties", Icon: CalendarDays },
     { href: "/vip", label: "Mur VIP 👑", Icon: Crown },
     { href: "/messages", label: t("navMessages", lang), Icon: MessageSquare },
-    { href: "/rendez-vous", label: t("navRendezVous", lang), Icon: CalendarDays },
-    { href: "/tarifs", label: t("navPricing", lang), Icon: Gem },
   ];
   const [sessionUser, setSessionUser] = useState<UserSession | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -208,18 +208,20 @@ export default function Header() {
           WebkitBackdropFilter: "blur(16px)",
           borderBottom: "1px solid #E8EDF5",
           boxShadow: "0 1px 8px rgba(11,37,89,0.07)",
+          paddingTop: "max(env(safe-area-inset-top, 0px), 0px)",
         }}
       >
         <div
           style={{
             maxWidth: "1280px",
             margin: "0 auto",
-            padding: "0 20px",
-            height: "68px",
+            padding: "0 16px",
+            minHeight: "64px",
+            height: "auto",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "16px",
+            gap: "12px",
           }}
         >
           {/* ── Brand Logo & Mobile Back Button ── */}
@@ -385,8 +387,37 @@ export default function Header() {
             })}
           </nav>
 
-          {/* ── Auth Zone ───────────────────────── */}
+          {/* ── Auth Zone (Menu mobile stylé placé AVANT le sélecteur de langue) ── */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            {/* ── Hamburger stylé (mobile only - affiché AVANT le menu langue sur smartphone) ─────── */}
+            <button
+              ref={hamburgerRef}
+              type="button"
+              aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu de navigation"}
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((v) => !v)}
+              className="header-hamburger"
+              style={{
+                display: "none",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "42px",
+                height: "42px",
+                borderRadius: "12px",
+                border: mobileOpen ? "1.5px solid #DC2626" : "1.5px solid #0B2559",
+                background: mobileOpen
+                  ? "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)"
+                  : "linear-gradient(135deg, #0B2559 0%, #1D4ED8 100%)",
+                color: "#FFFFFF",
+                cursor: "pointer",
+                flexShrink: 0,
+                boxShadow: "0 3px 10px rgba(11,37,89,0.22)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              {mobileOpen ? <X size={20} strokeWidth={2.5} /> : <Menu size={20} strokeWidth={2.5} />}
+            </button>
+
             {/* International Language Selector */}
             <LanguageSelector variant="compact" />
 
@@ -532,32 +563,6 @@ export default function Header() {
                 </Link>
               </>
             )}
-
-            {/* ── Hamburger (mobile only) ─────── */}
-            <button
-              ref={hamburgerRef}
-              type="button"
-              aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
-              aria-expanded={mobileOpen}
-              onClick={() => setMobileOpen((v) => !v)}
-              className="header-hamburger"
-              style={{
-                display: "none",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "40px",
-                height: "40px",
-                borderRadius: "10px",
-                border: "1.5px solid #D8E1EF",
-                background: mobileOpen ? "#0B2559" : "white",
-                color: mobileOpen ? "white" : "#0B2559",
-                cursor: "pointer",
-                flexShrink: 0,
-                transition: "all 0.2s ease",
-              }}
-            >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
           </div>
         </div>
       </header>

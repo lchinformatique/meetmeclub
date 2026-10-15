@@ -667,147 +667,39 @@ export default function InscriptionPage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          EN SUITE (2ÈME POSITION) : PROPOSITION DES 4 PLANS DE PAIEMENT DU SITE
-          AVEC LEUR DISPONIBILITÉ DE PAYER
-      ══════════════════════════════════════════════════════════ */}
-      <section style={{ width: "100%", maxWidth: "980px", textAlign: "center" }}>
-        <div style={{ marginBottom: "26px" }}>
-          <span style={{ fontSize: "12px", fontWeight: 800, color: "#E10600", textTransform: "uppercase", letterSpacing: "1px" }}>
-            Adhésion & Formules du Club
-          </span>
-          <h2 style={{ fontSize: "clamp(1.5rem, 4.5vw, 2.1rem)", fontWeight: 800, color: "#0B2559", marginTop: "6px", marginBottom: "8px" }}>
-            Les 4 Plans de Paiement disponibles sur Meet Me Club
-          </h2>
-          <p style={{ fontSize: "14px", color: "#64748B", maxWidth: "620px", margin: "0 auto", lineHeight: 1.6 }}>
-            Démarrez librement avec le Plan Gratuit inclus à l&apos;inscription, ou souscrivez immédiatement à un pass illimité avec disponibilité de paiement sécurisé (Saspay, Carte, T-Money, Moov Money).
-          </p>
-        </div>
-
-        {/* Grille des 4 Plans de Paiement */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "18px", textAlign: "left" }}>
-          {MEMBERSHIP_PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              style={{
-                background: "white",
-                borderRadius: "20px",
-                padding: "24px 20px",
-                border: plan.highlight ? "2px solid #0B2559" : `1.5px solid ${plan.borderColor}`,
-                boxShadow: plan.highlight ? "0 12px 32px rgba(11, 37, 89, 0.14)" : "0 4px 16px rgba(0,0,0,0.05)",
-                display: "flex",
-                flexDirection: "column",
-                position: "relative",
-              }}
-            >
-              {/* Badge du Plan */}
-              <div
-                style={{
-                  display: "inline-block",
-                  alignSelf: "flex-start",
-                  background: plan.badgeBg,
-                  color: plan.badgeColor,
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  padding: "4px 10px",
-                  borderRadius: "9999px",
-                  marginBottom: "12px",
-                }}
-              >
-                {plan.badge}
-              </div>
-
-              <div style={{ fontSize: "19px", fontWeight: 800, color: "#0B2559" }}>{plan.name}</div>
-
-              <div style={{ fontSize: "26px", fontWeight: 800, color: "#E10600", margin: "8px 0 2px" }}>
-                {plan.price}{" "}
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#64748B" }}>
-                  {plan.id === "FREE" ? "FCFA" : "FCFA / mois"}
-                </span>
-              </div>
-
-              <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "14px", fontStyle: "italic" }}>
-                {plan.period}
-              </div>
-
-              <p style={{ fontSize: "13px", color: "#475569", lineHeight: 1.45, marginBottom: "16px", minHeight: "38px" }}>
-                {plan.desc}
-              </p>
-
-              {/* Liste des fonctionnalités incluses */}
-              <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: "14px", display: "flex", flexDirection: "column", gap: "8px", flex: 1, marginBottom: "20px" }}>
-                {plan.features.map((f, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "7px", fontSize: "12px", color: "#334155" }}>
-                    <span style={{ color: "#10B981", fontWeight: 800 }}>✓</span>
-                    <span style={{ lineHeight: 1.35 }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Bouton de disponibilité de paiement / souscription */}
-              {plan.isFree ? (
-                <a
-                  href="#register-form"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    width: "100%",
-                    padding: "11px 14px",
-                    borderRadius: "12px",
-                    background: "#EEF2FB",
-                    color: "#0B2559",
-                    fontWeight: 700,
-                    fontSize: "13px",
-                    textDecoration: "none",
-                    border: "1.5px solid #CBD5E1",
-                    boxSizing: "border-box",
-                  }}
-                >
-                  <CheckCircle2 size={16} style={{ color: "#059669" }} />
-                  <span>{plan.actionLabel}</span>
-                </a>
-              ) : (
-                <a
-                  href={plan.actionHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    width: "100%",
-                    padding: "12px 14px",
-                    borderRadius: "12px",
-                    background: plan.highlight
-                      ? "linear-gradient(135deg, #E10600 0%, #B30500 100%)"
-                      : "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
-                    color: "white",
-                    fontWeight: 700,
-                    fontSize: "13px",
-                    textDecoration: "none",
-                    boxShadow: plan.highlight ? "0 4px 14px rgba(225,6,0,0.3)" : "0 4px 14px rgba(11,37,89,0.2)",
-                    boxSizing: "border-box",
-                  }}
-                >
-                  <span>💳 {plan.actionLabel}</span>
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Moyens de paiement acceptés */}
-        <div style={{ marginTop: "24px", fontSize: "12px", color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
-          <span>🔒 Paiement sécurisé par Saspay</span>
-          <span>•</span>
-          <span>📱 T-Money & Moov Money acceptés</span>
-          <span>•</span>
-          <span>💳 Cartes Bancaires (Visa / Mastercard)</span>
-        </div>
-      </section>
+      {/* ── Formules d'accès & Abonnements (Design épuré et compact) ── */}
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "460px",
+          marginTop: "20px",
+          textAlign: "center",
+          padding: "16px 20px",
+          background: "white",
+          borderRadius: "18px",
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+        }}
+      >
+        <p style={{ fontSize: "13px", color: "#64748B", margin: "0 0 10px", lineHeight: 1.5 }}>
+          Accès immédiat avec le <strong>Plan Gratuit 7 jours</strong> inclus. Vous pouvez également consulter toutes nos formules d&apos;adhésion (Pass Essentiel, Complice et Club VIP Prestige).
+        </p>
+        <Link
+          href="/tarifs"
+          style={{
+            fontSize: "13px",
+            fontWeight: 800,
+            color: "#0B2559",
+            textDecoration: "underline",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          <span>Consulter nos plans d&apos;accès officiels</span>
+          <span>→</span>
+        </Link>
+      </div>
     </div>
   );
 }

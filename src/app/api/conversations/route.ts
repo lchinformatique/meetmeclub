@@ -107,25 +107,6 @@ export async function GET() {
       })
     );
 
-    // Conversation d'accueil avec Victoire
-    const hasVictoire = enriched.some(
-      (c) => c.participantId === "user_victoire_lome" || c.id === "conv_victoire_welcome"
-    );
-    if (!hasVictoire && session.userId !== "user_victoire_lome") {
-      enriched.unshift({
-        id: "conv_victoire_welcome",
-        participantId: "user_victoire_lome",
-        firstName: "Victoire",
-        pseudo: "@victoire_lome",
-        photoUrl: "/victoire_profile.jpg",
-        lastMessage: "En ligne à Lomé · Écrivez-lui pour faire connaissance",
-        lastMessageAt: new Date().toISOString(),
-        unreadCount: 0,
-        isOnline: true,
-        isVerified: true,
-      });
-    }
-
     return NextResponse.json({ conversations: enriched });
   } catch (error) {
     console.warn("[GET /api/conversations] DB fallback to Supabase and db-store:", error);
@@ -220,23 +201,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Si c'est avec Victoire, retourner immédiatement la conversation active
-  if (targetUserId === "user_victoire_lome") {
-    return NextResponse.json({
-      conversation: {
-        id: "conv_victoire_welcome",
-        participantId: "user_victoire_lome",
-        firstName: "Victoire",
-        pseudo: "@victoire_lome",
-        photoUrl: "/victoire_profile.jpg",
-        lastMessage: "En ligne à Lomé · Écrivez-lui pour faire connaissance",
-        lastMessageAt: new Date().toISOString(),
-        unreadCount: 0,
-        isOnline: true,
-        isVerified: true,
-      },
-    });
-  }
 
   // Obtenir infos partenaire
   const localProfile = getProfileByUserId(targetUserId);

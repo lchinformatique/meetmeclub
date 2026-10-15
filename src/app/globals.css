@@ -1805,3 +1805,42 @@ p, span, h1, h2, h3, h4, h5, h6, a, label, button, li, div {
     word-break: break-word !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────
+   IPHONE NOTCH & SAFE-AREA RESPONSIVE ENHANCEMENTS
+   ────────────────────────────────────────────────────────────── */
+@supports (padding-top: env(safe-area-inset-top)) {
+  header.sticky,
+  header[style*="sticky"],
+  .header-sticky {
+    padding-top: max(env(safe-area-inset-top), 0px) !important;
+  }
+
+  .mobile-bottom-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 12px) !important;
+  }
+}
+
+/* Ensure back buttons on smartphones are always completely visible, never truncated or obscured */
+.header-mobile-back-btn,
+.mobile-back-btn-sticky {
+  min-height: 38px !important;
+  min-width: 38px !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0 !important;
+  z-index: 50 !important;
+}
+
+/* Prevent horizontal overflow on small smartphones (e.g. iPhone SE, 8, mini) */
+@media (max-width: 480px) {
+  html, body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  .mobile-back-btn-text {
+    display: none !important;
+  }
+}
+

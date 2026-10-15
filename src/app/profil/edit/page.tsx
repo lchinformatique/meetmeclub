@@ -454,9 +454,12 @@ export default function ProfilEditPage() {
       }
 
       setTimeout(() => {
-        router.push("/profil");
-        router.refresh();
-      }, 700);
+        if (typeof window !== "undefined") {
+          window.location.href = "/profil";
+        } else {
+          router.push("/profil");
+        }
+      }, 500);
     } catch {
       setMessage({ type: "error", text: "Erreur de connexion. Veuillez réessayer." });
     } finally {
@@ -500,7 +503,7 @@ export default function ProfilEditPage() {
         onChange={handleAlbumPhotoSelect}
       />
 
-      {/* Header Sticky */}
+      {/* Header Sticky avec support Safe Area iPhone Notch & Dynamic Island */}
       <header
         style={{
           background: "white",
@@ -508,25 +511,34 @@ export default function ProfilEditPage() {
           position: "sticky",
           top: 0,
           zIndex: 40,
-          height: "64px",
+          paddingTop: "max(env(safe-area-inset-top, 0px), 0px)",
+          minHeight: "calc(64px + max(env(safe-area-inset-top, 0px), 0px))",
           display: "flex",
           alignItems: "center",
+          boxShadow: "0 2px 8px rgba(11,37,89,0.06)",
         }}
       >
-        <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="container" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", paddingInline: "16px" }}>
           <Link
             href="/profil"
             style={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
               gap: "8px",
               textDecoration: "none",
               color: "#0B2559",
-              fontWeight: 700,
+              fontWeight: 800,
               fontSize: "14px",
+              background: "#F1F5F9",
+              border: "1.5px solid #CBD5E1",
+              padding: "8px 14px",
+              borderRadius: "12px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+              transition: "all 0.18s ease",
             }}
           >
-            <span>←</span> Retour au profil
+            <span style={{ fontSize: "16px", fontWeight: 900 }}>←</span>
+            <span>Retour au profil</span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div

@@ -105,32 +105,19 @@ export const VICTOIRE_PROFILE: StoredProfile = {
   updatedAt: new Date().toISOString(),
 };
 
-// Victoire est présente par défaut dans le club pour accueillir et répondre aux nouveaux membres
-export const DEFAULT_PROFILES: StoredProfile[] = [VICTOIRE_PROFILE];
+// Exclusivement réservé aux vrais membres enregistrés
+export const DEFAULT_PROFILES: StoredProfile[] = [];
 
-// In-memory fallback to guarantee zero crashes even on read-only environments
-let memoryProfiles: StoredProfile[] = [...DEFAULT_PROFILES];
+// In-memory fallback
+let memoryProfiles: StoredProfile[] = [];
 
-// Ensure data folder and profiles file exist with Victoire
 function ensureFile() {
-  if (memoryProfiles.length === 0) {
-    memoryProfiles = [...DEFAULT_PROFILES];
-  }
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     if (!fs.existsSync(PROFILES_FILE)) {
-      fs.writeFileSync(PROFILES_FILE, JSON.stringify(DEFAULT_PROFILES, null, 2), "utf8");
-    } else {
-      try {
-        const raw = fs.readFileSync(PROFILES_FILE, "utf8");
-        const list = JSON.parse(raw);
-        if (Array.isArray(list) && !list.some((p) => p.userId === VICTOIRE_PROFILE.userId)) {
-          list.unshift(VICTOIRE_PROFILE);
-          fs.writeFileSync(PROFILES_FILE, JSON.stringify(list, null, 2), "utf8");
-        }
-      } catch {}
+      fs.writeFileSync(PROFILES_FILE, JSON.stringify([], null, 2), "utf8");
     }
   } catch {
     // Silent catch for read-only serverless filesystems
@@ -144,22 +131,12 @@ export function getAllProfiles(): StoredProfile[] {
       const raw = fs.readFileSync(PROFILES_FILE, "utf8");
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        // Garantir que Victoire est toujours présente
-        if (!parsed.some((p) => p.userId === VICTOIRE_PROFILE.userId)) {
-          parsed.unshift(VICTOIRE_PROFILE);
-          try {
-            fs.writeFileSync(PROFILES_FILE, JSON.stringify(parsed, null, 2), "utf8");
-          } catch {}
-        }
         memoryProfiles = parsed;
         return parsed;
       }
     }
   } catch {
     // Read failed, use memory fallback
-  }
-  if (!memoryProfiles.some((p) => p.userId === VICTOIRE_PROFILE.userId)) {
-    memoryProfiles.unshift(VICTOIRE_PROFILE);
   }
   return memoryProfiles;
 }
@@ -427,25 +404,21 @@ export interface CommunityStats {
  */
 export function getCommunityStats(): CommunityStats {
   const profiles = getAllProfiles();
-  const baseBaseline = 1420; // Authentic active member baseline in Lomé
-  const total = profiles.length + baseBaseline;
-  const vipCount = profiles.filter((p) => p.plan === "VIP").length + 184;
-  const compliceCount = profiles.filter((p) => p.plan === "COMPLICE").length + 312;
-  const essentialCount = profiles.filter((p) => p.plan === "ESSENTIAL").length + 540;
-  const freeCount = total - (vipCount + compliceCount + essentialCount);
-  const verifiedCount = profiles.filter((p) => p.isVerified || p.selfieVerified).length + 1290;
-  const datesCount = 388 + Math.floor(profiles.length * 1.5);
-  
-  // Real-time online approximation according to local time
-  const hour = new Date().getHours();
-  const onlineNow = 48 + (hour >= 18 && hour <= 23 ? 65 : 22) + (profiles.length % 7);
+  const total = profiles.length;
+  const vipCount = profiles.filter((p) => p.plan === "VIP").length;
+  const compliceCount = profiles.filter((p) => p.plan === "COMPLICE").length;
+  const essentialCount = profiles.filter((p) => p.plan === "ESSENTIAL").length;
+  const freeCount = profiles.filter((p) => p.plan === "FREE" || !p.plan).length;
+  const verifiedCount = profiles.filter((p) => p.isVerified || p.selfieVerified).length;
+  const datesCount = 0;
+  const onlineNow = profiles.filter((p) => p.isVisible).length;
 
   return {
     totalMembers: total,
     vipMembers: vipCount,
     compliceMembers: compliceCount,
     essentialMembers: essentialCount,
-    freeMembers: Math.max(freeCount, 384),
+    freeMembers: freeCount,
     verifiedSelfieMembers: verifiedCount,
     organizedDates: datesCount,
     onlineNow,
@@ -687,40 +660,9 @@ export function sortProfilesByPriorityAndLikes<T extends { plan?: string; likesC
 
 const VIP_POSTS_FILE = path.join(DATA_DIR, "vip_posts.json");
 
-const DEFAULT_VIP_POSTS: VipPost[] = [
-  {
-    id: "post_vip_welcome_1",
-    userId: "user_victoire_lome",
-    authorName: "Victoire Lawson",
-    authorAvatar: "/victoire_profile.jpg",
-    authorPseudo: "@victoire_lome",
-    title: "✨ Bienvenue dans le Club VIP Meet Me Club !",
-    content: "Ravie d'accueillir les membres VIP dans cet espace privilégié. Ici, nous partageons nos bons plans sorties à Lomé, nos coups de cœur, photos et événements exclusifs. N'hésitez pas à publier vos actualités et inviter pour de belles rencontres !",
-    mediaUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1000&auto=format&fit=crop&q=80",
-    mediaType: "IMAGE",
-    likesCount: 24,
-    commentsCount: 6,
-    createdAt: "2026-10-14T10:00:00.000Z",
-    updatedAt: "2026-10-14T10:00:00.000Z",
-  },
-  {
-    id: "post_vip_welcome_2",
-    userId: "user_victoire_lome",
-    authorName: "Victoire Lawson",
-    authorAvatar: "/victoire_profile.jpg",
-    authorPseudo: "@victoire_lome",
-    title: "🍸 Soirée Rooftop & Dégustation ce Samedi",
-    content: "Rendez-vous réservé aux membres VIP à l'Hôtel 2 Février pour une soirée cocktail et échanges chaleureux à partir de 19h30. Une belle opportunité pour briser la glace en direct !",
-    mediaUrl: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=1000&auto=format&fit=crop&q=80",
-    mediaType: "ARTICLE",
-    likesCount: 31,
-    commentsCount: 9,
-    createdAt: "2026-10-15T08:30:00.000Z",
-    updatedAt: "2026-10-15T08:30:00.000Z",
-  },
-];
+const DEFAULT_VIP_POSTS: VipPost[] = [];
 
-let memoryVipPosts: VipPost[] = [...DEFAULT_VIP_POSTS];
+let memoryVipPosts: VipPost[] = [];
 
 function ensureVipPostsFile() {
   try {
@@ -728,7 +670,7 @@ function ensureVipPostsFile() {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     if (!fs.existsSync(VIP_POSTS_FILE)) {
-      fs.writeFileSync(VIP_POSTS_FILE, JSON.stringify(DEFAULT_VIP_POSTS, null, 2), "utf8");
+      fs.writeFileSync(VIP_POSTS_FILE, JSON.stringify([], null, 2), "utf8");
     }
   } catch {}
 }

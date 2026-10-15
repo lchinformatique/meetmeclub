@@ -112,8 +112,13 @@ function AuthCallbackHandler() {
         }
 
         const data = await res.json();
-        // Redirection selon le statut du compte
-        router.replace(data.redirect || "/decouverte");
+        // Redirection immédiate sur le profil / destination avec rechargement de session
+        const targetUrl = data.redirect || "/profil?welcome=1";
+        if (typeof window !== "undefined") {
+          window.location.href = targetUrl;
+        } else {
+          router.replace(targetUrl);
+        }
       } catch (err: unknown) {
         console.error("[Sync Backend] Erreur:", err);
         const message =
