@@ -4,7 +4,7 @@
 // 1ère position : Formulaire de création de compte & Google Auth
 // En suite : Proposition des 4 Plans de paiement d'adhésion (Gratuit, Essentiel, Complice, VIP) avec disponibilité de paiement
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -122,11 +122,26 @@ export default function InscriptionPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [deviceLockedEmail, setDeviceLockedEmail] = useState<string | null>(null);
 
   // Status
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focusField, setFocusField] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const locked =
+        localStorage.getItem("meetmeclub_primary_device_email") ||
+        localStorage.getItem("meetmeclub_saved_identifier");
+      if (locked) {
+        setDeviceLockedEmail(locked);
+        if (!identifier) {
+          setIdentifier(locked);
+        }
+      }
+    }
+  }, [identifier]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -164,6 +179,20 @@ export default function InscriptionPage() {
 
       if (typeof window !== "undefined") {
         localStorage.setItem("meetmeclub_saved_identifier", cleanInput);
+        localStorage.setItem("meetmeclub_primary_device_email", cleanInput);
+        localStorage.setItem("meetmeclub_last_auth_time", Date.now().toString());
+
+        // Demander à Google Password Manager / Trousseau d'enregistrer le mot de passe
+        if ((window as any).PasswordCredential && navigator.credentials?.store) {
+          try {
+            const cred = new (window as any).PasswordCredential({
+              id: cleanInput,
+              password,
+              name: cleanInput,
+            });
+            await navigator.credentials.store(cred);
+          } catch {}
+        }
       }
 
       router.push(data.redirect || "/profil?welcome=1");

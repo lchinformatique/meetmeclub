@@ -381,8 +381,8 @@ function MessagesContent() {
     setMobileView("chat");
   };
 
-  const activeConv = conversations.find((c) => c.id === activeConvId);
-  const currentMessages = messages[activeConvId] ?? [];
+  const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0] || VICTOIRE_CONVERSATION;
+  const currentMessages = messages[activeConv.id] ?? messages[activeConvId] ?? [];
   const isFreePlan = !myProfile?.plan || myProfile?.plan === "FREE";
   // Le chat est accessible à tous les membres connectés
   // La vérification d'identité améliore la confiance mais n'est pas obligatoire pour chatter
@@ -515,21 +515,32 @@ function MessagesContent() {
     if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
     const recordedSec = voiceRecordingSeconds || 4;
 
-    let audioUrl = "voice_recording_url";
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        audioUrl = URL.createObjectURL(audioBlob);
-        dispatchVoiceMessage(audioUrl, recordedSec);
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          if (audioStreamRef.current) {
+            audioStreamRef.current.getTracks().forEach((t) => t.stop());
+            audioStreamRef.current = null;
+          }
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64Audio = reader.result as string;
+            dispatchVoiceMessage(base64Audio, recordedSec);
+          };
+          reader.readAsDataURL(audioBlob);
+        } catch {
+          const blobUrl = URL.createObjectURL(new Blob(audioChunksRef.current, { type: "audio/webm" }));
+          dispatchVoiceMessage(blobUrl, recordedSec);
+        }
       };
+      mediaRecorderRef.current.stop();
     } else {
-      dispatchVoiceMessage(audioUrl, recordedSec);
-    }
-
-    if (audioStreamRef.current) {
-      audioStreamRef.current.getTracks().forEach((t) => t.stop());
-      audioStreamRef.current = null;
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((t) => t.stop());
+        audioStreamRef.current = null;
+      }
+      dispatchVoiceMessage("voice_recording_url", recordedSec);
     }
 
     setIsRecordingVoice(false);
@@ -634,37 +645,30 @@ function MessagesContent() {
     setPlayingAudioId(msgId);
     setAudioProgress(0);
 
-    // Synthesize gentle harmonic tone if demo URL or play blob URL
-    if (audioUrl && audioUrl.startsWith("blob:")) {
-      const audio = new Audio(audioUrl);
-      audioPlayerRef.current = audio;
-      audio.play().catch((e) => console.warn("Audio play blocked:", e));
-      audio.onended = () => {
-        setPlayingAudioId(null);
-        setAudioProgress(0);
-        if (audioProgressIntervalRef.current) clearInterval(audioProgressIntervalRef.current);
-      };
-    } else {
-      // Harmonic audio feedback using Web Audio API
+    const isPlayable = audioUrl && (audioUrl.startsWith("data:") || audioUrl.startsWith("blob:") || audioUrl.startsWith("http"));
+
+    if (isPlayable) {
       try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        if (AudioCtx) {
-          const ctx = new AudioCtx();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "sine";
-          osc.frequency.setValueAtTime(440, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(587, ctx.currentTime + 0.3);
-          gain.gain.setValueAtTime(0.12, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + duration);
-        }
-      } catch (e) {
-        console.warn("Web Audio tone feedback unavailable:", e);
+        const audio = new Audio(audioUrl);
+        audioPlayerRef.current = audio;
+        audio.ontimeupdate = () => {
+          if (audio.duration && audio.duration > 0) {
+            setAudioProgress((audio.currentTime / audio.duration) * 100);
+          }
+        };
+        audio.onended = () => {
+          setPlayingAudioId(null);
+          setAudioProgress(0);
+          if (audioProgressIntervalRef.current) clearInterval(audioProgressIntervalRef.current);
+        };
+        audio.play().catch(() => {
+          startSyntheticTone(duration);
+        });
+      } catch {
+        startSyntheticTone(duration);
       }
+    } else {
+      startSyntheticTone(duration);
     }
 
     // Advance progress bar smoothly
@@ -675,7 +679,7 @@ function MessagesContent() {
     audioProgressIntervalRef.current = setInterval(() => {
       stepCount += 1;
       const progress = Math.min(100, (stepCount / totalSteps) * 100);
-      setAudioProgress(progress);
+      setAudioProgress((prev) => Math.max(prev, progress));
 
       if (progress >= 100) {
         clearInterval(audioProgressIntervalRef.current);
@@ -683,6 +687,26 @@ function MessagesContent() {
         setAudioProgress(0);
       }
     }, intervalTimeMs);
+  };
+
+  const startSyntheticTone = (duration: number) => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(587, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      }
+    } catch {}
   };
 
   // Send Text Message — posts to real API
@@ -1727,6 +1751,27 @@ function MessagesContent() {
                 const isMe = msg.senderId === ME_ID;
                 const isPlaying = playingAudioId === msg.id;
 
+                // Extraction des coordonnées pour la carte Google Map interactive
+                let mapCoords: { lat: number; lng: number; label: string } | null = null;
+                if (msg.location) {
+                  mapCoords = {
+                    lat: msg.location.latitude || 6.1375,
+                    lng: msg.location.longitude || 1.2125,
+                    label: msg.location.label || "Lomé, Togo",
+                  };
+                } else if (msg.body && (msg.body.includes("maps.google.com") || msg.body.includes("Localisation partagée"))) {
+                  const match = msg.body.match(/q=([0-9.-]+),([0-9.-]+)/);
+                  if (match) {
+                    mapCoords = {
+                      lat: parseFloat(match[1]),
+                      lng: parseFloat(match[2]),
+                      label: "Position partagée (Lomé)",
+                    };
+                  } else {
+                    mapCoords = { lat: 6.1375, lng: 1.2125, label: "Lomé, Togo" };
+                  }
+                }
+
                 return (
                   <div
                     key={msg.id}
@@ -1735,11 +1780,55 @@ function MessagesContent() {
                       justifyContent: isMe ? "flex-end" : "flex-start",
                       alignItems: "flex-end",
                       gap: "8px",
+                      marginBottom: "6px",
                     }}
                   >
+                    {/* Avatar partenaire pour les messages reçus (Style WhatsApp authentique) */}
+                    {!isMe && (
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                          flexShrink: 0,
+                          marginBottom: "4px",
+                          border: "1.5px solid #CBD5E1",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                        }}
+                      >
+                        {activeConv.photoUrl ? (
+                          <Image
+                            src={activeConv.photoUrl}
+                            alt={activeConv.firstName}
+                            width={32}
+                            height={32}
+                            unoptimized
+                            style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              background: "#0B2559",
+                              color: "white",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 800,
+                              fontSize: "12px",
+                            }}
+                          >
+                            {activeConv.firstName?.charAt(0) || "M"}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div
                       style={{
-                        maxWidth: "72%",
+                        maxWidth: "min(420px, 78%)",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: isMe ? "flex-end" : "flex-start",
@@ -1747,18 +1836,38 @@ function MessagesContent() {
                     >
                       <div
                         style={{
-                          background: isMe ? "linear-gradient(135deg, #0B2559 0%, #1E3A8A 100%)" : "white",
-                          color: isMe ? "white" : "#0F172A",
-                          padding: "12px 18px",
+                          background: isMe
+                            ? "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)"
+                            : "#FFFFFF",
+                          color: isMe ? "#FFFFFF" : "#0F172A",
+                          padding: "12px 16px",
                           borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                          fontSize: "15px",
+                          fontSize: "14.5px",
                           lineHeight: 1.5,
-                          boxShadow: isMe ? "0 4px 12px rgba(11, 37, 89, 0.2)" : "0 2px 8px rgba(0, 0, 0, 0.04)",
-                          border: isMe ? "none" : "1px solid #E2E8F0",
+                          boxShadow: isMe
+                            ? "0 4px 14px rgba(11, 37, 89, 0.22)"
+                            : "0 2px 10px rgba(0, 0, 0, 0.05)",
+                          border: isMe ? "none" : "1.5px solid #E2E8F0",
                           wordBreak: "break-word",
                           fontWeight: 500,
+                          position: "relative",
                         }}
                       >
+                        {/* Prénom de l'expéditeur si message reçu */}
+                        {!isMe && (
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 800,
+                              color: "#E10600",
+                              marginBottom: "4px",
+                              letterSpacing: "-0.2px",
+                            }}
+                          >
+                            {activeConv.firstName}
+                          </div>
+                        )}
+
                         {/* 🎙️ Voice Note / Audio Message Player */}
                         {msg.audioUrl && (
                           <div
@@ -1768,7 +1877,12 @@ function MessagesContent() {
                               gap: "12px",
                               padding: "4px 2px",
                               minWidth: "220px",
-                              marginBottom: msg.body && msg.body !== "🎙️ Note vocale" && !msg.body.startsWith("🎙️ Note vocale") ? "8px" : "0",
+                              marginBottom:
+                                msg.body &&
+                                msg.body !== "🎙️ Note vocale" &&
+                                !msg.body.startsWith("🎙️ Note vocale")
+                                  ? "8px"
+                                  : "0",
                             }}
                           >
                             <button
@@ -1806,8 +1920,12 @@ function MessagesContent() {
                                         flex: 1,
                                         height: `${barH * 0.22}px`,
                                         background: isPassed
-                                          ? (isMe ? "#F59E0B" : "#E10600")
-                                          : (isMe ? "rgba(255,255,255,0.4)" : "#CBD5E1"),
+                                          ? isMe
+                                            ? "#F59E0B"
+                                            : "#E10600"
+                                          : isMe
+                                          ? "rgba(255,255,255,0.4)"
+                                          : "#CBD5E1",
                                         borderRadius: "2px",
                                         transition: "background 0.1s ease",
                                       }}
@@ -1873,56 +1991,109 @@ function MessagesContent() {
                           </div>
                         )}
 
-                        {/* 📍 GPS Location Card */}
-                        {msg.location && (
+                        {/* 📍 Google Maps Intégré Directement (Pas une simple image) */}
+                        {mapCoords && (
                           <div
                             style={{
-                              background: isMe ? "rgba(255,255,255,0.12)" : "#F8FAFC",
-                              borderRadius: "12px",
-                              padding: "12px",
-                              marginBottom: "6px",
-                              border: isMe ? "1px solid rgba(255,255,255,0.3)" : "1px solid #CBD5E1",
+                              borderRadius: "14px",
+                              overflow: "hidden",
+                              margin: "8px 0 4px",
+                              background: isMe ? "rgba(255,255,255,0.08)" : "#F8FAFC",
+                              border: isMe ? "1px solid rgba(255,255,255,0.25)" : "1.5px solid #CBD5E1",
+                              boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
                             }}
                           >
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, fontSize: "14px", marginBottom: "6px" }}>
-                              <span>📍</span> {msg.location.label}
-                            </div>
-                            <div style={{ fontSize: "12px", opacity: 0.9, marginBottom: "8px" }}>
-                              Lomé, Togo · Coordonnées GPS certifiées
-                            </div>
-                            <a
-                              href={msg.location.mapsUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <div
                               style={{
-                                display: "inline-flex",
+                                padding: "8px 12px",
+                                display: "flex",
                                 alignItems: "center",
-                                gap: "6px",
-                                background: isMe ? "white" : "#0B2559",
-                                color: isMe ? "#0B2559" : "white",
-                                padding: "6px 12px",
-                                borderRadius: "8px",
-                                fontSize: "12px",
-                                fontWeight: 800,
-                                textDecoration: "none",
+                                gap: "8px",
+                                fontWeight: 700,
+                                fontSize: "13px",
                               }}
                             >
-                              🗺️ Ouvrir sur Google Maps
-                            </a>
+                              <span>📍</span> <span>{mapCoords.label}</span>
+                            </div>
+                            <iframe
+                              title={mapCoords.label}
+                              src={`https://maps.google.com/maps?q=${mapCoords.lat},${mapCoords.lng}&hl=fr&z=15&output=embed`}
+                              width="100%"
+                              height="180"
+                              style={{ border: 0, display: "block" }}
+                              loading="lazy"
+                              allowFullScreen
+                              referrerPolicy="no-referrer-when-downgrade"
+                            />
+                            <div
+                              style={{
+                                padding: "8px 12px",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                background: isMe ? "rgba(0,0,0,0.2)" : "#F1F5F9",
+                              }}
+                            >
+                              <span style={{ fontSize: "11px", opacity: 0.85 }}>Lomé, Togo · GPS direct</span>
+                              <a
+                                href={`https://www.google.com/maps?q=${mapCoords.lat},${mapCoords.lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  padding: "5px 12px",
+                                  borderRadius: "8px",
+                                  background: isMe ? "white" : "#0B2559",
+                                  color: isMe ? "#0B2559" : "white",
+                                  fontSize: "11px",
+                                  fontWeight: 800,
+                                  textDecoration: "none",
+                                }}
+                              >
+                                Ouvrir Google Maps ↗
+                              </a>
+                            </div>
                           </div>
                         )}
 
-                        {/* Plain text body if not just an attachment title */}
+                        {/* Plain text body if not just an attachment title or map link */}
                         {(!msg.imageUrl || msg.body !== "📷 Photo partagée") &&
                           (!msg.videoUrl || msg.body !== "🎥 Vidéo partagée") &&
-                          (!msg.audioUrl || !msg.body.startsWith("🎙️ Note vocale")) && (
+                          (!msg.audioUrl || !msg.body.startsWith("🎙️ Note vocale")) &&
+                          (!mapCoords || (!msg.body.startsWith("📍 Localisation") && !msg.body.includes("maps.google.com"))) && (
                             <div>{msg.body}</div>
                           )}
                       </div>
 
-                      <span style={{ fontSize: "11px", color: "#64748B", marginTop: "4px", fontWeight: 500 }}>
-                        {formatTime(msg.createdAt)}
-                      </span>
+                      {/* Horodatage & Status Lu (Style WhatsApp) */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          marginTop: "3px",
+                          paddingInline: "4px",
+                        }}
+                      >
+                        <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 500 }}>
+                          {formatTime(msg.createdAt)}
+                        </span>
+                        {isMe && (
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              color: msg.status === "READ" ? "#3B82F6" : "#94A3B8",
+                              fontWeight: 800,
+                              lineHeight: 1,
+                            }}
+                            title={msg.status === "READ" ? "Lu" : "Envoyé"}
+                          >
+                            ✓✓
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

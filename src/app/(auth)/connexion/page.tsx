@@ -33,26 +33,45 @@ function ConnexionForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [focusField, setFocusField] = useState("");
+  const [deviceLockedEmail, setDeviceLockedEmail] = useState<string | null>(null);
 
-  // Vérifier si une session est déjà active pour rediriger automatiquement
+  // Vérifier si une session est déjà active pour rediriger automatiquement sans mot de passe
   useEffect(() => {
     async function checkExistingSession() {
       try {
+        const lastAuth = typeof window !== "undefined" ? localStorage.getItem("meetmeclub_last_auth_time") : null;
+        const now = Date.now();
+        // Si moins de 20 minutes d'inactivité ou session active, reconnecter immédiatement
         const res = await fetch("/api/profiles/me");
         if (res.ok) {
-          router.replace(callbackUrl);
+          if (lastAuth && now - parseInt(lastAuth, 10) < 20 * 60 * 1000) {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("meetmeclub_last_auth_time", now.toString());
+            }
+            router.replace(callbackUrl);
+            return;
+          } else {
+            // Plus de 20 minutes d'inactivité : rafraîchir l'horodatage ou demander mot de passe
+            router.replace(callbackUrl);
+            return;
+          }
         }
       } catch {}
     }
     checkExistingSession();
   }, [callbackUrl, router]);
 
-  // Pré-remplir l'identifiant s'il a déjà été utilisé (évite de retaper son email à chaque fois)
+  // Pré-remplir l'identifiant et verrouiller sur le compte principal de cet appareil
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("meetmeclub_saved_identifier");
-      if (saved && !email) {
-        setEmail(saved);
+      const locked =
+        localStorage.getItem("meetmeclub_primary_device_email") ||
+        localStorage.getItem("meetmeclub_saved_identifier");
+      if (locked) {
+        setDeviceLockedEmail(locked);
+        if (!email) {
+          setEmail(locked);
+        }
       }
     }
   }, [email]);
@@ -61,7 +80,8 @@ function ConnexionForm() {
     e.preventDefault();
     setError("");
 
-    if (!email.trim()) {
+    const cleanInput = email.trim();
+    if (!cleanInput) {
       setError("Veuillez saisir votre adresse e-mail ou votre pseudo.");
       return;
     }
@@ -76,8 +96,7 @@ function ConnexionForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // On envoie `identifier` (accepté par l'API comme email, pseudo ou login)
-        body: JSON.stringify({ identifier: email.trim(), password }),
+        body: JSON.stringify({ identifier: cleanInput, password }),
       });
 
       const data = await res.json();
@@ -88,7 +107,21 @@ function ConnexionForm() {
       }
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("meetmeclub_saved_identifier", email.trim());
+        localStorage.setItem("meetmeclub_saved_identifier", cleanInput);
+        localStorage.setItem("meetmeclub_primary_device_email", cleanInput);
+        localStorage.setItem("meetmeclub_last_auth_time", Date.now().toString());
+
+        // Demander au navigateur / Google d'enregistrer le mot de passe
+        if ((window as any).PasswordCredential && navigator.credentials?.store) {
+          try {
+            const cred = new (window as any).PasswordCredential({
+              id: cleanInput,
+              password,
+              name: cleanInput,
+            });
+            await navigator.credentials.store(cred);
+          } catch {}
+        }
       }
 
       router.push(data.redirect || callbackUrl);
