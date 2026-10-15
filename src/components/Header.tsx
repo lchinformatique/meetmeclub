@@ -303,6 +303,7 @@ export default function Header() {
                 meet <span style={{ color: "#E10600" }}>me</span> club
               </span>
               <span
+                className="header-logo-subtitle"
                 style={{
                   fontSize: "10px",
                   fontWeight: 700,
@@ -923,11 +924,11 @@ export default function Header() {
       ══════════════════════════════════════════ */}
       <style>{`
         /* ── Responsive breakpoints ── */
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
           .header-desktop-nav { display: flex !important; }
           .header-hamburger   { display: none !important; }
         }
-        @media (max-width: 767px) {
+        @media (max-width: 1023px) {
           .header-desktop-nav      { display: none !important; }
           .header-hamburger        { display: flex !important; }
           .header-login-btn        { display: none !important; }
@@ -937,6 +938,60 @@ export default function Header() {
           .header-logout-btn       { display: flex !important; padding: 8px 10px !important; }
           .header-logout-btn span  { display: none !important; }
           .header-mobile-back-btn  { display: flex !important; }
+        }
+
+        /* ── MacBook & Small PC Screen Optimizations (1024px - 1320px) ── */
+        @media (min-width: 1024px) and (max-width: 1320px) {
+          .header-desktop-nav {
+            gap: 3px !important;
+          }
+          .nav-link,
+          .nav-link-active {
+            padding: 6px 9px !important;
+            font-size: 13px !important;
+            gap: 5px !important;
+          }
+          .nav-link svg,
+          .nav-link-active svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+          .header-login-btn {
+            padding: 7px 12px !important;
+            font-size: 12.5px !important;
+          }
+          .header-join-btn {
+            padding: 7px 14px !important;
+            font-size: 12.5px !important;
+          }
+          .header-logo-subtitle {
+            display: none !important;
+          }
+        }
+
+        @media (min-width: 1024px) and (max-width: 1140px) {
+          .header-desktop-nav {
+            gap: 2px !important;
+          }
+          .nav-link,
+          .nav-link-active {
+            padding: 5px 6px !important;
+            font-size: 12px !important;
+            gap: 4px !important;
+          }
+          .nav-link svg,
+          .nav-link-active svg {
+            width: 13px !important;
+            height: 13px !important;
+          }
+          .header-login-btn {
+            padding: 6px 10px !important;
+            font-size: 12px !important;
+          }
+          .header-join-btn {
+            padding: 6px 11px !important;
+            font-size: 12px !important;
+          }
         }
 
         /* ── Logo hover ── */

@@ -195,8 +195,12 @@ export default function InscriptionPage() {
         }
       }
 
-      router.push(data.redirect || "/profil?welcome=1");
-      router.refresh();
+      const target = data.redirect || "/profil?welcome=1";
+      if (typeof window !== "undefined") {
+        window.location.href = target;
+      } else {
+        router.push(target);
+      }
     } catch {
       setError("Erreur réseau. Vérifiez votre connexion et réessayez.");
     } finally {
@@ -425,7 +429,7 @@ export default function InscriptionPage() {
           )}
 
           {/* ── FORMULAIRE DE CRÉATION DE COMPTE (1ÈRE POSITION) ── */}
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit} noValidate method="POST" action="/api/auth/register" name="registerForm">
             {/* Pseudo ou Email */}
             <div style={{ marginBottom: "16px" }}>
               <label
@@ -458,6 +462,7 @@ export default function InscriptionPage() {
                 </div>
                 <input
                   id="identifier"
+                  name="username"
                   type="text"
                   required
                   value={identifier}
@@ -506,6 +511,7 @@ export default function InscriptionPage() {
                 </div>
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}

@@ -158,20 +158,20 @@ export default function CustomerSupportWidget() {
                 width: "52px",
                 height: "52px",
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #0B2559 0%, #163B8A 55%, #1E3A8A 100%)",
+                background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
                 color: "white",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 8px 24px rgba(11, 37, 89, 0.45), 0 2px 6px rgba(217, 119, 6, 0.25)",
+                boxShadow: "0 8px 24px rgba(37, 211, 102, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15)",
                 textDecoration: "none",
                 position: "relative",
-                border: "2px solid rgba(245, 158, 11, 0.6)",
+                border: "2px solid #FFFFFF",
                 transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease",
                 flexShrink: 0,
               }}
             >
-              {/* Icône de Discussion Professionnelle MeetMe Club */}
+              {/* Icône de Discussion Professionnelle WhatsApp / Live Chat */}
               <svg
                 width="24"
                 height="24"
@@ -199,7 +199,7 @@ export default function CustomerSupportWidget() {
                   height: "12px",
                   borderRadius: "50%",
                   background: "#10B981",
-                  border: "2px solid #0B2559",
+                  border: "2px solid #FFFFFF",
                   boxShadow: "0 0 6px rgba(16, 185, 129, 0.9)",
                 }}
                 aria-hidden="true"
@@ -220,13 +220,13 @@ export default function CustomerSupportWidget() {
                 width: "50px",
                 height: "50px",
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #0B2559 0%, #071530 100%)",
+                background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
                 color: "white",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 8px 22px rgba(11, 37, 89, 0.45)",
-                border: "1.5px solid rgba(255, 255, 255, 0.25)",
+                boxShadow: "0 8px 24px rgba(217, 119, 6, 0.45)",
+                border: "2px solid #FEF3C7",
                 cursor: "pointer",
                 position: "relative",
                 transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -241,7 +241,7 @@ export default function CustomerSupportWidget() {
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 aria-hidden="true"
@@ -259,7 +259,7 @@ export default function CustomerSupportWidget() {
                   position: "absolute",
                   bottom: "-3px",
                   right: "-2px",
-                  background: "#D97706",
+                  background: "#E10600",
                   color: "white",
                   fontSize: "9px",
                   fontWeight: 800,
@@ -295,13 +295,13 @@ export default function CustomerSupportWidget() {
           {/* Header du Robot */}
           <div
             style={{
-              background: "linear-gradient(135deg, #0B2559 0%, #071530 100%)",
+              background: "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
               padding: "14px 18px",
               color: "white",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

@@ -8,10 +8,11 @@ import { LANGUAGES, SupportedLanguage, getLanguage, setLanguage, t } from "@/lib
 
 interface LanguageSelectorProps {
   variant?: "dropdown" | "pills" | "compact";
+  theme?: "dark" | "light";
   onSelect?: (lang: SupportedLanguage) => void;
 }
 
-export default function LanguageSelector({ variant = "dropdown", onSelect }: LanguageSelectorProps) {
+export default function LanguageSelector({ variant = "dropdown", theme = "dark", onSelect }: LanguageSelectorProps) {
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>("fr");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -37,8 +38,9 @@ export default function LanguageSelector({ variant = "dropdown", onSelect }: Lan
 
   const activeOption = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
 
-  // Mode Pills (idéal pour la bannière d'installation ou modal de premier démarrage)
+  // Mode Pills (pour bannière d'installation ou modal)
   if (variant === "pills") {
+    const isLight = theme === "light";
     return (
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {LANGUAGES.map((l) => {
@@ -54,9 +56,15 @@ export default function LanguageSelector({ variant = "dropdown", onSelect }: Lan
                 gap: "6px",
                 padding: "6px 12px",
                 borderRadius: "100px",
-                border: isSelected ? "2px solid #F59E0B" : "1px solid rgba(255, 255, 255, 0.2)",
-                background: isSelected ? "rgba(245, 158, 11, 0.22)" : "rgba(255, 255, 255, 0.08)",
-                color: "white",
+                border: isSelected
+                  ? isLight ? "2px solid #E10600" : "2px solid #F59E0B"
+                  : isLight ? "1px solid #CBD5E1" : "1px solid rgba(255, 255, 255, 0.2)",
+                background: isSelected
+                  ? isLight ? "rgba(225, 6, 0, 0.08)" : "rgba(245, 158, 11, 0.22)"
+                  : isLight ? "#F8FAFC" : "rgba(255, 255, 255, 0.08)",
+                color: isSelected
+                  ? isLight ? "#E10600" : "white"
+                  : isLight ? "#1E293B" : "white",
                 fontSize: "12px",
                 fontWeight: isSelected ? 800 : 500,
                 cursor: "pointer",
@@ -65,7 +73,7 @@ export default function LanguageSelector({ variant = "dropdown", onSelect }: Lan
             >
               <span>{l.flag}</span>
               <span>{l.nativeName}</span>
-              {isSelected && <Check size={12} color="#F59E0B" />}
+              {isSelected && <Check size={12} color={isLight ? "#E10600" : "#F59E0B"} />}
             </button>
           );
         })}

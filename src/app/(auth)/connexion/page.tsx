@@ -111,7 +111,7 @@ function ConnexionForm() {
         localStorage.setItem("meetmeclub_primary_device_email", cleanInput);
         localStorage.setItem("meetmeclub_last_auth_time", Date.now().toString());
 
-        // Demander au navigateur / Google d'enregistrer le mot de passe
+        // Demander au navigateur / Compte Google d'enregistrer le mot de passe
         if ((window as any).PasswordCredential && navigator.credentials?.store) {
           try {
             const cred = new (window as any).PasswordCredential({
@@ -124,8 +124,12 @@ function ConnexionForm() {
         }
       }
 
-      router.push(data.redirect || callbackUrl);
-      router.refresh();
+      const target = data.redirect || callbackUrl;
+      if (typeof window !== "undefined") {
+        window.location.href = target;
+      } else {
+        router.push(target);
+      }
     } catch {
       setError("Erreur réseau. Vérifiez votre connexion et réessayez.");
     } finally {
@@ -302,7 +306,7 @@ function ConnexionForm() {
           )}
 
           {/* Form Direct en Haut */}
-          <form onSubmit={handleEmailLogin} noValidate>
+          <form onSubmit={handleEmailLogin} noValidate method="POST" action="/api/auth/login" name="loginForm">
             {/* Email ou Pseudo */}
             <div style={{ marginBottom: "16px" }}>
               <label
@@ -323,6 +327,7 @@ function ConnexionForm() {
                 </div>
                 <input
                   id="email"
+                  name="username"
                   type="text"
                   required
                   value={email}
@@ -359,6 +364,7 @@ function ConnexionForm() {
                 </div>
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}

@@ -91,17 +91,15 @@ export default function PwaInstallPrompt() {
       style={{
         position: "fixed",
         bottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
-        left: "12px",
-        right: "12px",
-        maxWidth: "500px",
-        margin: "0 auto",
-        background: "rgba(11, 37, 89, 0.98)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        color: "white",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "calc(100% - 24px)",
+        maxWidth: "460px",
+        background: "#FFFFFF",
+        color: "#0B2559",
         borderRadius: "22px",
         padding: "16px 18px",
-        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.18)",
+        boxShadow: "0 20px 50px rgba(11, 37, 89, 0.22), 0 0 0 1.5px #E2E8F0",
         zIndex: 9998,
         animation: "fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
@@ -114,12 +112,12 @@ export default function PwaInstallPrompt() {
           justifyContent: "space-between",
           marginBottom: "12px",
           paddingBottom: "10px",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+          borderBottom: "1px solid #E2E8F0",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Globe size={15} color="#F59E0B" />
-          <span style={{ fontSize: "12px", fontWeight: 700, color: "#FDE047" }}>
+          <Globe size={16} color="#E10600" />
+          <span style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", letterSpacing: "0.3px" }}>
             {t("chooseLanguage", currentLang)}
           </span>
         </div>
@@ -127,17 +125,18 @@ export default function PwaInstallPrompt() {
           onClick={handleDismiss}
           aria-label={t("close", currentLang)}
           style={{
-            background: "rgba(255, 255, 255, 0.15)",
-            border: "none",
-            color: "white",
-            width: "24px",
-            height: "24px",
+            background: "#F1F5F9",
+            border: "1px solid #CBD5E1",
+            color: "#475569",
+            width: "26px",
+            height: "26px",
             borderRadius: "50%",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: "12px",
+            fontWeight: 800,
             padding: 0,
           }}
         >
@@ -145,9 +144,9 @@ export default function PwaInstallPrompt() {
         </button>
       </div>
 
-      {/* Boutons de langues avec drapeaux */}
+      {/* Boutons de langues avec drapeaux sur fond blanc */}
       <div style={{ marginBottom: "14px" }}>
-        <LanguageSelector variant="pills" />
+        <LanguageSelector variant="pills" theme="light" />
       </div>
 
       {/* ── 2. Instructions d'installation ── */}
@@ -159,10 +158,10 @@ export default function PwaInstallPrompt() {
             height: "50px",
             borderRadius: "14px",
             overflow: "hidden",
-            background: "white",
-            padding: "3px",
+            background: "#FFFFFF",
+            padding: "2px",
             flexShrink: 0,
-            boxShadow: "0 4px 14px rgba(0, 0, 0, 0.3)",
+            boxShadow: "0 4px 12px rgba(11, 37, 89, 0.12)",
             border: "2px solid #E10600",
             display: "flex",
             alignItems: "center",
@@ -180,14 +179,14 @@ export default function PwaInstallPrompt() {
 
         {/* Textes & CTA */}
         <div style={{ flex: 1 }}>
-          <h4 style={{ fontSize: "15px", fontWeight: 800, color: "white", margin: "0 0 3px 0" }}>
+          <h4 style={{ fontSize: "15px", fontWeight: 800, color: "#0B2559", margin: "0 0 3px 0" }}>
             {t("installApp", currentLang)}
           </h4>
 
           <p
             style={{
               fontSize: "12px",
-              color: "rgba(255, 255, 255, 0.88)",
+              color: "#475569",
               margin: "0 0 10px 0",
               lineHeight: 1.4,
             }}
@@ -199,12 +198,13 @@ export default function PwaInstallPrompt() {
             /* Guide pas-à-pas iOS Safari */
             <div
               style={{
-                background: "rgba(255, 255, 255, 0.10)",
+                background: "#F8FAFC",
                 borderRadius: "12px",
                 padding: "8px 12px",
                 fontSize: "11.5px",
                 lineHeight: 1.5,
-                border: "1px solid rgba(255, 255, 255, 0.15)",
+                border: "1px solid #E2E8F0",
+                color: "#334155",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
@@ -214,7 +214,9 @@ export default function PwaInstallPrompt() {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    background: "rgba(255, 255, 255, 0.22)",
+                    background: "#EEF2FF",
+                    border: "1px solid #C7D2FE",
+                    color: "#4338CA",
                     borderRadius: "6px",
                     padding: "2px 6px",
                     fontWeight: 700,
@@ -231,7 +233,7 @@ export default function PwaInstallPrompt() {
               </div>
               <div>
                 <span>{t("iosStep2", currentLang)} </span>
-                <strong style={{ color: "#F59E0B" }}>{t("iosAddToHome", currentLang)}</strong>
+                <strong style={{ color: "#E10600" }}>{t("iosAddToHome", currentLang)}</strong>
               </div>
             </div>
           ) : (
@@ -247,7 +249,7 @@ export default function PwaInstallPrompt() {
                 fontSize: "13px",
                 fontWeight: 800,
                 cursor: "pointer",
-                boxShadow: "0 4px 14px rgba(225, 6, 0, 0.38)",
+                boxShadow: "0 4px 14px rgba(225, 6, 0, 0.32)",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",

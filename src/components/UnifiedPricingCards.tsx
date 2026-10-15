@@ -470,6 +470,144 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
                   <span>{isCurrent ? "✓ Formule Actuelle" : plan.buttonText}</span>
                 </Link>
               )}
+
+              {/* Payment Method Badges */}
+              {plan.id === "FREE" ? (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    textAlign: "center",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#64748B",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                  }}
+                >
+                  <span style={{ display: "inline-block", width: "7px", height: "7px", borderRadius: "50%", background: "#10B981" }} />
+                  <span>100% Gratuit · Sans carte ni engagement</span>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    marginTop: "14px",
+                    paddingTop: "12px",
+                    borderTop: isVip ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid #E2E8F0",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    alignItems: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      letterSpacing: "0.5px",
+                      textTransform: "uppercase",
+                      color: isVip ? "#FDE68A" : "#64748B",
+                    }}
+                  >
+                    Paiements acceptés :
+                  </span>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexWrap: "wrap",
+                      gap: "6px",
+                    }}
+                  >
+                    {/* Mixx by Yas */}
+                    <div
+                      title="Mixx by Yas (T-Money)"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        background: "#FFFFFF",
+                        border: "1px solid #CBD5E1",
+                        borderRadius: "6px",
+                        padding: "2px 6px",
+                        height: "22px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/mixx-by-yas.jpg"
+                        alt="Mixx by Yas"
+                        style={{ height: "14px", width: "auto", objectFit: "contain", borderRadius: "2px" }}
+                      />
+                    </div>
+
+                    {/* Moov Money */}
+                    <div
+                      title="Moov Money (Flooz)"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        background: "#FFFFFF",
+                        border: "1px solid #CBD5E1",
+                        borderRadius: "6px",
+                        padding: "2px 6px",
+                        height: "22px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/moov-money.png"
+                        alt="Moov Money"
+                        style={{ height: "14px", width: "auto", objectFit: "contain", borderRadius: "2px" }}
+                      />
+                    </div>
+
+                    {/* Crypto USDT / BTC */}
+                    <div
+                      title="Crypto USDT / BTC"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        background: isVip ? "rgba(245, 158, 11, 0.2)" : "#FEF3C7",
+                        border: isVip ? "1px solid #F59E0B" : "1px solid #FDE68A",
+                        color: isVip ? "#FDE68A" : "#92400E",
+                        borderRadius: "6px",
+                        padding: "2px 6px",
+                        height: "22px",
+                        fontSize: "10px",
+                        fontWeight: 800,
+                      }}
+                    >
+                      <span style={{ fontSize: "11px" }}>₿</span>
+                      <span>USDT/Crypto</span>
+                    </div>
+
+                    {/* Carte */}
+                    <div
+                      title="Carte Bancaire Visa / Mastercard"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        background: isVip ? "rgba(255, 255, 255, 0.15)" : "#F1F5F9",
+                        border: isVip ? "1px solid rgba(255, 255, 255, 0.3)" : "1px solid #CBD5E1",
+                        color: isVip ? "#FFFFFF" : "#334155",
+                        borderRadius: "6px",
+                        padding: "2px 6px",
+                        height: "22px",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <span>💳 Carte</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

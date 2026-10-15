@@ -22,6 +22,7 @@ import {
   MapPin,
   Mail,
   Headphones,
+  Gem,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -324,10 +325,14 @@ export default function HomePage() {
                     WebkitBackdropFilter: "blur(12px)",
                     borderColor: "rgba(255,255,255,0.4)",
                     color: "white",
-                    fontWeight: 600,
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
                   }}
                 >
-                  Voir les packs
+                  <Gem size={18} color="#FCD34D" />
+                  <span>Nos plans d&apos;accès</span>
                 </Link>
               </div>
 

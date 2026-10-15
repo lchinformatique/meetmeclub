@@ -81,9 +81,9 @@ export default function MobileBottomNav() {
 
   const navItems = [
     { href: "/", label: t("appTitle", lang) === "Meet Me Club" ? (lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil") : "Accueil", Icon: Home },
-    { href: "/decouverte", label: t("navDiscovery", lang), Icon: Compass },
-    { href: "/tarifs", label: "Plans d'accès", Icon: Gem },
-    { href: "/rendez-vous", label: "Packs & Sorties", Icon: Calendar },
+    { href: "/decouverte", label: lang === "en" ? "Explore" : "Découvrir", Icon: Compass },
+    { href: "/tarifs", label: lang === "en" ? "Plans" : "Plans", Icon: Gem },
+    { href: "/rendez-vous", label: lang === "en" ? "Dates" : "Sorties", Icon: Calendar },
     {
       href: "/messages",
       activeHref: "/messages",
