@@ -42,7 +42,7 @@ export async function GET() {
         religion: supa.religion || profile?.religion || undefined,
         height: supa.height || profile?.height || undefined,
         languages: supa.languages || profile?.languages || ['fr'],
-        bio: supa.bio || profile?.bio || 'Nouveau membre sur Meet Me Club.',
+        bio: supa.bio !== undefined && supa.bio !== null ? supa.bio : (profile?.bio || 'Nouveau membre sur Meet Me Club.'),
         relationshipGoal: (supa.relationshipGoal as any) || profile?.relationshipGoal || 'SERIOUS',
         coverUrl: supa.coverUrl || profile?.coverUrl || undefined,
         plan: profile?.plan || 'FREE',

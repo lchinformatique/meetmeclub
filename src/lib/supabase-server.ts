@@ -196,6 +196,56 @@ export async function getProfileFromSupabase(userId: string) {
   }
 }
 
+// ── S'assurer que l'utilisateur existe dans la table users ──────
+export async function ensureUserExistsInSupabase(
+  userId: string,
+  email?: string,
+  phone?: string | null,
+  dateOfBirth?: string | null
+) {
+  const admin = getSupabaseAdmin();
+  const now = new Date().toISOString();
+  try {
+    const { data: existing } = await admin
+      .from("users")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!existing) {
+      const cleanEmail =
+        email ||
+        (userId.includes("@")
+          ? userId
+          : `${userId.replace(/[^a-zA-Z0-9_]/g, "")}@meetmeclub.net`);
+      const { error: insErr } = await admin.from("users").insert({
+        id: userId,
+        email: cleanEmail,
+        phone: phone || null,
+        dateOfBirth: dateOfBirth || "2000-01-01T00:00:00.000Z",
+        isAdult: true,
+        status: "ACTIVE",
+        role: "MEMBER",
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (insErr) {
+        console.warn("[ensureUserExistsInSupabase] Insert warning:", insErr);
+      }
+    } else {
+      const userUpdates: Record<string, any> = { updatedAt: now };
+      if (phone) userUpdates.phone = phone;
+      if (dateOfBirth) {
+        userUpdates.dateOfBirth = dateOfBirth;
+        userUpdates.isAdult = true;
+      }
+      await admin.from("users").update(userUpdates).eq("id", userId);
+    }
+  } catch (err) {
+    console.warn("[ensureUserExistsInSupabase] Exception:", err);
+  }
+}
+
 // ── Mise à jour ou création de profil dans Supabase ──────────
 export async function upsertProfileInSupabase(
   userId: string,
@@ -228,26 +278,15 @@ export async function upsertProfileInSupabase(
   }
 ) {
   const admin = getSupabaseAdmin();
+  const now = new Date().toISOString();
   try {
-    // 1. Mettre à jour la table users (phone, dateOfBirth, isAdult)
-    try {
-      const userUpdates: Record<string, any> = {};
-      if (data.phone) userUpdates.phone = data.phone;
-      if (data.dateOfBirth) {
-        userUpdates.dateOfBirth = data.dateOfBirth;
-        userUpdates.isAdult = true;
-      }
-      if (Object.keys(userUpdates).length > 0) {
-        await admin.from("users").update(userUpdates).eq("id", userId);
-      }
-    } catch (uErr) {
-      console.warn("[upsertProfileInSupabase] user update warning:", uErr);
-    }
+    // 1. S'assurer que le compte existe dans la table users Supabase
+    await ensureUserExistsInSupabase(userId, undefined, data.phone, data.dateOfBirth);
 
     // 2. Vérifier si un profil existe déjà
     let { data: existing } = await admin
       .from("profiles")
-      .select("id")
+      .select("*")
       .eq("userId", userId)
       .maybeSingle();
 
@@ -255,49 +294,54 @@ export async function upsertProfileInSupabase(
 
     // Si nouveau profil
     if (!profileId) {
-      profileId = `prof_${Date.now()}`;
+      profileId = `prof_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       const insertPayload: Record<string, any> = {
         id: profileId,
         userId,
         firstName: data.firstName || "Membre",
+        lastName: data.lastName || null,
         pseudo: data.pseudo || null,
         gender: data.gender || "OTHER",
         city: data.city || "Lomé",
-        bio: data.bio || "Nouveau membre sur Meet Me Club.",
+        neighborhood: data.neighborhood || null,
+        profession: data.profession || null,
+        bio: data.bio !== undefined ? data.bio : "Nouveau membre sur Meet Me Club.",
         relationshipGoal: data.relationshipGoal || "SERIOUS",
+        relationshipStatus: data.relationshipStatus || "Célibataire",
+        height: data.height || null,
+        religion: data.religion || null,
+        hasChildren: data.hasChildren ?? false,
+        languages: data.languages || ["fr"],
+        educationLevel: data.educationLevel || null,
+        coverUrl: data.coverUrl || null,
+        placeOfBirth: data.placeOfBirth || null,
+        dateOfBirth: data.dateOfBirth || null,
+        plan: data.plan || "FREE",
         isVisible: true,
-        profileCompleteness: 75,
-        updatedAt: new Date().toISOString(),
+        photoPrivacy: "ALL",
+        profileCompleteness: 85,
+        likesCount: data.likesCount || 0,
+        createdAt: now,
+        updatedAt: now,
       };
 
-      // Tenter d'insérer avec colonnes étendues (si migration appliquée)
-      const extendedInsert: Record<string, any> = { ...insertPayload };
-      if (data.lastName) extendedInsert.lastName = data.lastName;
-      if (data.coverUrl) extendedInsert.coverUrl = data.coverUrl;
-      if (data.placeOfBirth) extendedInsert.placeOfBirth = data.placeOfBirth;
-
-      let { data: created, error: insertError } = await admin
+      const { data: created, error: insertError } = await admin
         .from("profiles")
-        .insert(extendedInsert)
+        .insert(insertPayload)
         .select()
         .maybeSingle();
 
       if (insertError) {
-        // Fallback sans colonnes optionnelles
-        const fallback = await admin
-          .from("profiles")
-          .insert(insertPayload)
-          .select()
-          .maybeSingle();
-        created = fallback.data;
+        console.warn("[upsertProfileInSupabase] Insert warning:", insertError);
       }
-      existing = created;
+      existing = created || existing;
     } else {
       // Profil existant: Mettre à jour
       const updatePayload: Record<string, any> = {
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       };
       if (data.firstName !== undefined) updatePayload.firstName = data.firstName;
+      if (data.lastName !== undefined) updatePayload.lastName = data.lastName;
       if (data.pseudo !== undefined) updatePayload.pseudo = data.pseudo;
       if (data.gender !== undefined) updatePayload.gender = data.gender;
       if (data.city !== undefined) updatePayload.city = data.city;
@@ -311,32 +355,23 @@ export async function upsertProfileInSupabase(
       if (data.hasChildren !== undefined) updatePayload.hasChildren = data.hasChildren;
       if (data.languages !== undefined) updatePayload.languages = data.languages;
       if (data.educationLevel !== undefined) updatePayload.educationLevel = data.educationLevel;
+      if (data.coverUrl !== undefined) updatePayload.coverUrl = data.coverUrl;
+      if (data.placeOfBirth !== undefined) updatePayload.placeOfBirth = data.placeOfBirth;
+      if (data.dateOfBirth !== undefined) updatePayload.dateOfBirth = data.dateOfBirth;
+      if (data.plan !== undefined) updatePayload.plan = data.plan;
+      if (data.subscriptionExpiresAt !== undefined) updatePayload.subscriptionExpiresAt = data.subscriptionExpiresAt;
+      if (data.subscriptionStartedAt !== undefined) updatePayload.subscriptionStartedAt = data.subscriptionStartedAt;
+      if (data.likesCount !== undefined) updatePayload.likesCount = data.likesCount;
 
-      // Essayer avec colonnes optionnelles
-      const extendedUpdate: Record<string, any> = { ...updatePayload };
-      if (data.lastName !== undefined) extendedUpdate.lastName = data.lastName;
-      if (data.coverUrl !== undefined) extendedUpdate.coverUrl = data.coverUrl;
-      if (data.placeOfBirth !== undefined) extendedUpdate.placeOfBirth = data.placeOfBirth;
-      if (data.plan !== undefined) extendedUpdate.plan = data.plan;
-      if (data.subscriptionExpiresAt !== undefined) extendedUpdate.subscriptionExpiresAt = data.subscriptionExpiresAt;
-      if (data.subscriptionStartedAt !== undefined) extendedUpdate.subscriptionStartedAt = data.subscriptionStartedAt;
-      if (data.likesCount !== undefined) extendedUpdate.likesCount = data.likesCount;
-
-      let { data: updated, error: updateError } = await admin
+      const { data: updated, error: updateError } = await admin
         .from("profiles")
-        .update(extendedUpdate)
+        .update(updatePayload)
         .eq("id", profileId)
         .select()
         .maybeSingle();
 
       if (updateError) {
-        const fallbackUpdate = await admin
-          .from("profiles")
-          .update(updatePayload)
-          .eq("id", profileId)
-          .select()
-          .maybeSingle();
-        updated = fallbackUpdate.data;
+        console.warn("[upsertProfileInSupabase] Update warning:", updateError);
       }
       existing = updated || existing;
     }
@@ -356,7 +391,6 @@ export async function upsertProfileInSupabase(
           finalCover = uploadRes.url;
         }
 
-        // Sauvegarder dans profile_photos avec status COVER pour garantir la persistance
         await admin
           .from("profile_photos")
           .delete()
@@ -372,6 +406,7 @@ export async function upsertProfileInSupabase(
           isMain: false,
           order: 0,
           status: "COVER",
+          createdAt: now,
         });
       } catch (coverErr) {
         console.warn("[upsertProfileInSupabase] Cover save warning:", coverErr);
@@ -405,6 +440,91 @@ export async function upsertProfileInSupabase(
   }
 }
 
+// ── Seeding permanent du profil officiel Victoire Lawson ───────
+export async function seedPermanentVictoire() {
+  const admin = getSupabaseAdmin();
+  try {
+    const userId = "user_victoire_lome";
+    const now = new Date().toISOString();
+
+    const { data: userCheck } = await admin
+      .from("users")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!userCheck) {
+      await admin.from("users").insert({
+        id: userId,
+        email: "victoire@meetmeclub.net",
+        dateOfBirth: "2000-05-14T00:00:00.000Z",
+        isAdult: true,
+        status: "ACTIVE",
+        role: "MEMBER",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    const { data: profCheck } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("userId", userId)
+      .maybeSingle();
+
+    if (!profCheck) {
+      await admin.from("profiles").insert({
+        id: "prof_victoire_lome",
+        userId,
+        firstName: "Victoire",
+        lastName: "Lawson",
+        pseudo: "victoire_lome",
+        gender: "FEMALE",
+        city: "Lomé",
+        neighborhood: "Tokoin & Nyékonakpoè",
+        profession: "Styliste & Créatrice de mode",
+        educationLevel: "Master Mode & Design",
+        height: 168,
+        religion: "Chrétienne",
+        relationshipStatus: "Célibataire",
+        hasChildren: false,
+        languages: ["Français", "Mina", "Anglais"],
+        bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
+        relationshipGoal: "SERIOUS",
+        plan: "VIP",
+        likesCount: 68,
+        isVisible: true,
+        photoPrivacy: "ALL",
+        profileCompleteness: 95,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    const { data: photoCheck } = await admin
+      .from("profile_photos")
+      .select("id")
+      .eq("profileId", "prof_victoire_lome")
+      .maybeSingle();
+
+    if (!photoCheck) {
+      await admin.from("profile_photos").insert({
+        id: "ph_victoire_main",
+        profileId: "prof_victoire_lome",
+        url: "/victoire_profile.jpg",
+        thumbnailUrl: "/victoire_profile.jpg",
+        publicId: "victoire_profile",
+        isMain: true,
+        order: 1,
+        status: "APPROVED",
+        createdAt: now,
+      });
+    }
+  } catch (err) {
+    console.warn("[seedPermanentVictoire] Warning:", err);
+  }
+}
+
 // ── Enregistrement d'une photo dans Supabase profile_photos ───
 export async function savePhotoInSupabase(
   userId: string,
@@ -413,6 +533,7 @@ export async function savePhotoInSupabase(
   order: number = 1
 ) {
   const admin = getSupabaseAdmin();
+  const now = new Date().toISOString();
   try {
     let { data: profile } = await admin
       .from("profiles")
@@ -465,7 +586,7 @@ export async function savePhotoInSupabase(
     if (existingPhoto?.id) {
       const { data: updated } = await admin
         .from("profile_photos")
-        .update({ isMain, order, status: "APPROVED", updatedAt: new Date().toISOString() })
+        .update({ isMain, order, status: "APPROVED" })
         .eq("id", existingPhoto.id)
         .select()
         .single();
@@ -484,6 +605,7 @@ export async function savePhotoInSupabase(
         isMain,
         order,
         status: "APPROVED",
+        createdAt: now,
       })
       .select()
       .single();
@@ -502,6 +624,7 @@ export async function syncAlbumPhotosInSupabase(
   photos: Array<{ id?: string; url: string; isMain?: boolean }>
 ) {
   const admin = getSupabaseAdmin();
+  const now = new Date().toISOString();
   try {
     let { data: profile } = await admin
       .from("profiles")
@@ -559,6 +682,7 @@ export async function syncAlbumPhotosInSupabase(
           isMain: Boolean(p.isMain),
           order: i + 1,
           status: "APPROVED",
+          createdAt: now,
         })
         .select()
         .maybeSingle();
@@ -633,6 +757,9 @@ export async function deletePhotoInSupabase(userId: string, photoIdOrUrl: string
 export async function getPublicProfilesFromSupabase(currentUserId?: string) {
   const admin = getSupabaseAdmin();
   try {
+    // S'assurer que Victoire Lawson est initialisée dans Supabase
+    await seedPermanentVictoire();
+
     let query = admin
       .from("profiles")
       .select("*, profile_photos(*)")
@@ -649,7 +776,7 @@ export async function getPublicProfilesFromSupabase(currentUserId?: string) {
       return [];
     }
 
-    return profiles.map((p: any) => {
+    const formatted = profiles.map((p: any) => {
       const allPhotos = Array.isArray(p.profile_photos) ? p.profile_photos : [];
       const coverPhoto = allPhotos.find((ph: any) => ph.status === "COVER");
       const galleryPhotos = allPhotos
@@ -689,6 +816,36 @@ export async function getPublicProfilesFromSupabase(currentUserId?: string) {
         isVerified: true,
       };
     });
+
+    // S'assurer que le profil de Victoire Lawson est toujours en tête pour les nouveaux utilisateurs
+    if (!formatted.some((p) => p.userId === "user_victoire_lome") && currentUserId !== "user_victoire_lome") {
+      formatted.unshift({
+        id: "prof_victoire_lome",
+        userId: "user_victoire_lome",
+        firstName: "Victoire",
+        lastName: "Lawson",
+        pseudo: "victoire_lome",
+        gender: "FEMALE",
+        city: "Lomé",
+        neighborhood: "Tokoin & Nyékonakpoè",
+        profession: "Styliste & Créatrice de mode",
+        bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
+        coverUrl: undefined,
+        relationshipGoal: "SERIOUS",
+        plan: "VIP",
+        likesCount: 68,
+        subscriptionExpiresAt: "2028-12-31T23:59:59.000Z",
+        subscriptionStartedAt: "2024-01-01T00:00:00.000Z",
+        photos: [{ id: "ph_victoire_main", url: "/victoire_profile.jpg", isMain: true }],
+        avatarUrl: "/victoire_profile.jpg",
+        dateOfBirth: "2000-05-14",
+        placeOfBirth: "Lomé",
+        age: 24,
+        isVerified: true,
+      });
+    }
+
+    return formatted;
   } catch (err) {
     console.warn("[getPublicProfilesFromSupabase] Exception:", err);
     return [];

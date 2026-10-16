@@ -79,7 +79,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         city: supaProfile.city || "Lomé",
         neighborhood: supaProfile.neighborhood || "Centre-ville",
         profession: supaProfile.profession || "Membre actif",
-        bio: supaProfile.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+        bio: supaProfile.bio !== undefined && supaProfile.bio !== null ? supaProfile.bio : "Nouveau membre sur Meet Me Club à Lomé.",
         relationshipGoal: (supaProfile.relationshipGoal as any) || "SERIOUS",
         relationshipStatus: supaProfile.relationshipStatus || "Célibataire",
         height: supaProfile.height || null,
