@@ -541,7 +541,13 @@ function MessagesApp() {
         <aside className={`${styles.sidebar} ${mobileView === "chat" ? styles.hideMobile : ""}`}>
           <div className={styles.sideHeader}>
             <div className={styles.sideTitleRow}>
-              <h1>Discussions</h1>
+              <div>
+                <h1>Discussions</h1>
+                <button type="button" className={styles.onlineCount} onClick={() => setTab("online")}>
+                  <span className={styles.liveDot} />
+                  {onlineMembers.length} membre{onlineMembers.length > 1 ? "s" : ""} en ligne
+                </button>
+              </div>
               <div className={styles.sideMe}>
                 {!isFree ? <PlanBadge plan={plan} /> : (
                   <Link href="/tarifs" className={styles.freePill}>
@@ -705,7 +711,7 @@ function MessagesApp() {
                 </div>
               </header>
 
-              <div className={styles.thread} ref={scrollRef} onClick={() => setMenuOpen(false)}>
+              <div className={`${styles.thread} protected-content`} ref={scrollRef} onClick={() => setMenuOpen(false)}>
                 <div className={styles.e2e}>
                   <Lock size={12} /> Vos échanges sont privés et protégés. Ne partagez jamais d&apos;argent.
                 </div>

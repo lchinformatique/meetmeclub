@@ -22,10 +22,11 @@ import styles from "../messages.module.css";
 import Avatar from "./Avatar";
 import { GOAL_LABELS, LOME_SPOTS, isRenderableUrl, type Member } from "../_lib/chat-utils";
 import { SASPAY_LINKS } from "@/lib/subscription-constants";
+import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
 function Sheet({ onClose, children, label }: { onClose: () => void; children: React.ReactNode; label: string }) {
   return (
-    <div className={styles.modalBackdrop} onClick={onClose} role="dialog" aria-label={label}>
+    <div className={`${styles.modalBackdrop} protected-content`} onClick={onClose} role="dialog" aria-label={label}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Fermer">
           <X size={18} />
@@ -100,9 +101,10 @@ export function PartnerSheet({
       {photos.length > 0 && (
         <div className={styles.sheetPhotos}>
           {photos.map((ph, i) => (
-            <button key={i} type="button" onClick={() => onOpenImage(ph.url)} aria-label={`Photo ${i + 1}`}>
+            <button key={i} type="button" onClick={() => onOpenImage(ph.url)} aria-label={`Photo ${i + 1}`} onContextMenu={(e) => e.preventDefault()}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ph.url} alt="" loading="lazy" />
+              <img src={ph.url} alt="" loading="lazy" draggable={false} />
+              <Watermark />
             </button>
           ))}
         </div>
@@ -132,14 +134,30 @@ export function PartnerSheet({
   );
 }
 
+/** Filigrane au nom du membre qui regarde : une capture d'écran révèle qui l'a faite */
+export function Watermark() {
+  const { me } = useRealtime();
+  const label = `${me?.firstName ? `${me.firstName} · ` : ""}Meet Me Club · Confidentiel`;
+  return (
+    <span className={styles.watermark} aria-hidden>
+      {Array.from({ length: 12 }).map((_, i) => (
+        <span key={i}>{label}</span>
+      ))}
+    </span>
+  );
+}
+
 export function Lightbox({ url, onClose }: { url: string; onClose: () => void }) {
   return (
-    <div className={styles.lightbox} onClick={onClose} role="dialog" aria-label="Photo">
+    <div className={`${styles.lightbox} protected-content`} onClick={onClose} role="dialog" aria-label="Photo">
       <button type="button" className={styles.lightboxClose} onClick={onClose} aria-label="Fermer">
         <X size={22} />
       </button>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="" onClick={(e) => e.stopPropagation()} />
+      <div className={styles.lightboxFrame} onClick={(e) => e.stopPropagation()} onContextMenu={(e) => e.preventDefault()}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="" draggable={false} />
+        <Watermark />
+      </div>
     </div>
   );
 }

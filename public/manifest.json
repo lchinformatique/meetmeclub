@@ -3,7 +3,7 @@
   "short_name": "Meet Me Club",
   "description": "L'application officielle de rencontres et sorties élégantes à Lomé, Togo. Plus qu'une rencontre, un rendez-vous !",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/messages",
   "scope": "/",
   "display": "standalone",
   "background_color": "#071530",

@@ -28,6 +28,25 @@ function beep(freq: number, start: number, duration: number, volume = 0.18) {
   osc.stop(t0 + duration + 0.05);
 }
 
+/** Les téléphones n'autorisent le son qu'après un premier toucher : on « réveille » l'audio à ce moment */
+export function unlockAudioOnFirstTouch() {
+  if (typeof window === "undefined") return;
+  const unlock = () => {
+    const c = audioCtx();
+    if (c) {
+      const buf = c.createBuffer(1, 1, 22050);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      src.connect(c.destination);
+      src.start(0);
+    }
+    window.removeEventListener("pointerdown", unlock);
+    window.removeEventListener("keydown", unlock);
+  };
+  window.addEventListener("pointerdown", unlock, { once: true });
+  window.addEventListener("keydown", unlock, { once: true });
+}
+
 /** Petit carillon de nouveau message */
 export function playMessageChime() {
   beep(880, 0, 0.18, 0.12);

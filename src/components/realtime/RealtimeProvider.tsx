@@ -10,7 +10,7 @@ import { BellRing, X } from "lucide-react";
 import styles from "./realtime.module.css";
 import { joinPresence, openInbox, removeChannel, sendToUser, type PresenceInfo } from "@/lib/realtime-client";
 import { useCallManager, type CallKind, type CallPeer } from "./CallManager";
-import { playMessageChime } from "./tones";
+import { playMessageChime, unlockAudioOnFirstTouch } from "./tones";
 import { SASPAY_LINKS } from "@/lib/subscription-constants";
 
 export interface RealtimeMe {
@@ -235,6 +235,16 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       try {
       if (event.startsWith("call-")) {
         handleSignalRef.current(event, payload);
+      } else if (event === "like") {
+        playMessageChime();
+        const toast: Toast = {
+          id: `like-${Date.now()}`,
+          conversationId: "",
+          title: payload?.isMatch ? "💞 C'est réciproque !" : "❤️ Nouveau like",
+          body: `${payload?.fromName || "Un membre"} a aimé votre profil`,
+        };
+        setToasts((prev) => [...prev, toast].slice(-3));
+        setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== toast.id)), 6000);
       } else if (event === "plan-activated") {
         // Paiement confirmé par SasPay : le nouveau pass s'affiche immédiatement
         setMe((m) => (m ? { ...m, plan: payload?.plan || m.plan } : m));
@@ -323,6 +333,11 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
   }, [router]);
+
+  // Son des notifications autorisé dès le premier toucher (exigence des téléphones)
+  useEffect(() => {
+    unlockAudioOnFirstTouch();
+  }, []);
 
   // Toucher une notification alors que l'application est déjà ouverte → aller à la conversation
   useEffect(() => {

@@ -1,266 +1,198 @@
 "use client";
 // src/components/PwaInstallPrompt.tsx
-// International Multilingual PWA Installation & Language Setup (iOS Safari & Android & Desktop)
+// Invitation simple à installer l'application (téléphones uniquement).
+// - Jamais affichée si l'application est déjà installée ou ouverte depuis l'écran d'accueil
+// - Android : vrai bouton « Installer » (invite native du navigateur)
+// - iPhone (Safari) : une ligne d'explication « Partager › Sur l'écran d'accueil »
+// - Fermée = plus affichée pendant 30 jours ; installée = plus jamais
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { Globe, Sparkles } from "lucide-react";
-import LanguageSelector from "./LanguageSelector";
-import { SupportedLanguage, getLanguage, setLanguage, t, LANGUAGES } from "@/lib/i18n";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { Download, Share, X } from "lucide-react";
+
+const DISMISS_KEY = "mmc_pwa_dismissed";
+const INSTALLED_KEY = "mmc_pwa_installed";
+
+function isInstalled() {
+  try {
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.matchMedia("(display-mode: fullscreen)").matches ||
+      (window.navigator as any).standalone === true ||
+      localStorage.getItem(INSTALLED_KEY) === "1"
+    );
+  } catch {
+    return false;
+  }
+}
 
 export default function PwaInstallPrompt() {
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [isIos, setIsIos] = useState(false);
+  const pathname = usePathname();
+  const [mode, setMode] = useState<"android" | "ios" | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [currentLang, setCurrentLang] = useState<SupportedLanguage>("fr");
 
   useEffect(() => {
-    setCurrentLang(getLanguage());
-
-    const handleLangChange = (e: any) => {
-      if (e.detail?.lang) {
-        setCurrentLang(e.detail.lang);
+    // Ouverte depuis l'écran d'accueil : on retient qu'elle est installée
+    try {
+      if (window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true) {
+        localStorage.setItem(INSTALLED_KEY, "1");
       }
-    };
-    window.addEventListener("mmclub_lang_changed", handleLangChange);
+    } catch {}
+    if (isInstalled()) return;
 
-    // 1. Détection mode PWA standalone (déjà installé)
-    const isStandalone =
-      typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as any).standalone === true);
+    let dismissedRecently = false;
+    try {
+      const t = Number(localStorage.getItem(DISMISS_KEY) || 0);
+      dismissedRecently = Date.now() - t < 30 * 24 * 3600 * 1000;
+    } catch {}
+    if (dismissedRecently) return;
 
-    // 2. Vérifier si l'utilisateur a fermé la bannière récemment (stocké 7 jours)
-    const dismissedTime = localStorage.getItem("mmc_pwa_dismissed");
-    const isDismissed =
-      dismissedTime && Date.now() - parseInt(dismissedTime, 10) < 7 * 24 * 60 * 60 * 1000;
+    const ua = navigator.userAgent.toLowerCase();
+    const isIos = /iphone|ipad|ipod/.test(ua);
+    // Safari seulement (les navigateurs intégrés de Facebook/Instagram ne savent pas installer)
+    const isIosSafari = isIos && /safari/.test(ua) && !/crios|fxios|fbav|instagram|line/.test(ua);
+    const isMobile = isIos || /android/.test(ua);
+    if (!isMobile) return;
 
-    // Si déjà installé et dismissed, ne pas afficher
-    if (isStandalone && isDismissed) {
-      return () => window.removeEventListener("mmclub_lang_changed", handleLangChange);
-    }
-
-    // 3. Détection iOS / iPhone / iPad
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIos(isIosDevice);
-
-    // 4. Écouteur pour Android / Chrome
-    const handleBeforeInstall = (e: Event) => {
+    const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowPrompt(true);
+      setTimeout(() => setMode("android"), 3000);
     };
+    const onInstalled = () => {
+      try {
+        localStorage.setItem(INSTALLED_KEY, "1");
+      } catch {}
+      setMode(null);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onInstalled);
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-
-    // Afficher sur iOS ou premier démarrage après 1.2s
-    const timer = setTimeout(() => {
-      if (!isDismissed) {
-        setShowPrompt(true);
-      }
-    }, 1200);
+    const timer = isIosSafari ? setTimeout(() => setMode("ios"), 4000) : undefined;
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-      window.removeEventListener("mmclub_lang_changed", handleLangChange);
-      clearTimeout(timer);
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onInstalled);
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        setShowPrompt(false);
-      }
-      setDeferredPrompt(null);
+  const dismiss = () => {
+    setMode(null);
+    try {
+      localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    } catch {}
+  };
+
+  const install = async () => {
+    if (!deferredPrompt) return dismiss();
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice.catch(() => ({ outcome: "dismissed" }));
+    setDeferredPrompt(null);
+    if (outcome === "accepted") {
+      try {
+        localStorage.setItem(INSTALLED_KEY, "1");
+      } catch {}
+      setMode(null);
+    } else {
+      dismiss();
     }
   };
 
-  const handleDismiss = () => {
-    setShowPrompt(false);
-    localStorage.setItem("mmc_pwa_dismissed", Date.now().toString());
-  };
+  // Pas pendant l'inscription, la connexion ou une conversation
+  const hiddenHere =
+    pathname?.startsWith("/messages") ||
+    pathname?.startsWith("/connexion") ||
+    pathname?.startsWith("/inscription") ||
+    pathname?.startsWith("/auth") ||
+    pathname?.startsWith("/onboarding");
 
-  if (!showPrompt) return null;
+  if (!mode || hiddenHere) return null;
 
   return (
     <div
+      role="dialog"
+      aria-label="Installer l'application Meet Me Club"
       style={{
         position: "fixed",
-        bottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "calc(100% - 24px)",
-        maxWidth: "460px",
-        background: "#FFFFFF",
-        color: "#0B2559",
-        borderRadius: "22px",
-        padding: "16px 18px",
-        boxShadow: "0 20px 50px rgba(11, 37, 89, 0.22), 0 0 0 1.5px #E2E8F0",
-        zIndex: 9998,
-        animation: "fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        left: 12,
+        right: 12,
+        bottom: "calc(74px + env(safe-area-inset-bottom, 0px))",
+        maxWidth: 440,
+        margin: "0 auto",
+        zIndex: 3900,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 12px 12px 14px",
+        borderRadius: 18,
+        background: "#fff",
+        boxShadow: "0 16px 40px rgba(11,37,89,0.22), 0 0 0 1px #E2E8F0",
+        animation: "fadeInUp 0.3s ease",
       }}
     >
-      {/* ── 1. Sélecteur de Langue International Direct ── */}
-      <div
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/apple-touch-icon.png"
+        alt=""
+        width={44}
+        height={44}
+        style={{ borderRadius: 12, flexShrink: 0, boxShadow: "0 2px 8px rgba(11,37,89,0.15)" }}
+      />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#0B2559" }}>Installer Meet Me Club</div>
+        {mode === "ios" ? (
+          <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4, marginTop: 2 }}>
+            Touchez <Share size={13} style={{ verticalAlign: "-2px", color: "#2563EB" }} /> puis{" "}
+            <strong>« Sur l&apos;écran d&apos;accueil »</strong>
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>Accès direct depuis votre écran d&apos;accueil</div>
+        )}
+      </div>
+      {mode === "android" && (
+        <button
+          type="button"
+          onClick={install}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            height: 40,
+            padding: "0 14px",
+            border: "none",
+            borderRadius: 12,
+            background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+            color: "#fff",
+            fontWeight: 800,
+            fontSize: 13,
+            flexShrink: 0,
+            cursor: "pointer",
+          }}
+        >
+          <Download size={16} /> Installer
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Fermer"
         style={{
+          width: 32,
+          height: 32,
+          border: "none",
+          borderRadius: "50%",
+          background: "#F1F5F9",
+          color: "#64748B",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "12px",
-          paddingBottom: "10px",
-          borderBottom: "1px solid #E2E8F0",
+          justifyContent: "center",
+          flexShrink: 0,
+          cursor: "pointer",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Globe size={16} color="#E10600" />
-          <span style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", letterSpacing: "0.3px" }}>
-            {t("chooseLanguage", currentLang)}
-          </span>
-        </div>
-        <button
-          onClick={handleDismiss}
-          aria-label={t("close", currentLang)}
-          style={{
-            background: "#F1F5F9",
-            border: "1px solid #CBD5E1",
-            color: "#475569",
-            width: "26px",
-            height: "26px",
-            borderRadius: "50%",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "12px",
-            fontWeight: 800,
-            padding: 0,
-          }}
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* Boutons de langues avec drapeaux sur fond blanc */}
-      <div style={{ marginBottom: "14px" }}>
-        <LanguageSelector variant="pills" theme="light" />
-      </div>
-
-      {/* ── 2. Instructions d'installation ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
-        {/* Logo App */}
-        <div
-          style={{
-            width: "50px",
-            height: "50px",
-            borderRadius: "14px",
-            overflow: "hidden",
-            background: "#FFFFFF",
-            padding: "2px",
-            flexShrink: 0,
-            boxShadow: "0 4px 12px rgba(11, 37, 89, 0.12)",
-            border: "2px solid #E10600",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Image
-            src="/apple-touch-icon.png"
-            alt="Meet Me Club"
-            width={44}
-            height={44}
-            style={{ objectFit: "contain", borderRadius: "10px" }}
-          />
-        </div>
-
-        {/* Textes & CTA */}
-        <div style={{ flex: 1 }}>
-          <h4 style={{ fontSize: "15px", fontWeight: 800, color: "#0B2559", margin: "0 0 3px 0" }}>
-            {t("installApp", currentLang)}
-          </h4>
-
-          <p
-            style={{
-              fontSize: "12px",
-              color: "#475569",
-              margin: "0 0 10px 0",
-              lineHeight: 1.4,
-            }}
-          >
-            {t("installDesc", currentLang)}
-          </p>
-
-          {isIos ? (
-            /* Guide pas-à-pas iOS Safari */
-            <div
-              style={{
-                background: "#F8FAFC",
-                borderRadius: "12px",
-                padding: "8px 12px",
-                fontSize: "11.5px",
-                lineHeight: 1.5,
-                border: "1px solid #E2E8F0",
-                color: "#334155",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
-                <span>{t("iosStep1", currentLang)}</span>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    background: "#EEF2FF",
-                    border: "1px solid #C7D2FE",
-                    color: "#4338CA",
-                    borderRadius: "6px",
-                    padding: "2px 6px",
-                    fontWeight: 700,
-                  }}
-                >
-                  {t("iosShare", currentLang)}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                    <polyline points="16 6 12 2 8 6" />
-                    <line x1="12" y1="2" x2="12" y2="15" />
-                  </svg>
-                </span>
-                <span>{t("iosInSafari", currentLang)}</span>
-              </div>
-              <div>
-                <span>{t("iosStep2", currentLang)} </span>
-                <strong style={{ color: "#E10600" }}>{t("iosAddToHome", currentLang)}</strong>
-              </div>
-            </div>
-          ) : (
-            /* Bouton Android / Chrome */
-            <button
-              onClick={handleInstallClick}
-              style={{
-                background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                padding: "9px 18px",
-                fontSize: "13px",
-                fontWeight: 800,
-                cursor: "pointer",
-                boxShadow: "0 4px 14px rgba(225, 6, 0, 0.32)",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              <Sparkles size={14} />
-              <span>{t("installButton", currentLang)}</span>
-            </button>
-          )}
-        </div>
-      </div>
+        <X size={16} />
+      </button>
     </div>
   );
 }

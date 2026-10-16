@@ -1,10 +1,16 @@
 "use client";
-// Zone de saisie : texte, pièces jointes, appareil photo, position et notes vocales
+// Zone de saisie : texte, pièces jointes, appareil photo, position et notes vocales.
+// Note vocale façon WhatsApp : maintenir le micro pour parler, relâcher pour envoyer,
+// glisser à gauche pour annuler, glisser vers le haut pour verrouiller (mains libres).
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, Image as ImageIcon, MapPin, Mic, Paperclip, Send, Trash2 } from "lucide-react";
+import { Camera, ChevronLeft, ChevronUp, Image as ImageIcon, Lock, MapPin, Mic, Paperclip, Send, Trash2 } from "lucide-react";
 import styles from "../messages.module.css";
 import { formatSeconds, readAsDataUrl } from "../_lib/chat-utils";
+
+const CANCEL_DISTANCE = 90; // px vers la gauche
+const LOCK_DISTANCE = 70; // px vers le haut
+const MIN_SECONDS = 1;
 
 export default function Composer({
   onSendText,
@@ -26,8 +32,10 @@ export default function Composer({
   const [draft, setDraft] = useState("");
   const [attachOpen, setAttachOpen] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [dragX, setDragX] = useState(0);
   const [seconds, setSeconds] = useState(0);
-  const [micError, setMicError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -37,6 +45,9 @@ export default function Composer({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelledRef = useRef(false);
   const secondsRef = useRef(0);
+  const holdingRef = useRef(false);
+  const lockedRef = useRef(false);
+  const startPoint = useRef<{ x: number; y: number } | null>(null);
 
   // Hauteur automatique du champ texte
   useEffect(() => {
@@ -45,6 +56,12 @@ export default function Composer({
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 132)}px`;
   }, [draft]);
+
+  useEffect(() => {
+    if (!hint) return;
+    const id = setTimeout(() => setHint(null), 3500);
+    return () => clearTimeout(id);
+  }, [hint]);
 
   const stopStream = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -72,22 +89,35 @@ export default function Composer({
     textRef.current?.focus();
   };
 
+  const resetRecordingUi = () => {
+    setRecording(false);
+    setLocked(false);
+    lockedRef.current = false;
+    setDragX(0);
+  };
+
   const startRecording = async () => {
     if (!guard()) return;
-    setMicError(null);
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      setMicError("L'enregistrement vocal n'est pas disponible sur ce navigateur.");
+      setHint("L'enregistrement vocal n'est pas disponible sur ce navigateur.");
       return;
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
       });
+      // Doigt déjà relevé pendant la demande d'autorisation : on n'enregistre pas
+      if (!holdingRef.current && !lockedRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        setHint("Maintenez le micro appuyé pour enregistrer, relâchez pour envoyer.");
+        return;
+      }
       streamRef.current = stream;
-      const mime = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/aac"].find(
-        (t) => MediaRecorder.isTypeSupported?.(t)
+      // MP4/AAC d'abord : lisible sur iPhone ET Android
+      const mime = ["audio/mp4", "audio/aac", "audio/webm;codecs=opus", "audio/webm"].find((t) =>
+        MediaRecorder.isTypeSupported?.(t)
       );
-      const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : undefined);
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 64000 } : undefined);
       chunksRef.current = [];
       cancelledRef.current = false;
       rec.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
@@ -95,35 +125,79 @@ export default function Composer({
         const secs = secondsRef.current;
         stopStream();
         if (cancelledRef.current || chunksRef.current.length === 0) return;
+        if (secs < MIN_SECONDS) {
+          setHint("Note trop courte : maintenez le micro pendant que vous parlez.");
+          return;
+        }
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || mime || "audio/webm" });
         onSendVoice(await readAsDataUrl(blob), secs);
       };
       recorderRef.current = rec;
-      rec.start(250);
+      rec.start(200);
       secondsRef.current = 0;
       setSeconds(0);
       setRecording(true);
+      navigator.vibrate?.(30);
       timerRef.current = setInterval(() => {
         secondsRef.current += 1;
         setSeconds(secondsRef.current);
-        // Limite de 2 minutes par note vocale
-        if (secondsRef.current >= 120) finishRecording();
+        if (secondsRef.current >= 120) finishRecording(); // 2 minutes maximum
       }, 1000);
     } catch {
-      setMicError("Autorisez l'accès au micro pour envoyer une note vocale.");
+      holdingRef.current = false;
+      setHint("Autorisez l'accès au micro pour envoyer une note vocale.");
     }
   };
 
   const finishRecording = () => {
-    setRecording(false);
+    holdingRef.current = false;
+    resetRecordingUi();
     if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+    else stopStream();
   };
 
   const cancelRecording = () => {
     cancelledRef.current = true;
-    setRecording(false);
+    holdingRef.current = false;
+    resetRecordingUi();
+    navigator.vibrate?.([20, 40, 20]);
     if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     else stopStream();
+  };
+
+  // ── Gestes sur le micro ─────────────────────────────────────
+  const onMicDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (lockedRef.current) return;
+    e.preventDefault();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    holdingRef.current = true;
+    startPoint.current = { x: e.clientX, y: e.clientY };
+    startRecording();
+  };
+
+  const onMicMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!holdingRef.current || !startPoint.current || lockedRef.current) return;
+    const dx = e.clientX - startPoint.current.x;
+    const dy = e.clientY - startPoint.current.y;
+    setDragX(Math.min(0, dx));
+    if (dx < -CANCEL_DISTANCE) cancelRecording();
+    else if (dy < -LOCK_DISTANCE && recording) {
+      lockedRef.current = true;
+      holdingRef.current = false;
+      setLocked(true);
+      setDragX(0);
+      navigator.vibrate?.(20);
+    }
+  };
+
+  const onMicUp = () => {
+    if (lockedRef.current) return; // verrouillé : on continue à enregistrer
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
+    if (recorderRef.current?.state === "recording") finishRecording();
+    // sinon : l'autorisation micro est encore en cours, startRecording annulera
   };
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,11 +207,13 @@ export default function Composer({
     if (file && guard()) onSendFile(file);
   };
 
+  const showMic = !draft.trim();
+
   return (
     <div className={styles.composerWrap}>
-      {micError && <div className={styles.composerError}>{micError}</div>}
+      {hint && <div className={styles.composerError}>{hint}</div>}
 
-      {attachOpen && (
+      {attachOpen && !recording && (
         <div className={styles.attachMenu}>
           <button type="button" onClick={() => galleryRef.current?.click()}>
             <span className={styles.attachIcon} style={{ background: "#7C3AED" }}>
@@ -169,22 +245,33 @@ export default function Composer({
       <input ref={galleryRef} type="file" accept="image/*,video/*" hidden onChange={onFile} />
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
 
-      {recording ? (
-        <div className={styles.composer}>
-          <button type="button" className={styles.iconBtn} onClick={cancelRecording} aria-label="Annuler la note vocale">
-            <Trash2 size={22} />
-          </button>
+      {/* Verrou affiché au-dessus du micro pendant l'appui */}
+      {recording && !locked && (
+        <div className={styles.lockHint} aria-hidden>
+          <Lock size={16} />
+          <ChevronUp size={16} />
+        </div>
+      )}
+
+      <div className={styles.composer}>
+        {recording ? (
           <div className={styles.recordingBar}>
+            {locked ? (
+              <button type="button" className={styles.iconBtn} onClick={cancelRecording} aria-label="Supprimer la note vocale">
+                <Trash2 size={21} />
+              </button>
+            ) : null}
             <span className={styles.recDot} />
             <span className={styles.recTime}>{formatSeconds(seconds)}</span>
-            <span className={styles.recHint}>Enregistrement…</span>
+            {locked ? (
+              <span className={styles.recHint}>Enregistrement…</span>
+            ) : (
+              <span className={styles.recSlide} style={{ transform: `translateX(${dragX}px)`, opacity: 1 + dragX / CANCEL_DISTANCE }}>
+                <ChevronLeft size={16} /> Glisser pour annuler
+              </span>
+            )}
           </div>
-          <button type="button" className={styles.sendBtn} onClick={finishRecording} aria-label="Envoyer la note vocale">
-            <Send size={20} />
-          </button>
-        </div>
-      ) : (
-        <div className={styles.composer}>
+        ) : (
           <div className={styles.inputPill}>
             <button
               type="button"
@@ -212,23 +299,38 @@ export default function Composer({
               }}
               onFocus={() => setAttachOpen(false)}
             />
-            {!draft.trim() && (
+            {showMic && (
               <button type="button" className={styles.iconBtn} onClick={() => cameraRef.current?.click()} aria-label="Prendre une photo">
                 <Camera size={21} />
               </button>
             )}
           </div>
-          {draft.trim() ? (
-            <button type="button" className={styles.sendBtn} onClick={send} aria-label="Envoyer">
-              <Send size={20} />
-            </button>
-          ) : (
-            <button type="button" className={styles.sendBtn} onClick={startRecording} aria-label="Enregistrer une note vocale">
-              <Mic size={21} />
-            </button>
-          )}
-        </div>
-      )}
+        )}
+
+        {locked ? (
+          <button type="button" className={styles.sendBtn} onClick={finishRecording} aria-label="Envoyer la note vocale">
+            <Send size={20} />
+          </button>
+        ) : showMic ? (
+          <button
+            type="button"
+            className={`${styles.sendBtn} ${recording ? styles.micActive : ""}`}
+            onPointerDown={onMicDown}
+            onPointerMove={onMicMove}
+            onPointerUp={onMicUp}
+            onPointerCancel={onMicUp}
+            onContextMenu={(e) => e.preventDefault()}
+            aria-label="Maintenir pour enregistrer une note vocale"
+            style={{ touchAction: "none" }}
+          >
+            <Mic size={recording ? 26 : 21} />
+          </button>
+        ) : (
+          <button type="button" className={styles.sendBtn} onClick={send} aria-label="Envoyer">
+            <Send size={20} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

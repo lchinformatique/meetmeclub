@@ -168,7 +168,7 @@ export default function DecouvertePage() {
         const res = await fetch("/api/likes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ toUserId: profile.id }),
+          body: JSON.stringify({ toUserId: profile.userId || profile.id }),
         });
         if (res.ok) {
           const data = await res.json();

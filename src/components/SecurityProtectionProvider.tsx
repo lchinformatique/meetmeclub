@@ -11,6 +11,7 @@ export default function SecurityProtectionProvider({
 }) {
   const [warning, setWarning] = useState<string | null>(null);
   const [screenShieldActive, setScreenShieldActive] = useState(false);
+  const [privacyShield, setPrivacyShield] = useState(false);
 
   useEffect(() => {
     // 1. Intercept and block right click context menu on images and profile containers
@@ -111,13 +112,22 @@ export default function SecurityProtectionProvider({
       }
     };
 
+    // 6. Écran masqué dès que l'application passe en arrière-plan : l'aperçu du
+    //    sélecteur d'applications (et beaucoup d'outils de capture) ne montre rien.
+    const handleVisibility = () => setPrivacyShield(document.visibilityState === "hidden");
+    const handleFocus = () => setPrivacyShield(false);
+
     document.addEventListener("contextmenu", handleContextMenu);
     document.addEventListener("dragstart", handleDragStart);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
     document.addEventListener("copy", handleCopy);
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("dragstart", handleDragStart);
       document.removeEventListener("keydown", handleKeyDown);
@@ -136,6 +146,25 @@ export default function SecurityProtectionProvider({
   return (
     <>
       {children}
+
+      {/* Masque de confidentialité (application en arrière-plan / fenêtre inactive) */}
+      {privacyShield && !screenShieldActive && (
+        <div
+          aria-hidden
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 999998,
+            background: "linear-gradient(135deg, #071530 0%, #0B2559 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-icon.png" alt="" width={90} height={90} style={{ borderRadius: "50%", background: "#fff", padding: 8 }} />
+        </div>
+      )}
 
       {/* Screen Shield when Screenshot key is hit */}
       {screenShieldActive && (

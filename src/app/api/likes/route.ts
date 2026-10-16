@@ -2,7 +2,7 @@
 // POST /api/likes — like a profile (creates a match if mutual)
 // GET  /api/likes — list profiles that liked you
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
@@ -44,6 +44,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Nouveau like ? (pour ne prévenir le membre qu'une seule fois)
+    const already = await (prisma as any).like
+      .findUnique({ where: { fromUserId_toUserId: { fromUserId: session.userId, toUserId } } })
+      .catch(() => null);
+
     // Upsert the like (idempotent)
     await (prisma as any).like.upsert({
       where: {
@@ -84,6 +89,39 @@ export async function POST(req: NextRequest) {
       });
 
       isMatch = true;
+    }
+
+    if (!already) {
+      after(async () => {
+        try {
+          const { getProfileByUserId } = await import("@/lib/db-store");
+          const { getSupabaseAdmin, getProfileFromSupabase } = await import("@/lib/supabase-server");
+          const { broadcastToUser } = await import("@/lib/realtime-server");
+          const { sendPushToUser } = await import("@/lib/push-server");
+          const me = getProfileByUserId(session.userId) || (await getProfileFromSupabase(session.userId));
+          const name = me?.firstName || "Un membre";
+
+          // Compteur de likes affiché sur le profil
+          const admin = getSupabaseAdmin();
+          const { data: target } = await admin.from("profiles").select("id, likesCount").eq("userId", toUserId).maybeSingle();
+          if (target) await admin.from("profiles").update({ likesCount: (target.likesCount || 0) + 1 }).eq("id", target.id);
+
+          await Promise.allSettled([
+            broadcastToUser(toUserId, "like", { fromUserId: session.userId, fromName: name, isMatch }),
+            sendPushToUser(toUserId, {
+              kind: "message",
+              title: isMatch ? "💞 C'est réciproque !" : "❤️ Nouveau like",
+              body: isMatch
+                ? `${name} et vous vous plaisez mutuellement. Écrivez-lui !`
+                : `${name} a aimé votre profil.`,
+              url: isMatch ? `/messages?contact=${encodeURIComponent(session.userId)}` : "/decouverte",
+              tag: `like-${session.userId}`,
+            }),
+          ]);
+        } catch (e) {
+          console.warn("[likes] notification", e);
+        }
+      });
     }
 
     return NextResponse.json({ liked: true, isMatch }, { status: 201 });
