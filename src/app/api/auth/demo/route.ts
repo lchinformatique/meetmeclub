@@ -12,9 +12,9 @@ export async function POST() {
   if (!getProfileByUserId(userId)) {
     saveProfile({
       userId,
-      firstName: "Armand",
-      lastName: "Adzra",
-      pseudo: "Armand_MMC",
+      firstName: "Koffi",
+      lastName: "Mensah",
+      pseudo: "Koffi_MMC",
       gender: "MALE",
       age: 30,
       phone: "+22890123456",

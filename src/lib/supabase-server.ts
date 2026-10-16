@@ -144,14 +144,6 @@ export async function getProfileFromSupabase(userId: string) {
       if (byPseudo) profile = byPseudo;
     }
 
-    if (!profile && (userId === "armandoadzra" || userId === "armandadzra")) {
-      const { data: byAlias } = await admin
-        .from("profiles")
-        .select("*")
-        .or("userId.eq.armandadzra,userId.eq.armandoadzra,pseudo.ilike.%armand%")
-        .maybeSingle();
-      if (byAlias) profile = byAlias;
-    }
 
     if (!profile) {
       const cleanLower = userId.toLowerCase().trim();
@@ -338,14 +330,6 @@ export async function upsertProfileInSupabase(
       if (byPseudo) existing = byPseudo;
     }
 
-    if (!existing && (userId === "armandoadzra" || userId === "armandadzra")) {
-      const { data: byAlias } = await admin
-        .from("profiles")
-        .select("*")
-        .or("userId.eq.armandadzra,userId.eq.armandoadzra,pseudo.ilike.%armand%")
-        .maybeSingle();
-      if (byAlias) existing = byAlias;
-    }
 
     let profileId = existing?.id;
 

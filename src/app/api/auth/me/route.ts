@@ -71,7 +71,7 @@ export async function GET() {
 
     let resolvedFirstName = local?.firstName || user?.profile?.firstName || session.email?.split("@")[0] || "Membre";
     if (resolvedFirstName.startsWith("google_")) {
-      resolvedFirstName = "Armando";
+      resolvedFirstName = "Membre";
     }
     const resolvedCity = local?.city || user?.profile?.city || "Lomé";
     const validPhoto =

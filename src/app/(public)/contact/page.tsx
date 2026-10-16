@@ -124,7 +124,7 @@ export default function ContactPage() {
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Armand Adzra"
+                    placeholder="Ex: Koffi Mensah"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     style={{ width: "100%", padding: "12px 14px", borderRadius: "10px", border: "1px solid #CBD5E1", fontSize: "14px" }}

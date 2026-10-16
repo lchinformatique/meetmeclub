@@ -36,8 +36,6 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         OR: [
           { id: session.userId },
           { profile: { pseudo: { equals: session.userId, mode: "insensitive" as const } } },
-          ...(session.userId === "armandoadzra" ? [{ id: "armandadzra" }] : []),
-          ...(session.userId === "armandadzra" ? [{ id: "armandoadzra" }] : []),
           ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
         ],
       },
@@ -210,8 +208,8 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   const validPhotos = (profile.photos || []).filter((p) => p.url && !p.url.includes("dicebear.com/7.x/initials"));
   const mainPhoto = validPhotos.find((p) => p.isMain) || validPhotos[0];
 
-  const displayName = (profile.firstName || "Membre").startsWith("google_") ? "Armando" : (profile.firstName || "Membre");
-  const displayPseudo = (profile.pseudo || "").startsWith("google_") ? "armandoadzra" : profile.pseudo;
+  const displayName = (profile.firstName || "Membre").startsWith("google_") ? "Nouveau Membre" : (profile.firstName || "Membre");
+  const displayPseudo = (profile.pseudo || "").startsWith("google_") ? "membre" : profile.pseudo;
   const cleanProfile = {
     ...profile,
     firstName: displayName,

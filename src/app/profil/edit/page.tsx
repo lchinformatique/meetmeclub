@@ -204,8 +204,8 @@ export default function ProfilEditPage() {
 
           let cleanFirst = data.profile.firstName || "";
           let cleanPseudo = data.profile.pseudo || "";
-          if (cleanFirst.startsWith("google_")) cleanFirst = "Armando";
-          if (cleanPseudo.startsWith("google_")) cleanPseudo = "armandoadzra";
+          if (cleanFirst.startsWith("google_")) cleanFirst = "Nouveau Membre";
+          if (cleanPseudo.startsWith("google_")) cleanPseudo = "membre";
 
           setForm({
             firstName: cleanFirst,

@@ -1521,15 +1521,15 @@ function MessagesContent() {
                 zIndex: 40,
               }}
             >
-              {/* Left: Contact Info */}
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+              {/* Left: Partner Profile Info (Back arrow + Avatar + Name + Online presence) */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1, marginRight: "12px" }}>
                 {/* Bouton retour vers la liste sur smartphone */}
                 <button
                   type="button"
                   onClick={() => setMobileView("list")}
                   className="mobile-back-to-list-btn"
                   style={{
-                    background: "transparent",
+                    background: "#F1F5F9",
                     border: "none",
                     borderRadius: "50%",
                     width: "36px",
@@ -1540,15 +1540,21 @@ function MessagesContent() {
                     cursor: "pointer",
                     color: "#0F172A",
                     flexShrink: 0,
+                    transition: "all 0.15s ease",
                   }}
                   title="Retour aux conversations"
+                  aria-label="Retour aux conversations"
                 >
-                  <ArrowLeft size={22} />
+                  <ArrowLeft size={20} />
                 </button>
 
-                {/* Avatar with status indicator */}
-                <div style={{ position: "relative", flexShrink: 0 }}>
-                  {activeConv.photoUrl && (activeConv.photoUrl.startsWith("http") || activeConv.photoUrl.startsWith("/")) ? (
+                {/* Avatar cliquable pour voir profil */}
+                <div
+                  onClick={() => setPartnerModalOpen(true)}
+                  style={{ position: "relative", flexShrink: 0, cursor: "pointer" }}
+                  title="Voir les photos et critères de ce profil"
+                >
+                  {activeConv.photoUrl && (activeConv.photoUrl.startsWith("http") || activeConv.photoUrl.startsWith("/")) && !activeConv.photoUrl.includes("dicebear.com/7.x/initials") ? (
                     <Image
                       src={activeConv.photoUrl}
                       alt={activeConv.firstName}
@@ -1557,7 +1563,7 @@ function MessagesContent() {
                       style={{
                         borderRadius: "50%",
                         objectFit: "cover",
-                        border: "2px solid #CBD5E1",
+                        border: "2px solid #E2E8F0",
                         display: "block",
                       }}
                     />
@@ -1567,17 +1573,15 @@ function MessagesContent() {
                         width: "44px",
                         height: "44px",
                         borderRadius: "50%",
-                        background: "#EEF2FB",
-                        color: "#0B2559",
-                        fontWeight: 800,
-                        fontSize: "17px",
+                        background: "linear-gradient(135deg, #0B2559 0%, #1E3A8A 100%)",
+                        color: "white",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        border: "2px solid #CBD5E1",
+                        border: "2px solid #E2E8F0",
                       }}
                     >
-                      {activeConv.firstName ? activeConv.firstName.charAt(0).toUpperCase() : "M"}
+                      <User size={22} style={{ color: "rgba(255,255,255,0.9)" }} />
                     </div>
                   )}
                   {activeConv.isOnline && (
@@ -1586,220 +1590,193 @@ function MessagesContent() {
                         position: "absolute",
                         bottom: "1px",
                         right: "1px",
-                        width: "11px",
-                        height: "11px",
+                        width: "12px",
+                        height: "12px",
                         background: "#10B981",
                         border: "2px solid white",
                         borderRadius: "50%",
+                        boxShadow: "0 0 4px rgba(16,185,129,0.5)",
                       }}
                     />
                   )}
                 </div>
 
-                {/* Name & Presence (Clickable to open Interlocutor criteria/photos) */}
+                {/* Nom, Vérification & Présence (Cliquer ouvre le profil du partenaire) */}
                 <div
                   onClick={() => setPartnerModalOpen(true)}
                   style={{ minWidth: 0, cursor: "pointer", flex: 1 }}
-                  title="Voir le profil complet et les photos"
+                  title="Voir les informations complètes et critères"
                 >
-                  <div style={{ fontWeight: 800, fontSize: "15px", color: "#0F172A", display: "flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    <span>{activeConv.firstName}</span>
-                    <span style={{ fontSize: "11px", color: "#059669", fontWeight: 700, flexShrink: 0 }}>✓</span>
+                  <div style={{ fontWeight: 800, fontSize: "15px", color: "#0F172A", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{activeConv.firstName}</span>
+                    <span style={{ fontSize: "11px", color: "#10B981", background: "#ECFDF5", padding: "1px 6px", borderRadius: "100px", fontWeight: 700, flexShrink: 0 }}>
+                      ✓ Vérifié
+                    </span>
                   </div>
-                  <div style={{ fontSize: "11.5px", color: activeConv.isOnline ? "#059669" : "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
-                    <span style={{ whiteSpace: "nowrap" }}>{activeConv.isOnline ? "● En ligne" : "● Vu récemment"}</span>
-                    <span style={{ whiteSpace: "nowrap", fontWeight: 700 }}>· Lomé</span>
+                  <div style={{ fontSize: "12px", color: activeConv.isOnline ? "#059669" : "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap", marginTop: "1px" }}>
+                    <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: activeConv.isOnline ? "#10B981" : "#94A3B8" }} />
+                    <span style={{ whiteSpace: "nowrap" }}>{activeConv.isOnline ? "En ligne" : "Vu récemment"}</span>
+                    <span style={{ color: "#94A3B8" }}>·</span>
+                    <span style={{ whiteSpace: "nowrap", color: "#64748B" }}>Lomé</span>
                   </div>
                 </div>
               </div>
 
-              {/* Right: WhatsApp-Style Action Icons */}
-              <div style={{ display: "flex", gap: "6px", alignItems: "center", flexShrink: 0, position: "relative" }}>
-                {/* 👤 Profil Partenaire (Critères & Galerie) */}
-                <button
-                  type="button"
-                  onClick={() => setPartnerModalOpen(true)}
-                  style={{
-                    background: "#EFF6FF",
-                    border: "1.5px solid #BFDBFE",
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#1D4ED8",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                  }}
-                  title="Voir les critères, bio et photos de ce profil"
-                  aria-label="Profil du partenaire"
-                >
-                  <User size={16} />
-                </button>
-
-                {/* 👤 Mon Compte (Fixé en haut avec photo pour référence directe) */}
-                <Link
-                  href="/profil"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    border: "2px solid #0B2559",
-                    background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
-                    color: "white",
-                    fontWeight: 800,
-                    fontSize: "13px",
-                    textDecoration: "none",
-                    flexShrink: 0,
-                  }}
-                  title="Mon Compte & Réglages"
-                  aria-label="Mon Compte"
-                >
-                  {myProfile?.photos?.find((p: any) => p.isMain)?.url || myProfile?.photos?.[0]?.url ? (
-                    <Image
-                      src={myProfile.photos.find((p: any) => p.isMain)?.url || myProfile.photos[0].url}
-                      alt="Mon Profil"
-                      width={36}
-                      height={36}
-                      unoptimized
-                      style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                    />
-                  ) : (
-                    <span>{(myProfile?.firstName || "M").charAt(0).toUpperCase()}</span>
-                  )}
-                </Link>
-
-                {/* 📞 WhatsApp Audio Call Button */}
+              {/* Right: Actions de Communication Spacieuses & Claires (Style Vrai Chat App) */}
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexShrink: 0, position: "relative" }}>
+                {/* 📞 Bouton Appel Vocal */}
                 <button
                   type="button"
                   onClick={startAudioCall}
                   style={{
                     background: isVip ? "#ECFDF5" : "#F8FAFC",
-                    border: isVip ? "1.5px solid #10B981" : "1px solid #E2E8F0",
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "50%",
+                    border: isVip ? "1.5px solid #A7F3D0" : "1px solid #E2E8F0",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "12px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: isVip ? "#059669" : "#64748B",
-                    transition: "all 0.15s ease",
+                    color: isVip ? "#059669" : "#475569",
+                    transition: "all 0.18s ease",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                   }}
-                  title={isVip ? "Appel vocal WhatsApp sécurisé" : "Appel vocal direct (Pass VIP requis)"}
+                  title={isVip ? "Appel vocal sécurisé" : "Appel vocal direct (Pass requis)"}
                   aria-label="Appel vocal"
                 >
-                  <Phone size={18} />
+                  <Phone size={19} />
                 </button>
 
-                {/* 📹 WhatsApp Video Call Button */}
+                {/* 📹 Bouton Appel Vidéo Direct */}
                 <button
                   type="button"
                   onClick={startVideoCall}
                   style={{
                     background: isVip ? "#ECFDF5" : "#F8FAFC",
-                    border: isVip ? "1.5px solid #10B981" : "1px solid #E2E8F0",
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "50%",
+                    border: isVip ? "1.5px solid #A7F3D0" : "1px solid #E2E8F0",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "12px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: isVip ? "#059669" : "#64748B",
-                    transition: "all 0.15s ease",
+                    color: isVip ? "#059669" : "#475569",
+                    transition: "all 0.18s ease",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                   }}
-                  title={isVip ? "Appel Vidéo WhatsApp sécurisé" : "Appel Vidéo direct (Pass VIP requis)"}
+                  title={isVip ? "Appel Vidéo en direct" : "Appel Vidéo direct (Pass requis)"}
                   aria-label="Appel Vidéo"
                 >
-                  <Video size={19} />
+                  <Video size={20} />
                 </button>
 
-                {/* 📅 Sortie / Rendez-vous */}
+                {/* 📅 Bouton Proposer une sortie / RDV */}
                 <Link
                   href={`/rendez-vous/nouveau?avec=${activeConv.participantId}`}
                   style={{
-                    background: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "50%",
+                    background: "#EFF6FF",
+                    border: "1.5px solid #BFDBFE",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "12px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#0B2559",
+                    color: "#1D4ED8",
                     textDecoration: "none",
-                    transition: "all 0.15s ease",
+                    transition: "all 0.18s ease",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                   }}
-                  title="Proposer une sortie à Lomé"
+                  title="Proposer une sortie ou un rendez-vous à Lomé"
                   aria-label="Proposer une sortie"
                 >
-                  <Calendar size={18} />
+                  <Calendar size={19} />
                 </Link>
 
-                {/* ⋮ WhatsApp 3-dots Menu Button */}
+                {/* ⋮ Bouton Menu Options */}
                 <button
                   type="button"
                   onClick={() => setChatMenuOpen(!chatMenuOpen)}
                   style={{
                     background: chatMenuOpen ? "#E2E8F0" : "#F8FAFC",
                     border: "1px solid #E2E8F0",
-                    width: "38px",
-                    height: "38px",
-                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "12px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
                     color: "#0F172A",
-                    transition: "all 0.15s ease",
+                    transition: "all 0.18s ease",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                   }}
                   title="Options de discussion"
                   aria-label="Options de discussion"
                 >
-                  <MoreVertical size={19} />
+                  <MoreVertical size={20} />
                 </button>
 
-                {/* WhatsApp Dropdown Menu */}
+                {/* Dropdown Menu Moderne */}
                 {chatMenuOpen && (
                   <div
                     style={{
                       position: "absolute",
-                      top: "46px",
+                      top: "48px",
                       right: "0",
                       background: "white",
                       borderRadius: "14px",
                       boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
                       border: "1px solid #E2E8F0",
                       padding: "8px 0",
-                      minWidth: "240px",
+                      minWidth: "250px",
                       zIndex: 100,
                       display: "flex",
                       flexDirection: "column",
                     }}
                   >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPartnerModalOpen(true);
+                        setChatMenuOpen(false);
+                      }}
+                      style={{
+                        padding: "10px 16px",
+                        background: "none",
+                        border: "none",
+                        textAlign: "left",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#0B2559",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <User size={16} style={{ color: "#2563EB" }} />
+                      <span>Voir le profil de {activeConv.firstName}</span>
+                    </button>
+
                     <Link
                       href="/profil"
                       onClick={() => setChatMenuOpen(false)}
                       style={{
                         padding: "10px 16px",
                         fontSize: "13px",
-                        fontWeight: 700,
-                        color: "#0B2559",
+                        fontWeight: 600,
+                        color: "#475569",
                         textDecoration: "none",
                         display: "flex",
                         alignItems: "center",
                         gap: "10px",
-                        background: "#F8FAFC",
                       }}
                     >
-                      <User size={16} style={{ color: "#2563EB" }} />
-                      <span>Mon Profil & Paramètres du compte</span>
+                      <span>⚙️</span>
+                      <span>Mon Profil & Paramètres</span>
                     </Link>
 
                     <div style={{ height: "1px", background: "#F1F5F9", margin: "4px 0" }} />

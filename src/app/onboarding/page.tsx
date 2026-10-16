@@ -452,11 +452,11 @@ export default function OnboardingPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
                 <div className="input-group">
                   <label htmlFor="firstName" className="input-label" style={{ fontWeight: 700, color: "#0F172A" }}>Prénom *</label>
-                  <input id="firstName" type="text" className="input" placeholder="Ex: Armand" value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} autoFocus />
+                  <input id="firstName" type="text" className="input" placeholder="Ex: Koffi" value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} autoFocus />
                 </div>
                 <div className="input-group">
                   <label htmlFor="lastName" className="input-label" style={{ fontWeight: 700, color: "#0F172A" }}>Nom de famille *</label>
-                  <input id="lastName" type="text" className="input" placeholder="Ex: Adzra" value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
+                  <input id="lastName" type="text" className="input" placeholder="Ex: Mensah" value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
                 </div>
               </div>
 
