@@ -1,0 +1,414 @@
+"use client";
+// src/components/realtime/RealtimeProvider.tsx
+// Couche temps réel globale : présence en ligne, messages non lus, notifications
+// (in-app + téléphone) et appels audio/vidéo — disponible sur toutes les pages.
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+import { BellRing, X } from "lucide-react";
+import styles from "./realtime.module.css";
+import { joinPresence, openInbox, removeChannel, sendToUser, type PresenceInfo } from "@/lib/realtime-client";
+import { useCallManager, type CallKind, type CallPeer } from "./CallManager";
+import { playMessageChime } from "./tones";
+
+export interface RealtimeMe {
+  userId: string;
+  firstName: string;
+  photoUrl?: string | null;
+  city?: string;
+  plan?: string;
+}
+
+type Listener = (event: string, payload: any) => void;
+
+interface Toast {
+  id: string;
+  conversationId: string;
+  title: string;
+  body: string;
+  photoUrl?: string;
+}
+
+interface RealtimeContextValue {
+  me: RealtimeMe | null;
+  online: Record<string, PresenceInfo>;
+  isOnline: (userId?: string | null) => boolean;
+  unreadTotal: number;
+  unreadByConversation: Record<string, number>;
+  refreshUnread: () => Promise<void>;
+  markConversationRead: (conversationId: string) => void;
+  setActiveConversation: (conversationId: string | null) => void;
+  subscribe: (listener: Listener) => () => void;
+  sendTyping: (toUserId: string, conversationId: string) => void;
+  startCall: (peer: CallPeer, kind: CallKind, conversationId?: string) => void;
+  inCall: boolean;
+  push: { supported: boolean; permission: NotificationPermission | "unsupported"; enable: () => Promise<boolean> };
+}
+
+const RealtimeContext = createContext<RealtimeContextValue | null>(null);
+
+const NOOP_CONTEXT: RealtimeContextValue = {
+  me: null,
+  online: {},
+  isOnline: () => false,
+  unreadTotal: 0,
+  unreadByConversation: {},
+  refreshUnread: async () => {},
+  markConversationRead: () => {},
+  setActiveConversation: () => {},
+  subscribe: () => () => {},
+  sendTyping: () => {},
+  startCall: () => {},
+  inCall: false,
+  push: { supported: false, permission: "unsupported", enable: async () => false },
+};
+
+export function useRealtime() {
+  return useContext(RealtimeContext) || NOOP_CONTEXT;
+}
+
+function urlBase64ToUint8Array(base64: string) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+
+async function subscribeDeviceToPush(): Promise<boolean> {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !VAPID_PUBLIC_KEY) return false;
+  const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+  await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+  }
+  const res = await fetch("/api/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription: sub.toJSON() }),
+  });
+  return res.ok;
+}
+
+export default function RealtimeProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [me, setMe] = useState<RealtimeMe | null>(null);
+  const [online, setOnline] = useState<Record<string, PresenceInfo>>({});
+  const [unreadByConversation, setUnreadByConversation] = useState<Record<string, number>>({});
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [pushBannerDismissed, setPushBannerDismissed] = useState(true);
+  const listeners = useRef(new Set<Listener>());
+  const activeConvRef = useRef<string | null>(null);
+  const lastTypingSent = useRef<Record<string, number>>({});
+
+  const pushSupported =
+    typeof window !== "undefined" && "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
+
+  // ── 1. Identité du membre connecté ───────────────────────────
+  useEffect(() => {
+    if (me) return;
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.authenticated || !data.user?.id) return;
+        setMe({
+          userId: data.user.id,
+          firstName: data.user.firstName || "Membre",
+          photoUrl: data.user.avatarUrl || null,
+          city: data.user.city,
+          plan: data.user.subscriptionTier,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // Re-vérifie après une navigation (ex. juste après la connexion)
+  }, [pathname, me]);
+
+  // Déconnexion → on coupe tout (les pages de connexion ne sont accessibles qu'hors session)
+  useEffect(() => {
+    if (pathname?.startsWith("/connexion") || pathname?.startsWith("/inscription")) setMe(null);
+  }, [pathname]);
+
+  const isOnline = useCallback((userId?: string | null) => Boolean(userId && online[userId]), [online]);
+
+  const call = useCallManager(
+    me ? { userId: me.userId, firstName: me.firstName, photoUrl: me.photoUrl } : null,
+    isOnline
+  );
+  const handleSignalRef = useRef(call.handleSignal);
+  useEffect(() => {
+    handleSignalRef.current = call.handleSignal;
+  }, [call.handleSignal]);
+
+  // ── 2. Non-lus ───────────────────────────────────────────────
+  const refreshUnread = useCallback(async () => {
+    try {
+      const res = await fetch("/api/messages/unread", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const map: Record<string, number> = { ...(data.byConversation || {}) };
+      if (activeConvRef.current && document.visibilityState === "visible") delete map[activeConvRef.current];
+      setUnreadByConversation(map);
+    } catch {}
+  }, []);
+
+  const markConversationRead = useCallback((conversationId: string) => {
+    setUnreadByConversation((prev) => {
+      if (!prev[conversationId]) return prev;
+      const next = { ...prev };
+      delete next[conversationId];
+      return next;
+    });
+    fetch("/api/messages/read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId }),
+    }).catch(() => {});
+  }, []);
+
+  const setActiveConversation = useCallback(
+    (conversationId: string | null) => {
+      activeConvRef.current = conversationId;
+      if (conversationId) markConversationRead(conversationId);
+    },
+    [markConversationRead]
+  );
+
+  useEffect(() => {
+    if (!me) return;
+    refreshUnread();
+    const id = setInterval(refreshUnread, 60_000);
+    const onVisible = () => document.visibilityState === "visible" && refreshUnread();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [me, refreshUnread]);
+
+  // Pastille sur l'icône de l'application (Android / ordinateur)
+  const unreadTotal = useMemo(
+    () => Object.values(unreadByConversation).reduce((s, n) => s + n, 0),
+    [unreadByConversation]
+  );
+  useEffect(() => {
+    const nav = navigator as any;
+    if (unreadTotal > 0) nav.setAppBadge?.(unreadTotal).catch?.(() => {});
+    else nav.clearAppBadge?.().catch?.(() => {});
+  }, [unreadTotal]);
+
+  // ── 3. Présence + boîte de réception temps réel ──────────────
+  const pathnameRef = useRef(pathname);
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!me) return;
+    let presence: RealtimeChannel | null = null;
+    let inbox: RealtimeChannel | null = null;
+
+    presence = joinPresence(
+      { userId: me.userId, firstName: me.firstName, photoUrl: me.photoUrl, city: me.city, plan: me.plan },
+      (state) => {
+        const others = { ...state };
+        delete others[me.userId];
+        setOnline(others);
+      }
+    );
+
+    inbox = openInbox(me.userId, (event, payload) => {
+      if (event.startsWith("call-")) {
+        handleSignalRef.current(event, payload);
+      } else if (event === "message") {
+        const convId = payload?.conversationId as string;
+        const viewing =
+          convId &&
+          activeConvRef.current === convId &&
+          document.visibilityState === "visible" &&
+          pathnameRef.current?.startsWith("/messages");
+        if (viewing) {
+          markConversationRead(convId);
+        } else if (convId) {
+          setUnreadByConversation((prev) => ({ ...prev, [convId]: (prev[convId] || 0) + 1 }));
+          playMessageChime();
+          if (document.visibilityState === "visible") {
+            const toast: Toast = {
+              id: `${payload.messageId || Date.now()}`,
+              conversationId: convId,
+              title: payload.senderName || "Nouveau message",
+              body: "vous a envoyé un message",
+              photoUrl: payload.senderPhoto,
+            };
+            setToasts((prev) => [...prev.filter((t) => t.conversationId !== convId), toast].slice(-3));
+            setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== toast.id)), 6000);
+          }
+        }
+      }
+      listeners.current.forEach((l) => l(event, payload));
+    });
+
+    return () => {
+      removeChannel(presence);
+      removeChannel(inbox);
+      setOnline({});
+    };
+  }, [me, markConversationRead]);
+
+  const subscribe = useCallback((listener: Listener) => {
+    listeners.current.add(listener);
+    return () => {
+      listeners.current.delete(listener);
+    };
+  }, []);
+
+  const sendTyping = useCallback(
+    (toUserId: string, conversationId: string) => {
+      if (!me || !toUserId) return;
+      const now = Date.now();
+      if (now - (lastTypingSent.current[conversationId] || 0) < 2500) return;
+      lastTypingSent.current[conversationId] = now;
+      sendToUser(toUserId, "typing", { conversationId, userId: me.userId });
+    },
+    [me]
+  );
+
+  // ── 4. Notifications téléphone (Web Push) ────────────────────
+  useEffect(() => {
+    if (!me || !pushSupported) return;
+    setPushPermission(Notification.permission);
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem("mmc_push_banner_dismissed") === "1";
+    } catch {}
+    setPushBannerDismissed(dismissed);
+    // Appareil déjà autorisé : on (ré)associe l'abonnement au membre connecté
+    if (Notification.permission === "granted") subscribeDeviceToPush().catch(() => {});
+  }, [me, pushSupported]);
+
+  const enablePush = useCallback(async () => {
+    if (!pushSupported) return false;
+    const permission = await Notification.requestPermission();
+    setPushPermission(permission);
+    if (permission !== "granted") return false;
+    try {
+      return await subscribeDeviceToPush();
+    } catch (err) {
+      console.warn("[push] subscribe failed", err);
+      return false;
+    }
+  }, [pushSupported]);
+
+  const dismissPushBanner = () => {
+    setPushBannerDismissed(true);
+    try {
+      localStorage.setItem("mmc_push_banner_dismissed", "1");
+    } catch {}
+  };
+
+  const isIos = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone =
+    typeof window !== "undefined" &&
+    (window.matchMedia?.("(display-mode: standalone)").matches || (navigator as any).standalone === true);
+  const showPushBanner =
+    Boolean(me) &&
+    !pushBannerDismissed &&
+    !pathname?.startsWith("/messages") && // la messagerie a sa propre invite, sans masquer la saisie
+    !pathname?.startsWith("/onboarding") &&
+    ((pushSupported && pushPermission === "default") || (isIos && !isStandalone && !pushSupported));
+
+  const value: RealtimeContextValue = {
+    me,
+    online,
+    isOnline,
+    unreadTotal,
+    unreadByConversation,
+    refreshUnread,
+    markConversationRead,
+    setActiveConversation,
+    subscribe,
+    sendTyping,
+    startCall: call.startCall,
+    inCall: call.inCall,
+    push: { supported: pushSupported, permission: pushPermission, enable: enablePush },
+  };
+
+  return (
+    <RealtimeContext.Provider value={value}>
+      {children}
+
+      {/* Toasts « nouveau message » */}
+      {toasts.length > 0 && (
+        <div className={styles.toastStack} aria-live="polite">
+          {toasts.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={styles.toast}
+              onClick={() => {
+                setToasts((prev) => prev.filter((x) => x.id !== t.id));
+                router.push(`/messages?conv=${encodeURIComponent(t.conversationId)}`);
+              }}
+            >
+              {t.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={t.photoUrl} alt="" className={styles.toastAvatar} />
+              ) : (
+                <span className={styles.toastAvatarFallback}>{t.title.charAt(0).toUpperCase()}</span>
+              )}
+              <span className={styles.toastText}>
+                <strong>{t.title}</strong>
+                <span>{t.body}</span>
+              </span>
+              <span className={styles.toastCta}>Lire</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Invitation à activer les notifications sur le téléphone */}
+      {showPushBanner && (
+        <div className={styles.pushBanner} role="dialog" aria-label="Activer les notifications">
+          <div className={styles.pushIcon}>
+            <BellRing size={20} />
+          </div>
+          <div className={styles.pushText}>
+            <strong>Ne manquez aucun message</strong>
+            <span>
+              {isIos && !isStandalone && !pushSupported
+                ? "Sur iPhone : touchez Partager puis « Sur l'écran d'accueil », ouvrez l'app et activez les notifications."
+                : "Recevez une notification sur votre téléphone à chaque message ou appel."}
+            </span>
+          </div>
+          {pushSupported && (
+            <button
+              type="button"
+              className={styles.pushBtn}
+              onClick={async () => {
+                await enablePush();
+                dismissPushBanner();
+              }}
+            >
+              Activer
+            </button>
+          )}
+          <button type="button" className={styles.pushClose} onClick={dismissPushBanner} aria-label="Fermer">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {call.ui}
+    </RealtimeContext.Provider>
+  );
+}

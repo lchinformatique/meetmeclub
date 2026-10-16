@@ -324,6 +324,61 @@ export async function ensureUserExistsInSupabase(
   }
 }
 
+// ── Écriture tolérante : une colonne absente ou une valeur refusée ne doit
+// jamais faire perdre TOUT l'enregistrement du profil ─────────────────────
+const GENDERS = ["MALE", "FEMALE", "OTHER"];
+const GOALS = ["FRIENDSHIP", "SERIOUS", "MARRIAGE", "CASUAL", "EXCHANGE"];
+
+function sanitizeProfilePayload(payload: Record<string, any>) {
+  const out = { ...payload };
+  for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k];
+  if (out.gender && !GENDERS.includes(out.gender)) out.gender = "OTHER";
+  if (out.relationshipGoal && !GOALS.includes(out.relationshipGoal)) out.relationshipGoal = "SERIOUS";
+  if (typeof out.height === "string") out.height = parseInt(out.height, 10) || null;
+  return out;
+}
+
+async function writeProfileResilient(
+  write: (payload: Record<string, any>) => PromiseLike<{ data: any; error: any }>,
+  initial: Record<string, any>
+) {
+  let payload = sanitizeProfilePayload(initial);
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const { data, error } = await write(payload);
+    if (!error) return { data, error: null };
+
+    const msg = `${error.message || ""} ${error.details || ""}`;
+    const missingCol = msg.match(/Could not find the '([^']+)' column/);
+    if (missingCol && missingCol[1] in payload) {
+      const { [missingCol[1]]: _dropped, ...rest } = payload;
+      payload = rest;
+      continue;
+    }
+    if (error.code === "23505" && /pseudo/i.test(msg) && "pseudo" in payload) {
+      // Pseudo déjà utilisé par un autre membre : on enregistre le reste du profil
+      const { pseudo: _p, ...rest } = payload;
+      payload = rest;
+      continue;
+    }
+    const badEnum = msg.match(/invalid input value for enum [^:]*: "([^"]+)"/);
+    if (badEnum) {
+      const badKey = Object.keys(payload).find((k) => payload[k] === badEnum[1]);
+      if (badKey === "relationshipGoal" && payload.relationshipGoal === "EXCHANGE") {
+        // Base sans la valeur EXCHANGE (migration v2 non appliquée) → équivalent le plus proche
+        payload = { ...payload, relationshipGoal: "FRIENDSHIP" };
+        continue;
+      }
+      if (badKey) {
+        const { [badKey]: _b, ...rest } = payload;
+        payload = rest;
+        continue;
+      }
+    }
+    return { data: null, error };
+  }
+  return { data: null, error: new Error("Trop de tentatives d'écriture") };
+}
+
 // ── Mise à jour ou création de profil dans Supabase ──────────
 export async function upsertProfileInSupabase(
   userId: string,
@@ -374,16 +429,8 @@ export async function upsertProfileInSupabase(
       .eq("userId", effectiveUserId)
       .maybeSingle();
 
-    if (!existing && data.pseudo) {
-      const clean = data.pseudo.replace(/^@/, "").trim();
-      const { data: byPseudo } = await admin
-        .from("profiles")
-        .select("*")
-        .ilike("pseudo", clean)
-        .maybeSingle();
-      if (byPseudo) existing = byPseudo;
-    }
-
+    // NB : pas de recherche par pseudo ici — un pseudo identique appartient à un AUTRE
+    // membre et son profil serait écrasé.
     if (!existing && data.email) {
       const cleanEmail = data.email.toLowerCase().trim();
       const { data: userMatch } = await admin
@@ -436,11 +483,10 @@ export async function upsertProfileInSupabase(
         updatedAt: now,
       };
 
-      const { data: created, error: insertError } = await admin
-        .from("profiles")
-        .insert(insertPayload)
-        .select()
-        .maybeSingle();
+      const { data: created, error: insertError } = await writeProfileResilient(
+        (p) => admin.from("profiles").insert(p).select().maybeSingle(),
+        insertPayload
+      );
 
       if (insertError) {
         console.warn("[upsertProfileInSupabase] Insert warning:", insertError);
@@ -474,16 +520,15 @@ export async function upsertProfileInSupabase(
       if (data.subscriptionStartedAt !== undefined) updatePayload.subscriptionStartedAt = data.subscriptionStartedAt;
       if (data.likesCount !== undefined) updatePayload.likesCount = data.likesCount;
 
-      const { data: updated, error: updateError } = await admin
-        .from("profiles")
-        .update(updatePayload)
-        .eq("id", profileId)
-        .select()
-        .maybeSingle();
+      const { data: updated, error: updateError } = await writeProfileResilient(
+        (p) => admin.from("profiles").update(p).eq("id", profileId).select().maybeSingle(),
+        updatePayload
+      );
 
       if (updateError) {
         console.warn("[upsertProfileInSupabase] Update warning:", updateError);
       }
+      if (updated) existing = updated;
     }
 
     // 3. Gestion pérenne de la Couverture dans Supabase
@@ -1021,11 +1066,12 @@ export async function getMessagesFromSupabase(conversationId: string, limit: num
       .select("*")
       .eq("conversationId", conversationId)
       .is("deletedAt", null)
-      .order("createdAt", { ascending: true })
+      .order("createdAt", { ascending: false })
       .limit(limit);
 
     if (error || !data) return [];
-    return data;
+    // Les plus récents, remis dans l'ordre chronologique
+    return data.reverse();
   } catch (err) {
     console.warn("[getMessagesFromSupabase] Exception:", err);
     return [];

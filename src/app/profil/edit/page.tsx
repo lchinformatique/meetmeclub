@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { compressImage } from "@/app/messages/_lib/chat-utils";
 import {
   Camera,
   Loader2,
@@ -257,27 +258,26 @@ export default function ProfilEditPage() {
     if (!file) return;
     setUploadingCover(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        setCoverUrl(base64);
-        const res = await fetch("/api/profiles/me", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ coverUrl: base64 }),
-        });
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data.profile?.coverUrl) {
-            setCoverUrl(data.profile.coverUrl);
-          }
-          setMessage({ type: "success", text: "Photo de couverture enregistrée avec succès !" });
-        }
-        setUploadingCover(false);
-      };
-      reader.readAsDataURL(file);
+      // Compression avant envoi : une photo de téléphone brute dépasse la limite d'envoi du serveur
+      const base64 = await compressImage(file, 1600, 0.8);
+      setCoverUrl(base64);
+      const res = await fetch("/api/profiles/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coverUrl: base64 }),
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.profile?.coverUrl) setCoverUrl(data.profile.coverUrl);
+        setMessage({ type: "success", text: "Photo de couverture enregistrée avec succès !" });
+      } else {
+        setMessage({ type: "error", text: "La photo de couverture n'a pas pu être enregistrée. Réessayez." });
+      }
     } catch {
+      setMessage({ type: "error", text: "La photo de couverture n'a pas pu être enregistrée. Réessayez." });
+    } finally {
       setUploadingCover(false);
+      e.target.value = "";
     }
   }
 
@@ -286,22 +286,19 @@ export default function ProfilEditPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setAvatarUrl(base64);
-        setPhotos((prev) => {
-          const updated = [
-            { id: `photo_${Date.now()}`, url: base64, isMain: true },
-            ...prev.map((p) => ({ ...p, isMain: false })),
-          ].slice(0, 4);
-          return updated;
-        });
-        setMessage({ type: "success", text: "Photo de profil sélectionnée. N'oubliez pas d'enregistrer !" });
-      };
-      reader.readAsDataURL(file);
+      const base64 = await compressImage(file, 1280, 0.82);
+      setAvatarUrl(base64);
+      setPhotos((prev) =>
+        [
+          { id: `photo_${Date.now()}`, url: base64, isMain: true },
+          ...prev.map((p) => ({ ...p, isMain: false })),
+        ].slice(0, 4)
+      );
+      setMessage({ type: "success", text: "Photo de profil sélectionnée. N'oubliez pas d'enregistrer !" });
     } catch (err) {
       console.warn("Avatar select error:", err);
+    } finally {
+      e.target.value = "";
     }
   }
 
@@ -314,20 +311,15 @@ export default function ProfilEditPage() {
       return;
     }
     try {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setPhotos((prev) => {
-          const isFirst = prev.length === 0;
-          const next = [...prev, { id: `photo_${Date.now()}`, url: base64, isMain: isFirst }].slice(0, 4);
-          if (isFirst) setAvatarUrl(base64);
-          return next;
-        });
-        setMessage({ type: "success", text: "Photo ajoutée à la bio (" + Math.min(photos.length + 1, 4) + "/4)." });
-      };
-      reader.readAsDataURL(file);
+      const base64 = await compressImage(file, 1280, 0.82);
+      const isFirst = photos.length === 0;
+      if (isFirst) setAvatarUrl(base64);
+      setPhotos((prev) => [...prev, { id: `photo_${Date.now()}`, url: base64, isMain: prev.length === 0 }].slice(0, 4));
+      setMessage({ type: "success", text: "Photo ajoutée à la bio (" + Math.min(photos.length + 1, 4) + "/4). N'oubliez pas d'enregistrer !" });
     } catch (err) {
       console.warn("Album upload error:", err);
+    } finally {
+      e.target.value = "";
     }
   }
 
@@ -423,8 +415,10 @@ export default function ProfilEditPage() {
           languages: form.languages,
           bio: form.bio.trim(),
           relationshipGoal: form.relationshipGoal,
-          avatarUrl: avatarUrl || undefined,
-          coverUrl: coverUrl || undefined,
+          // La photo principale fait partie de l'album : inutile de l'envoyer deux fois
+          avatarUrl: photos.length === 0 ? avatarUrl || undefined : undefined,
+          // La couverture est enregistrée dès sa sélection ; on ne renvoie que son adresse
+          coverUrl: coverUrl && !coverUrl.startsWith("data:") ? coverUrl : undefined,
           photos: photos.slice(0, 4),
         }),
       });

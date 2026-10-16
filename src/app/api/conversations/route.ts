@@ -83,6 +83,15 @@ export async function GET() {
           }
         }
 
+        if (partnerName === "Membre" || !partnerPhotoUrl) {
+          const localProfile = getProfileByUserId(partnerId);
+          if (localProfile) {
+            partnerName = localProfile.firstName || partnerName;
+            partnerPseudo = localProfile.pseudo || partnerPseudo;
+            partnerPhotoUrl = partnerPhotoUrl || localProfile.photos?.find((p) => p.isMain)?.url || localProfile.photos?.[0]?.url || "";
+          }
+        }
+
         const lastMsg = conv.messages[0];
         const unreadCount = await prisma.message.count({
           where: {
@@ -100,8 +109,10 @@ export async function GET() {
           photoUrl: partnerPhotoUrl,
           lastMessage: lastMsg?.body || "Nouvelle conversation",
           lastMessageAt: conv.lastMessageAt.toISOString(),
+          lastMessageSenderId: lastMsg?.senderId,
+          lastMessageStatus: lastMsg?.status,
           unreadCount,
-          isOnline: true,
+          isOnline: false,
           isVerified,
         };
       })
@@ -117,6 +128,10 @@ export async function GET() {
       const supaConvs = await getConversationsFromSupabase(session.userId);
       const localConvs = getConversationsForUser(session.userId);
 
+      const { getUnreadCounts } = await import("@/lib/messaging-server");
+      const { getProfileFromSupabase, getMessagesFromSupabase } = await import("@/lib/supabase-server");
+      const unread = await getUnreadCounts(session.userId).catch(() => ({} as Record<string, number>));
+
       const allCombined = [...supaConvs, ...localConvs];
       const seenIds = new Set<string>();
       const result: any[] = [];
@@ -126,16 +141,19 @@ export async function GET() {
         seenIds.add(conv.id);
         const partnerId = conv.participantA === session.userId ? conv.participantB : conv.participantA;
         const p = getProfileByUserId(partnerId);
+        const supa = !p || !p.photos?.length ? await getProfileFromSupabase(partnerId).catch(() => null) : null;
+        const last = !conv.lastMessage ? (await getMessagesFromSupabase(conv.id, 1).catch(() => []))[0] : null;
         result.push({
           id: conv.id,
           participantId: partnerId,
-          firstName: p?.firstName || "Membre",
-          pseudo: p?.pseudo || "@membre",
-          photoUrl: p?.photos?.[0]?.url || "",
-          lastMessage: conv.lastMessage || "Nouvelle conversation",
-          lastMessageAt: conv.lastMessageAt || new Date().toISOString(),
-          unreadCount: 0,
-          isOnline: true,
+          firstName: p?.firstName || supa?.firstName || "Membre",
+          pseudo: p?.pseudo || supa?.pseudo || "@membre",
+          photoUrl: p?.photos?.find((ph) => ph.isMain)?.url || p?.photos?.[0]?.url || supa?.avatarUrl || "",
+          lastMessage: conv.lastMessage || last?.body || "Nouvelle conversation",
+          lastMessageAt: conv.lastMessageAt || last?.createdAt || new Date().toISOString(),
+          lastMessageSenderId: last?.senderId,
+          unreadCount: unread[conv.id] || 0,
+          isOnline: false,
           isVerified: p?.isVerified ?? true,
         });
       }
@@ -201,6 +219,38 @@ export async function POST(req: NextRequest) {
     );
   }
 
+
+  // Plan gratuit : 3 interlocuteurs maximum (hors Victoire, l'hôtesse du club)
+  if (targetUserId !== "user_victoire_lome") {
+    try {
+      const { getEffectivePlan } = await import("@/lib/db-store");
+      const { getSupabaseAdmin, getProfileFromSupabase } = await import("@/lib/supabase-server");
+      let me: any = getProfileByUserId(session.userId);
+      if (!me?.plan || me.plan === "FREE") {
+        const supaMe = await getProfileFromSupabase(session.userId, session.email || undefined);
+        if (supaMe) me = { ...me, ...supaMe, userId: session.userId, email: session.email };
+      }
+      if (getEffectivePlan(me || { userId: session.userId, email: session.email }) === "FREE") {
+        const { data: convs } = await getSupabaseAdmin()
+          .from("conversations")
+          .select("participantA, participantB")
+          .or(`participantA.eq.${session.userId},participantB.eq.${session.userId}`);
+        const partners = new Set(
+          (convs || [])
+            .map((c: any) => (c.participantA === session.userId ? c.participantB : c.participantA))
+            .filter((id: string) => id !== "user_victoire_lome")
+        );
+        if (!partners.has(targetUserId) && partners.size >= 3) {
+          return NextResponse.json(
+            { error: "Plan gratuit : 3 discussions maximum. Passez à un pass pour en ouvrir d'autres." },
+            { status: 403 }
+          );
+        }
+      }
+    } catch (quotaErr) {
+      console.warn("[POST /api/conversations] quota check:", quotaErr);
+    }
+  }
 
   // Obtenir infos partenaire
   const localProfile = getProfileByUserId(targetUserId);

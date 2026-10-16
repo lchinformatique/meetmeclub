@@ -68,6 +68,7 @@ import CustomerSupportWidget from "@/components/CustomerSupportWidget";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SecurityProtectionProvider from "@/components/SecurityProtectionProvider";
+import RealtimeProvider from "@/components/realtime/RealtimeProvider";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -91,10 +92,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <SecurityProtectionProvider>
-          {children}
-          <CustomerSupportWidget />
-          <MobileBottomNav />
-          <PwaInstallPrompt />
+          <RealtimeProvider>
+            {children}
+            <CustomerSupportWidget />
+            <MobileBottomNav />
+            <PwaInstallPrompt />
+          </RealtimeProvider>
         </SecurityProtectionProvider>
       </body>
     </html>

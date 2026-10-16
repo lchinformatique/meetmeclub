@@ -44,12 +44,14 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const { getSupabaseAdmin } = await import("@/lib/supabase-server");
-      const sb = getSupabaseAdmin();
-      await sb
-        .from("profiles")
-        .update({ updatedAt: new Date().toISOString() })
-        .eq("userId", session.userId);
+      // Le plan doit être enregistré dans Supabase, sinon il est perdu au prochain redémarrage
+      const { upsertProfileInSupabase } = await import("@/lib/supabase-server");
+      await upsertProfileInSupabase(session.userId, {
+        email: session.email || undefined,
+        plan: updated.plan,
+        subscriptionStartedAt: updated.subscriptionStartedAt || null,
+        subscriptionExpiresAt: updated.subscriptionExpiresAt || null,
+      });
     } catch (err) {
       console.warn("[POST /api/subscription/upgrade] Supabase sync:", err);
     }

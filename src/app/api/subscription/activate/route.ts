@@ -27,6 +27,21 @@ export async function POST(req: NextRequest) {
       plan: plan as any,
     });
 
+    // 1.b Le plan doit être enregistré dans Supabase, sinon il est perdu au prochain redémarrage
+    if (session?.userId) {
+      try {
+        const { upsertProfileInSupabase } = await import("@/lib/supabase-server");
+        await upsertProfileInSupabase(userId, {
+          email: session.email || undefined,
+          plan: updated.plan,
+          subscriptionStartedAt: updated.subscriptionStartedAt || null,
+          subscriptionExpiresAt: updated.subscriptionExpiresAt || null,
+        });
+      } catch (supaErr) {
+        console.warn("[activate] Supabase plan sync:", supaErr);
+      }
+    }
+
     // 2. Persist subscription to Prisma/Supabase
     try {
       const { prisma } = await import("@/lib/prisma");

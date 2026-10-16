@@ -5,7 +5,18 @@
 import fs from "fs";
 import path from "path";
 export { SASPAY_LINKS, type SubscriptionStatusInfo, type VipPost } from "./subscription-constants";
-import { SASPAY_LINKS, type SubscriptionStatusInfo, type VipPost } from "./subscription-constants";
+import { SASPAY_LINKS, type SubscriptionStatusInfo, type VipPost, findPermanentVipAccount, PERMANENT_VIP_START, PERMANENT_VIP_EXPIRY } from "./subscription-constants";
+
+// Force le plan VIP illimité sur les comptes de test permanents (vip_master, vip_tester)
+function applyPermanentVip<T extends Partial<StoredProfile>>(profile: T): T {
+  if (!findPermanentVipAccount(profile)) return profile;
+  return {
+    ...profile,
+    plan: "VIP",
+    subscriptionStartedAt: PERMANENT_VIP_START,
+    subscriptionExpiresAt: PERMANENT_VIP_EXPIRY,
+  };
+}
 
 export interface StoredProfile {
   id: string;
@@ -153,15 +164,14 @@ export function getProfileByUserId(userId: string): StoredProfile | null {
   const cleanLower = clean.toLowerCase();
   const isEmail = cleanLower.includes("@");
 
-  return (
-    profiles.find(
-      (p) =>
-        p.userId === clean ||
-        p.id === clean ||
-        (isEmail && p.email && p.email.toLowerCase() === cleanLower) ||
-        (p.pseudo && p.pseudo.toLowerCase() === cleanLower)
-    ) || null
+  const found = profiles.find(
+    (p) =>
+      p.userId === clean ||
+      p.id === clean ||
+      (isEmail && p.email && p.email.toLowerCase() === cleanLower) ||
+      (p.pseudo && p.pseudo.toLowerCase() === cleanLower)
   );
+  return found ? applyPermanentVip(found) : null;
 }
 
 export function saveProfile(profileData: Partial<StoredProfile> & { userId: string }): StoredProfile {
@@ -191,7 +201,7 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
     let subStarted = profileData.subscriptionStartedAt || old.subscriptionStartedAt;
     let subExpires = profileData.subscriptionExpiresAt || old.subscriptionExpiresAt;
 
-    if (planChanged) {
+    if (planChanged && !profileData.subscriptionExpiresAt) {
       subStarted = new Date().toISOString();
       const durationDays = plan === "FREE" ? 7 : 30;
       subExpires = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
@@ -214,6 +224,7 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       age: computedAge,
       updatedAt: new Date().toISOString(),
     };
+    updatedProfile = applyPermanentVip(updatedProfile);
     profiles[index] = updatedProfile;
   } else {
     let initialAge = profileData.age || 25;
@@ -274,6 +285,7 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       createdAt: nowIso,
       updatedAt: nowIso,
     };
+    updatedProfile = applyPermanentVip(updatedProfile);
     profiles.unshift(updatedProfile);
   }
 
@@ -585,6 +597,7 @@ export function saveConversation(conv: Partial<StoredConversation> & { id: strin
 // ── Calcul et gestion de l'expiration d'abonnement & compte à rebours ─────
 
 export function getSubscriptionStatus(profile?: StoredProfile | any): SubscriptionStatusInfo {
+  if (profile) profile = applyPermanentVip(profile);
   const plan = ((profile?.plan || "FREE") as string).toUpperCase() as "FREE" | "ESSENTIAL" | "COMPLICE" | "VIP";
   const planConfig = PLAN_LIMITS[plan] || PLAN_LIMITS.FREE;
   const isTrial = plan === "FREE";
@@ -633,6 +646,19 @@ export function getSubscriptionStatus(profile?: StoredProfile | any): Subscripti
     totalDurationDays,
     progressPercent,
   };
+}
+
+/**
+ * Plan réellement actif : un pass payant expiré redevient « FREE ».
+ * Les comptes VIP permanents (tests) restent toujours VIP.
+ */
+export function getEffectivePlan(profile?: Partial<StoredProfile> | null): "FREE" | "ESSENTIAL" | "COMPLICE" | "VIP" {
+  if (!profile) return "FREE";
+  const p = applyPermanentVip(profile);
+  const plan = ((p.plan || "FREE") as string).toUpperCase() as "FREE" | "ESSENTIAL" | "COMPLICE" | "VIP";
+  if (plan === "FREE") return "FREE";
+  if (p.subscriptionExpiresAt && new Date(p.subscriptionExpiresAt).getTime() < Date.now()) return "FREE";
+  return plan;
 }
 
 /**

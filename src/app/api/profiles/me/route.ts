@@ -46,6 +46,8 @@ export async function GET() {
         relationshipGoal: (supa.relationshipGoal as any) || profile?.relationshipGoal || 'SERIOUS',
         coverUrl: supa.coverUrl || profile?.coverUrl || undefined,
         plan: supa.plan || profile?.plan || 'FREE',
+        subscriptionStartedAt: supa.subscriptionStartedAt || profile?.subscriptionStartedAt || undefined,
+        subscriptionExpiresAt: supa.subscriptionExpiresAt || profile?.subscriptionExpiresAt || undefined,
         partnersContacted: profile?.partnersContacted || [],
         photos: mergedPhotos,
         interests: profile?.interests || [],
@@ -130,13 +132,15 @@ export async function GET() {
     } catch {}
   }
 
-  const planInfo = PLAN_LIMITS[profile.plan] || PLAN_LIMITS.FREE;
-  const { getSubscriptionStatus } = await import('@/lib/db-store');
+  const { getSubscriptionStatus, getEffectivePlan } = await import('@/lib/db-store');
+  const effectivePlan = getEffectivePlan(profile);
+  const planInfo = PLAN_LIMITS[effectivePlan] || PLAN_LIMITS.FREE;
   const subscriptionStatus = getSubscriptionStatus(profile);
 
   return NextResponse.json({
     profile: {
       ...profile,
+      effectivePlan,
       planInfo,
       subscriptionStatus,
       contactsRemaining: Math.max(0, (planInfo.maxPartners || 3) - (profile.partnersContacted?.length || 0)),
@@ -206,6 +210,14 @@ export async function PATCH(request: NextRequest) {
     // 3. Gestion album photo complet (jusqu'a 8 photos) et Avatar via Supabase Storage
     const existingProfile = getProfileByUserId(session.userId);
     let updatedPhotos = existingProfile?.photos ? [...existingProfile.photos] : [];
+    // Album actuel : Supabase fait foi (le store local de ce serveur peut être périmé)
+    if (!Array.isArray(body.photos) && (body.avatarUrl || body.photoUrl)) {
+      try {
+        const { getProfileFromSupabase } = await import('@/lib/supabase-server');
+        const supaNow = await getProfileFromSupabase(session.userId, session.email || undefined);
+        if (supaNow?.photos) updatedPhotos = supaNow.photos.map((p: any) => ({ id: p.id, url: p.url, isMain: p.isMain }));
+      } catch {}
+    }
     let finalAvatarUrl = body.avatarUrl || body.photoUrl;
 
     if (Array.isArray(body.photos)) {
@@ -269,7 +281,9 @@ export async function PATCH(request: NextRequest) {
     // 4. Mise a jour immediate du store local
     const patchData: Record<string, any> = { ...body };
     if (coverUrl !== undefined) patchData.coverUrl = coverUrl;
-    if (updatedPhotos.length > 0) patchData.photos = updatedPhotos;
+    if (Array.isArray(body.photos) || body.avatarUrl || body.photoUrl) patchData.photos = updatedPhotos;
+    delete patchData.avatarUrl; // jamais de base64 brut dans le store
+    delete patchData.photoUrl;
     if (calculatedAge !== undefined) patchData.age = calculatedAge;
     if (session.email && !patchData.email) patchData.email = session.email;
 
@@ -277,34 +291,39 @@ export async function PATCH(request: NextRequest) {
 
     // 5. Synchronisation Supabase directe (REST HTTPS)
     try {
-      const { upsertProfileInSupabase, syncAlbumPhotosInSupabase, savePhotoInSupabase } = await import('@/lib/supabase-server');
+      const { upsertProfileInSupabase, syncAlbumPhotosInSupabase, getProfileFromSupabase } = await import('@/lib/supabase-server');
+      const syncAlbum = Array.isArray(body.photos) || Boolean(body.avatarUrl || body.photoUrl);
+
+      // Seuls les champs réellement envoyés par le formulaire sont écrits : le store local de ce
+      // serveur peut être périmé et ne doit jamais écraser des données plus récentes.
+      const FIELDS = [
+        'firstName', 'lastName', 'pseudo', 'gender', 'dateOfBirth', 'placeOfBirth', 'city', 'neighborhood',
+        'profession', 'bio', 'relationshipGoal', 'relationshipStatus', 'height', 'religion', 'hasChildren',
+        'languages', 'educationLevel', 'phone',
+      ] as const;
+      const changes: Record<string, any> = { email: session.email || saved.email };
+      for (const f of FIELDS) if (body[f] !== undefined) changes[f] = body[f];
+      if (calculatedAge !== undefined) changes.age = calculatedAge;
+      if (coverUrl !== undefined) changes.coverUrl = coverUrl;
+
+      // Premier enregistrement dans Supabase : on transmet le profil complet
+      const existsInSupabase = await getProfileFromSupabase(session.userId, session.email || undefined);
+      const payload = existsInSupabase
+        ? changes
+        : {
+            firstName: saved.firstName, lastName: saved.lastName, pseudo: saved.pseudo, gender: saved.gender,
+            city: saved.city, neighborhood: saved.neighborhood, profession: saved.profession, bio: saved.bio,
+            relationshipGoal: saved.relationshipGoal, relationshipStatus: saved.relationshipStatus,
+            languages: saved.languages, plan: saved.plan, ...changes,
+          };
       await upsertProfileInSupabase(session.userId, {
-        firstName: body.firstName || saved.firstName,
-        lastName: body.lastName !== undefined ? body.lastName : saved.lastName,
-        pseudo: body.pseudo !== undefined ? body.pseudo : saved.pseudo,
-        email: session.email || saved.email,
-        gender: body.gender || saved.gender,
-        dateOfBirth: body.dateOfBirth !== undefined ? body.dateOfBirth : saved.dateOfBirth,
-        placeOfBirth: body.placeOfBirth !== undefined ? body.placeOfBirth : saved.placeOfBirth,
-        age: calculatedAge !== undefined ? calculatedAge : saved.age,
-        city: body.city || saved.city,
-        neighborhood: body.neighborhood !== undefined ? body.neighborhood : saved.neighborhood,
-        profession: body.profession !== undefined ? body.profession : saved.profession,
-        bio: body.bio !== undefined ? body.bio : saved.bio,
-        relationshipGoal: body.relationshipGoal || saved.relationshipGoal,
-        relationshipStatus: body.relationshipStatus !== undefined ? body.relationshipStatus : saved.relationshipStatus,
-        height: body.height !== undefined ? body.height : saved.height,
-        religion: body.religion !== undefined ? body.religion : saved.religion,
-        hasChildren: body.hasChildren !== undefined ? body.hasChildren : saved.hasChildren,
-        languages: body.languages !== undefined ? body.languages : saved.languages,
-        educationLevel: body.educationLevel !== undefined ? body.educationLevel : saved.educationLevel,
-        phone: body.phone !== undefined ? body.phone : saved.phone,
-        avatarUrl: finalAvatarUrl || undefined,
-        coverUrl: coverUrl !== undefined ? coverUrl : saved.coverUrl,
+        ...payload,
+        // L'avatar est géré par la synchronisation de l'album quand des photos sont envoyées
+        avatarUrl: syncAlbum ? undefined : finalAvatarUrl || undefined,
       });
 
-      // Synchroniser toutes les photos vers Supabase Storage & Database (jusqu'à 4 photos bio)
-      if (updatedPhotos && updatedPhotos.length > 0) {
+      // Album envoyé par le formulaire (même vide = toutes les photos supprimées)
+      if (syncAlbum) {
         await syncAlbumPhotosInSupabase(session.userId, updatedPhotos.slice(0, 4));
       }
     } catch (supaErr) {

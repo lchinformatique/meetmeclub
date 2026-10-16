@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
 import { getAllProfiles, saveProfile } from "@/lib/db-store";
+import { findPermanentVipAccount, PERMANENT_VIP_START, PERMANENT_VIP_EXPIRY } from "@/lib/subscription-constants";
 
 export async function POST(req: NextRequest) {
   try {
@@ -113,6 +114,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── 2.b Comptes VIP permanents de test (vip_master / vip_tester) ───────
+    // Toujours disponibles, même si la base n'a pas encore été seedée.
+    const permanentVip = findPermanentVipAccount({
+      userId: user?.id,
+      email: user?.email || (isEmail ? cleanLower : undefined),
+      pseudo: user?.profile?.pseudo || (isEmail ? undefined : cleanLower),
+    });
+    if (!user && permanentVip && password === "123456") {
+      user = {
+        id: permanentVip.userId,
+        email: permanentVip.email,
+        role: permanentVip.role,
+        status: "ACTIVE",
+        passwordHash: null,
+        profile: {
+          firstName: permanentVip.firstName,
+          lastName: permanentVip.lastName,
+          pseudo: permanentVip.pseudo,
+          gender: permanentVip.gender,
+        },
+        _isLocalOnly: true,
+      };
+    }
+
     // ── 3. Vérification du mot de passe ────────────────────────────────────
     if (user) {
       if (user.passwordHash && !user._isLocalOnly) {
@@ -162,7 +187,30 @@ export async function POST(req: NextRequest) {
         const { getProfileFromSupabase, upsertProfileInSupabase } = await import("@/lib/supabase-server");
         const effectiveEmail = user.email || (isEmail ? cleanLower : undefined);
         let supaProf = await getProfileFromSupabase(user.id, effectiveEmail);
-        if (!supaProf) {
+
+        // Déterminer le plan réel — on préfère toujours la valeur Supabase/Prisma sur le fallback
+        const prismaProfilePlan = user.profile?.plan || null;
+        const realPlan = permanentVip ? "VIP" : (supaProf?.plan || prismaProfilePlan || "FREE");
+
+        if (permanentVip) {
+          // VIP illimité garanti dans Supabase pour les comptes de test
+          supaProf = (await upsertProfileInSupabase(user.id, {
+            firstName: supaProf?.firstName || permanentVip.firstName,
+            lastName: supaProf?.lastName || permanentVip.lastName,
+            pseudo: supaProf?.pseudo || permanentVip.pseudo,
+            email: permanentVip.email,
+            gender: supaProf?.gender || permanentVip.gender,
+            city: supaProf?.city || "Lomé",
+            plan: "VIP",
+            subscriptionStartedAt: PERMANENT_VIP_START,
+            subscriptionExpiresAt: PERMANENT_VIP_EXPIRY,
+          })) || supaProf;
+          if (supaProf) {
+            supaProf.plan = "VIP";
+            supaProf.subscriptionStartedAt = PERMANENT_VIP_START;
+            supaProf.subscriptionExpiresAt = PERMANENT_VIP_EXPIRY;
+          }
+        } else if (!supaProf) {
           supaProf = await upsertProfileInSupabase(user.id, {
             firstName: user.profile?.firstName || cleanInput.split("@")[0] || "Membre",
             pseudo: user.profile?.pseudo || cleanInput.split("@")[0] || "membre",
@@ -170,10 +218,19 @@ export async function POST(req: NextRequest) {
             gender: user.profile?.gender || "OTHER",
             city: user.profile?.city || "Lomé",
             bio: user.profile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
-            plan: user.profile?.plan || "FREE",
+            plan: realPlan,
           });
+        } else if (supaProf.plan !== realPlan && realPlan !== "FREE") {
+          // Mettre à jour le plan dans Supabase si le profil Prisma est plus élevé
+          await upsertProfileInSupabase(user.id, { plan: realPlan });
+          supaProf.plan = realPlan;
         }
+
         if (supaProf) {
+          // Calculer les timestamps d'abonnement
+          const subStart = supaProf.subscriptionStartedAt || user.profile?.subscriptionStartedAt || null;
+          const subExpiry = supaProf.subscriptionExpiresAt || user.profile?.subscriptionExpiresAt || null;
+
           saveProfile({
             userId: user.id,
             firstName: supaProf.firstName || "Membre",
@@ -183,8 +240,13 @@ export async function POST(req: NextRequest) {
             gender: (supaProf.gender as any) || "OTHER",
             city: supaProf.city || "Lomé",
             bio: supaProf.bio || "Nouveau membre sur Meet Me Club.",
-            plan: supaProf.plan || "FREE",
+            // Plan Supabase toujours prioritaire — ne jamais forcer FREE sur un VIP
+            plan: supaProf.plan || realPlan,
+            subscriptionStartedAt: subStart || undefined,
+            subscriptionExpiresAt: subExpiry || undefined,
             photos: supaProf.photos || [],
+            age: supaProf.age || undefined,
+            profession: supaProf.profession || undefined,
             isVerified: true,
             isVisible: true,
           });

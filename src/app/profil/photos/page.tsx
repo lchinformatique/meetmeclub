@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { compressImage } from "@/app/messages/_lib/chat-utils";
 
 interface Photo {
   id: string;
@@ -16,7 +17,8 @@ interface Photo {
   status: "PENDING" | "APPROVED" | "REJECTED";
 }
 
-const MAX_PHOTOS = 8;
+// 4 photos : même limite que l'édition du profil et que l'affichage sur les fiches membres
+const MAX_PHOTOS = 4;
 
 export default function ProfilPhotosPage() {
   const router = useRouter();
@@ -63,8 +65,8 @@ export default function ProfilPhotosPage() {
       return;
     }
 
-    if (file.size > 8 * 1024 * 1024) {
-      setError("L'image est trop lourde (max 8 Mo).");
+    if (file.size > 20 * 1024 * 1024) {
+      setError("L'image est trop lourde (max 20 Mo).");
       return;
     }
 
@@ -73,25 +75,20 @@ export default function ProfilPhotosPage() {
     setSuccess("");
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        const res = await fetch("/api/profiles/me/photos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ base64 }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Erreur lors de l'envoi.");
-          return;
-        }
-
-        setSuccess("Photo ajoutée avec succès !");
-        loadPhotos();
-      };
-      reader.readAsDataURL(file);
+      // Compression dans le téléphone : rapide sur mobile et sous la limite d'envoi du serveur
+      const base64 = await compressImage(file, 1280, 0.82);
+      const res = await fetch("/api/profiles/me/photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64, isMain: photos.length === 0 }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Erreur lors de l'envoi.");
+        return;
+      }
+      setSuccess("Photo ajoutée avec succès !");
+      loadPhotos();
     } catch {
       setError("Erreur lors de la lecture du fichier.");
     } finally {

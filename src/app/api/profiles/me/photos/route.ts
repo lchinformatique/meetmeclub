@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getProfileByUserId, saveProfile } from "@/lib/db-store";
 
-const MAX_PHOTOS = 8;
+const MAX_PHOTOS = 4;
 
 // ── GET: liste des photos ─────────────────────────────────────
 export async function GET() {
@@ -35,19 +35,9 @@ export async function GET() {
     // Prisma non dispo → fallback local
   }
 
-  // 2. Fallback store local
-  const local = getProfileByUserId(session.userId);
-  let photos = (local?.photos || []).map((p, i) => ({
-    id: p.id,
-    url: p.url,
-    thumbnailUrl: p.url,
-    isMain: p.isMain,
-    order: i,
-    status: "APPROVED",
-  }));
-
-  // 3. Fallback Supabase REST si pas de photos trouvées
-  if (photos.length === 0) {
+  // 2. Supabase REST (source de vérité, commune à tous les serveurs)
+  let photos: Array<{ id: string; url: string; thumbnailUrl: string; isMain: boolean; order: number; status: string }> = [];
+  {
     try {
       const { getProfileFromSupabase } = await import("@/lib/supabase-server");
       const supa = await getProfileFromSupabase(session.userId);
@@ -70,6 +60,19 @@ export async function GET() {
     }
   }
 
+  // 3. Dernier recours : store local de ce serveur
+  if (photos.length === 0) {
+    const local = getProfileByUserId(session.userId);
+    photos = (local?.photos || []).map((p, i) => ({
+      id: p.id,
+      url: p.url,
+      thumbnailUrl: p.url,
+      isMain: p.isMain,
+      order: i,
+      status: "APPROVED",
+    }));
+  }
+
   return NextResponse.json({ photos });
 }
 
@@ -82,7 +85,13 @@ export async function POST(request: NextRequest) {
 
   // Récupérer le profil local pour limiter le nombre de photos
   const localProfile = getProfileByUserId(session.userId);
-  const existingCount = localProfile?.photos?.length || 0;
+  let existingCount = localProfile?.photos?.length || 0;
+  // Le store local de ce serveur peut être vide : Supabase fait foi
+  try {
+    const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+    const supa = await getProfileFromSupabase(session.userId, session.email || undefined);
+    if (supa?.photos) existingCount = Math.max(existingCount, supa.photos.length);
+  } catch {}
 
   if (existingCount >= MAX_PHOTOS) {
     return NextResponse.json(

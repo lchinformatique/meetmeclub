@@ -2,7 +2,7 @@
 // GET  /api/messages           — list conversations for the current user
 // POST /api/messages           — send a message
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
@@ -39,6 +39,53 @@ export async function GET() {
     // Return empty list gracefully (dev mode without DB)
     return NextResponse.json({ conversations: [] });
   }
+}
+
+interface ConvRef {
+  id: string;
+  participantA: string;
+  participantB: string;
+}
+
+// Retrouve (ou crée) la conversation réelle : Prisma d'abord, puis Supabase REST
+async function resolveConversation(userId: string, conversationId: string): Promise<ConvRef | null> {
+  const isMine = (c: any) => c && (c.participantA === userId || c.participantB === userId);
+
+  try {
+    const conv = await (prisma as any).conversation.findFirst({
+      where: { id: conversationId, OR: [{ participantA: userId }, { participantB: userId }], isBlockedBy: null },
+    });
+    if (conv) return conv;
+  } catch {}
+
+  const { getSupabaseAdmin, findOrCreateConversationInSupabase } = await import("@/lib/supabase-server");
+  try {
+    const { data } = await getSupabaseAdmin()
+      .from("conversations")
+      .select("id, participantA, participantB, isBlockedBy")
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (data) return isMine(data) && !data.isBlockedBy ? data : null;
+  } catch {}
+
+  // Identifiant provisoire côté client ("local_<userId>") → conversation avec ce membre
+  const partnerId = conversationId.startsWith("local_") ? conversationId.slice(6) : null;
+  if (!partnerId || partnerId === userId) return null;
+
+  try {
+    const existing = await (prisma as any).conversation.findFirst({
+      where: {
+        OR: [
+          { participantA: userId, participantB: partnerId },
+          { participantA: partnerId, participantB: userId },
+        ],
+      },
+    });
+    if (existing) return existing;
+    return await (prisma as any).conversation.create({ data: { participantA: userId, participantB: partnerId } });
+  } catch {}
+
+  return await findOrCreateConversationInSupabase(userId, partnerId);
 }
 
 // ── POST: send a message ─────────────────────────────────────
@@ -113,132 +160,89 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Verify the caller is a participant of this conversation
-    const conv = await (prisma as any).conversation.findFirst({
-      where: {
-        id: conversationId,
-        OR: [
-          { participantA: session.userId },
-          { participantB: session.userId },
-        ],
-        isBlockedBy: null,
-      },
-    });
-
-    let activeConversation = conv;
-    if (!activeConversation) {
-      const partnerId = conversationId.startsWith("local_") ? conversationId.replace("local_", "") : conversationId;
-      try {
-        activeConversation = await (prisma as any).conversation.findFirst({
-          where: {
-            OR: [
-              { participantA: session.userId, participantB: partnerId },
-              { participantA: partnerId, participantB: session.userId },
-            ],
-          },
-        });
-        if (!activeConversation) {
-          activeConversation = await (prisma as any).conversation.create({
-            data: {
-              participantA: session.userId,
-              participantB: partnerId,
-            },
-          });
-        }
-      } catch {
-        activeConversation = {
-          id: conversationId,
-          participantA: session.userId,
-          participantB: partnerId,
-        };
-      }
+    const conversation = await resolveConversation(session.userId, conversationId);
+    if (!conversation) {
+      return NextResponse.json({ error: "Conversation introuvable" }, { status: 404 });
     }
+    const realConvId = conversation.id;
+    const text = (messageBody || "Média partagé").trim();
 
-    const realConvId = activeConversation.id;
+    // 1. Enregistrement : Prisma, sinon Supabase REST (toujours attendu → aucun message perdu)
+    let messageRecord: {
+      id: string;
+      conversationId: string;
+      senderId: string;
+      body: string;
+      mediaUrl: string | null;
+      createdAt: string;
+      status: "SENT";
+    } | null = null;
 
-    let message: any = null;
     try {
       const [msg] = await (prisma as any).$transaction([
         (prisma as any).message.create({
-          data: {
-            conversationId: realConvId,
-            senderId: session.userId,
-            body: (messageBody || "Média partagé").trim(),
-            mediaUrl: mediaUrl || null,
-            status: "SENT",
-          },
+          data: { conversationId: realConvId, senderId: session.userId, body: text, mediaUrl: mediaUrl || null, status: "SENT" },
         }),
-        (prisma as any).conversation.update({
-          where: { id: realConvId },
-          data: { lastMessageAt: new Date() },
-        }),
+        (prisma as any).conversation.update({ where: { id: realConvId }, data: { lastMessageAt: new Date() } }),
       ]);
-      message = msg;
-    } catch {
-      message = {
-        id: `msg_${Date.now()}`,
+      messageRecord = {
+        id: msg.id,
         conversationId: realConvId,
         senderId: session.userId,
-        body: (messageBody || "Média partagé").trim(),
-        mediaUrl: mediaUrl || null,
-        createdAt: new Date().toISOString(),
+        body: msg.body,
+        mediaUrl: msg.mediaUrl || null,
+        createdAt: new Date(msg.createdAt).toISOString(),
         status: "SENT",
       };
-    }
-
-    const { saveMessage, saveConversation } = await import("@/lib/db-store");
-    const { saveMessageInSupabase } = await import("@/lib/supabase-server");
-
-    const messageRecord = {
-      id: message.id,
-      conversationId: message.conversationId,
-      senderId: message.senderId,
-      body: message.body,
-      mediaUrl: message.mediaUrl,
-      createdAt: message.createdAt ? new Date(message.createdAt).toISOString() : new Date().toISOString(),
-      status: (message.status || "SENT") as any,
-    };
-
-    saveMessage(messageRecord);
-    saveConversation({
-      id: realConvId,
-      participantA: activeConversation.participantA,
-      participantB: activeConversation.participantB,
-      lastMessage: message.body,
-      lastMessageAt: messageRecord.createdAt,
-    });
-
-    // Sauvegarde asynchrone dans Supabase PostgREST
-    saveMessageInSupabase(messageRecord).catch(() => {});
-
-    return NextResponse.json({ message: messageRecord }, { status: 201 });
-  } catch (error) {
-    console.error("[POST /api/messages]", error);
-    // Local fallback persistence
-    try {
-      const { saveMessage, saveConversation } = await import("@/lib/db-store");
+    } catch {
       const { saveMessageInSupabase } = await import("@/lib/supabase-server");
-      const fallbackMsg = {
-        id: `msg_${Date.now()}`,
-        conversationId,
+      const candidate = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        conversationId: realConvId,
         senderId: session.userId,
-        body: (messageBody || "Média partagé").trim(),
+        body: text,
         mediaUrl: mediaUrl || null,
         createdAt: new Date().toISOString(),
         status: "SENT" as const,
       };
-      saveMessage(fallbackMsg);
-      saveConversation({
-        id: conversationId,
-        participantA: session.userId,
-        participantB: conversationId.startsWith("local_") ? conversationId.replace("local_", "") : "partner",
-        lastMessage: fallbackMsg.body,
-        lastMessageAt: fallbackMsg.createdAt,
-      });
-      saveMessageInSupabase(fallbackMsg).catch(() => {});
-      return NextResponse.json({ message: fallbackMsg }, { status: 201 });
-    } catch {}
+      const saved = await saveMessageInSupabase(candidate);
+      if (!saved) {
+        return NextResponse.json({ error: "Le message n'a pas pu être enregistré. Réessayez." }, { status: 503 });
+      }
+      messageRecord = candidate;
+    }
+
+    const { saveMessage, saveConversation } = await import("@/lib/db-store");
+    saveMessage(messageRecord);
+    saveConversation({
+      id: realConvId,
+      participantA: conversation.participantA,
+      participantB: conversation.participantB,
+      lastMessage: messageRecord.body,
+      lastMessageAt: messageRecord.createdAt,
+    });
+
+    // 2. Notification du destinataire (temps réel + téléphone) après la réponse
+    const recipientId =
+      conversation.participantA === session.userId ? conversation.participantB : conversation.participantA;
+    const record = messageRecord;
+    after(async () => {
+      const { notifyNewMessage } = await import("@/lib/messaging-server");
+      await notifyNewMessage({
+        conversationId: realConvId,
+        messageId: record.id,
+        senderId: session.userId,
+        recipientId,
+        body: record.body,
+        mediaUrl: record.mediaUrl,
+        senderName: senderProfile?.firstName,
+        senderPhoto: senderProfile?.photos?.find((p) => p.isMain)?.url || senderProfile?.photos?.[0]?.url,
+      }).catch((e) => console.warn("[notifyNewMessage]", e));
+    });
+
+    return NextResponse.json({ message: messageRecord }, { status: 201 });
+  } catch (error) {
+    console.error("[POST /api/messages]", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
-

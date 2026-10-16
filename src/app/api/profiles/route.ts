@@ -1,12 +1,46 @@
 // src/app/api/profiles/route.ts
-// GET /api/profiles — Browse member profiles with filters (Discovery)
+// GET /api/profiles — Membres visibles (Découverte, messagerie)
+// Source de vérité : Supabase (plan réel, photos, âge), complétée par Prisma puis le store local.
+// Règles de visibilité par plan + classement (VIP en tête, puis likes).
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { getAllProfiles } from "@/lib/db-store";
+import {
+  canViewMember,
+  getAllProfiles,
+  getEffectivePlan,
+  getProfileByUserId,
+  sortProfilesByPriorityAndLikes,
+} from "@/lib/db-store";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+
+const VICTOIRE_ID = "user_victoire_lome";
+
+function fromLocal(p: ReturnType<typeof getAllProfiles>[number]) {
+  return {
+    id: p.id,
+    userId: p.userId,
+    firstName: p.firstName,
+    pseudo: p.pseudo || p.firstName,
+    gender: p.gender,
+    city: p.city,
+    neighborhood: p.neighborhood || "Lomé",
+    profession: p.profession,
+    bio: p.bio,
+    coverUrl: p.coverUrl,
+    relationshipGoal: p.relationshipGoal,
+    plan: getEffectivePlan(p),
+    likesCount: p.likesCount ?? 0,
+    profileCompleteness: 90,
+    photos: (p.photos || []).map((ph) => ({ url: ph.url, isMain: ph.isMain })),
+    interests: (p.interests || []).map((name) => ({ interest: { name, icon: "✨" } })),
+    verifications: p.isVerified ? [{ type: "PHONE" }, { type: "SELFIE" }] : [],
+    age: p.age,
+    isVerified: p.isVerified,
+  };
+}
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -20,184 +54,83 @@ export async function GET(req: NextRequest) {
   const goal = searchParams.get("goal");
 
   try {
-    // 1. Try to fetch live profiles from Supabase PostgreSQL
+    // 1. Plan réel du membre connecté (Supabase fait foi, le store local peut être périmé)
+    let viewerSource: any = getProfileByUserId(session.userId);
     try {
-      const dbProfiles = await prisma.profile.findMany({
-        where: {
-          isVisible: true,
-          userId: { not: session.userId },
-          ...(gender && ["MALE", "FEMALE", "OTHER"].includes(gender) ? { gender: gender as any } : {}),
-          ...(goal && ["FRIENDSHIP", "SERIOUS", "MARRIAGE", "CASUAL"].includes(goal) ? { relationshipGoal: goal as any } : {}),
-          ...(city ? { city: { contains: city, mode: "insensitive" } } : {}),
-        },
-        include: {
-          photos: { where: { status: "APPROVED" }, orderBy: { order: "asc" } },
-          interests: { include: { interest: true } },
-          verifications: { where: { status: "APPROVED" } },
-          user: { select: { dateOfBirth: true, phoneVerifiedAt: true, emailVerifiedAt: true } },
-        },
-        orderBy: { updatedAt: "desc" },
-      });
+      const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+      const supaMe = await getProfileFromSupabase(session.userId, session.email || undefined);
+      if (supaMe) viewerSource = { ...viewerSource, ...supaMe, userId: session.userId, email: session.email || supaMe.email };
+    } catch {}
+    const viewerPlan = getEffectivePlan(viewerSource || { userId: session.userId, email: session.email });
 
-      if (dbProfiles && dbProfiles.length > 0) {
-        const dbUserIds = new Set(dbProfiles.map((p) => p.userId));
-        const formatted = dbProfiles.map((p) => {
-          let calculatedAge = 25;
+    // 2. Membres : Supabase REST d'abord
+    let profiles: any[] = [];
+    try {
+      const { getPublicProfilesFromSupabase } = await import("@/lib/supabase-server");
+      const supa = await getPublicProfilesFromSupabase(session.userId);
+      profiles = supa.map((p: any) => ({ ...p, plan: getEffectivePlan(p) }));
+    } catch (supaErr) {
+      console.warn("[GET /api/profiles] Supabase:", supaErr);
+    }
+
+    // 3. Secours Prisma si Supabase ne répond pas
+    if (profiles.length === 0) {
+      try {
+        const dbProfiles = await prisma.profile.findMany({
+          where: { isVisible: true, userId: { not: session.userId } },
+          include: {
+            photos: { orderBy: { order: "asc" } },
+            user: { select: { dateOfBirth: true } },
+          },
+          orderBy: { updatedAt: "desc" },
+        });
+        profiles = dbProfiles.map((p) => {
+          const local = getProfileByUserId(p.userId);
+          let age: number | undefined;
           if (p.user?.dateOfBirth) {
-            const birthDate = new Date(p.user.dateOfBirth);
+            const dob = new Date(p.user.dateOfBirth);
             const now = new Date();
-            calculatedAge = now.getFullYear() - birthDate.getFullYear();
+            age = now.getFullYear() - dob.getFullYear() - (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
           }
-
-          // Check if local store has more recent photos
-          const localMatch = getAllProfiles().find((lp) => lp.userId === p.userId);
-          let photos = p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain }));
-          if (photos.length === 0 && localMatch?.photos && localMatch.photos.length > 0) {
-            photos = localMatch.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain }));
-          }
-
           return {
             id: p.id,
             userId: p.userId,
             firstName: p.firstName,
-            pseudo: p.pseudo || localMatch?.pseudo || p.firstName,
+            pseudo: p.pseudo || p.firstName,
             gender: p.gender,
             city: p.city,
-            neighborhood: p.neighborhood || localMatch?.neighborhood || "Lomé",
-            profession: p.profession || localMatch?.profession,
-            bio: p.bio || localMatch?.bio,
-            coverUrl: (p as any).coverUrl || localMatch?.coverUrl || undefined,
+            neighborhood: p.neighborhood || "Lomé",
+            profession: p.profession,
+            bio: p.bio,
             relationshipGoal: p.relationshipGoal,
-            plan: "FREE",
-            profileCompleteness: p.profileCompleteness || 90,
-            photos,
-            interests: p.interests.map((pi) => ({ interest: { name: pi.interest.name, icon: pi.interest.icon || "✨" } })),
-            verifications: p.verifications.map((v) => ({ type: v.type })),
-            age: calculatedAge,
+            plan: getEffectivePlan(local),
+            likesCount: local?.likesCount ?? 0,
+            photos: p.photos.filter((ph) => ph.status !== ("COVER" as any)).map((ph) => ({ url: ph.url, isMain: ph.isMain })),
+            age: age ?? local?.age,
             isVerified: true,
           };
         });
-
-        // Add any local profiles not yet in dbProfiles
-        const extraLocal = getAllProfiles()
-          .filter((lp) => lp.isVisible && lp.userId !== session.userId && !dbUserIds.has(lp.userId))
-          .map((p) => ({
-            id: p.id,
-            userId: p.userId,
-            firstName: p.firstName,
-            pseudo: p.pseudo || p.firstName,
-            gender: p.gender,
-            city: p.city,
-            neighborhood: p.neighborhood || "Lomé",
-            profession: p.profession,
-            bio: p.bio,
-            coverUrl: p.coverUrl,
-            relationshipGoal: p.relationshipGoal,
-            plan: p.plan,
-            profileCompleteness: 90,
-            photos: p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain })),
-            interests: p.interests.map((name) => ({ interest: { name, icon: "✨" } })),
-            verifications: p.isVerified ? [{ type: "PHONE" }, { type: "SELFIE" }] : [],
-            age: p.age,
-            isVerified: p.isVerified,
-          }));
-
-        return NextResponse.json({ profiles: [...formatted, ...extraLocal] });
+      } catch (dbErr) {
+        console.warn("[GET /api/profiles] Prisma:", dbErr);
       }
-    } catch (dbErr) {
-      console.warn("[GET /api/profiles] Prisma query fallback to Supabase REST and local store:", dbErr);
     }
 
-    // 2. Fetch live profiles directly from Supabase REST
-    try {
-      const { getPublicProfilesFromSupabase } = await import("@/lib/supabase-server");
-      const supaProfiles = await getPublicProfilesFromSupabase(session.userId);
-      if (supaProfiles && supaProfiles.length > 0) {
-        let filteredSupa = supaProfiles;
-        if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) {
-          filteredSupa = filteredSupa.filter((p: any) => p.gender === gender);
-        }
-        if (city) {
-          filteredSupa = filteredSupa.filter((p: any) => p.city?.toLowerCase().includes(city.toLowerCase()));
-        }
-        if (goal) {
-          filteredSupa = filteredSupa.filter((p: any) => p.relationshipGoal === goal);
-        }
+    // 4. Membres connus uniquement de ce serveur
+    const known = new Set(profiles.map((p) => p.userId));
+    const extraLocal = getAllProfiles()
+      .filter((lp) => lp.isVisible && lp.userId !== session.userId && !known.has(lp.userId))
+      .map(fromLocal);
+    profiles = [...profiles, ...extraLocal];
 
-        const supaUserIds = new Set(filteredSupa.map((p: any) => p.userId));
-        const extraLocal = getAllProfiles()
-          .filter((lp) => lp.isVisible && lp.userId !== session.userId && !supaUserIds.has(lp.userId))
-          .map((p) => ({
-            id: p.id,
-            userId: p.userId,
-            firstName: p.firstName,
-            pseudo: p.pseudo || p.firstName,
-            gender: p.gender,
-            city: p.city,
-            neighborhood: p.neighborhood || "Lomé",
-            profession: p.profession,
-            bio: p.bio,
-            coverUrl: p.coverUrl,
-            relationshipGoal: p.relationshipGoal,
-            plan: p.plan,
-            profileCompleteness: 90,
-            photos: p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain })),
-            interests: p.interests.map((name) => ({ interest: { name, icon: "✨" } })),
-            verifications: p.isVerified ? [{ type: "PHONE" }, { type: "SELFIE" }] : [],
-            age: p.age,
-            isVerified: p.isVerified,
-          }));
+    // 5. Filtres de recherche
+    if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) profiles = profiles.filter((p) => p.gender === gender);
+    if (city) profiles = profiles.filter((p) => p.city?.toLowerCase().includes(city.toLowerCase()));
+    if (goal) profiles = profiles.filter((p) => p.relationshipGoal === goal);
 
-        return NextResponse.json({ profiles: [...filteredSupa, ...extraLocal] });
-      }
-    } catch (supaErr) {
-      console.warn("[GET /api/profiles] Supabase REST fallback warning:", supaErr);
-    }
+    // 6. Visibilité selon le plan (Victoire, l'hôtesse du club, reste visible de tous)
+    const visible = profiles.filter((p) => p.userId === VICTOIRE_ID || canViewMember(viewerPlan, p.plan));
 
-    // 3. Fallback to local store
-    let profiles = getAllProfiles().filter((p) => p.isVisible && p.userId !== session.userId);
-
-    if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) {
-      profiles = profiles.filter((p) => p.gender === gender);
-    }
-    if (city) {
-      profiles = profiles.filter((p) => p.city.toLowerCase().includes(city.toLowerCase()));
-    }
-    if (goal) {
-      profiles = profiles.filter((p) => p.relationshipGoal === goal);
-    }
-
-    const formatted = profiles.map((p) => ({
-      id: p.id,
-      userId: p.userId,
-      firstName: p.firstName,
-      pseudo: p.pseudo || p.firstName,
-      gender: p.gender,
-      city: p.city,
-      neighborhood: p.neighborhood || "Lomé",
-      profession: p.profession,
-      bio: p.bio,
-      coverUrl: p.coverUrl,
-      relationshipGoal: p.relationshipGoal,
-      plan: p.plan || "FREE",
-      likesCount: p.likesCount !== undefined ? p.likesCount : 10,
-      profileCompleteness: 90,
-      photos: p.photos.map((ph) => ({ url: ph.url, isMain: ph.isMain })),
-      interests: p.interests.map((name) => ({ interest: { name, icon: "✨" } })),
-      verifications: p.isVerified ? [{ type: "PHONE" }, { type: "SELFIE" }] : [],
-      age: p.age,
-      isVerified: p.isVerified,
-    }));
-
-    // Application stricte des rôles de tarifs (visibilité entre catégories) et classement par likes
-    const { getProfileByUserId, canViewMember, sortProfilesByPriorityAndLikes } = await import("@/lib/db-store");
-    const myProfile = getProfileByUserId(session.userId);
-    const viewerPlan = myProfile?.plan || "FREE";
-
-    const visibleProfiles = formatted.filter((p) => canViewMember(viewerPlan, p.plan));
-    const sorted = sortProfilesByPriorityAndLikes(visibleProfiles);
-
-    return NextResponse.json({ profiles: sorted });
+    return NextResponse.json({ profiles: sortProfilesByPriorityAndLikes(visible), viewerPlan });
   } catch (error) {
     console.error("[GET /api/profiles] Error:", error);
     return NextResponse.json({ profiles: [] });

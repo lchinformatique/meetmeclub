@@ -9,6 +9,8 @@ import Image from "next/image";
 import Header from "@/components/Header";
 import CommunityStatsWidget from "@/components/CommunityStatsWidget";
 import { Sparkles, Crown } from "lucide-react";
+import { useRealtime } from "@/components/realtime/RealtimeProvider";
+import { PartnerSheet, Lightbox } from "@/app/messages/_components/Modals";
 
 interface ProfileItem {
   id: string;
@@ -30,6 +32,7 @@ interface ProfileItem {
     phoneVerifiedAt?: string | null;
   };
   age?: number;
+  plan?: string;
 }
 
 // No sample profiles — only real registered users from API
@@ -53,6 +56,10 @@ export default function DecouvertePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [matchModal, setMatchModal] = useState<ProfileItem | null>(null);
+  // Fiche complète d'un membre (toutes ses photos, bio, infos)
+  const [sheetProfile, setSheetProfile] = useState<ProfileItem | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const rt = useRealtime();
 
   // User subscription & quota state
   const [myProfile, setMyProfile] = useState<any>(null);
@@ -748,8 +755,30 @@ export default function DecouvertePage() {
                       </div>
                     )}
 
-                    {/* Anti-download transparent protective layer */}
-                    <div style={{ position: "absolute", inset: 0, zIndex: 1 }} onContextMenu={(e) => e.preventDefault()} />
+                    {/* Anti-download transparent protective layer — un toucher ouvre la fiche complète */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Voir le profil et les photos de ${profile.firstName}`}
+                      style={{ position: "absolute", inset: 0, zIndex: 1, cursor: "pointer" }}
+                      onContextMenu={(e) => e.preventDefault()}
+                      onClick={() => setSheetProfile(profile)}
+                      onKeyDown={(e) => e.key === "Enter" && setSheetProfile(profile)}
+                    />
+
+                    {/* Nombre de photos + statut en ligne */}
+                    <div style={{ position: "absolute", top: "12px", right: "12px", zIndex: 2, display: "flex", gap: "6px", pointerEvents: "none" }}>
+                      {rt.isOnline(targetId) && (
+                        <span style={{ background: "rgba(18,183,106,0.95)", color: "white", fontSize: "11px", fontWeight: 800, padding: "4px 9px", borderRadius: "9999px" }}>
+                          ● En ligne
+                        </span>
+                      )}
+                      {(profile.photos?.length || 0) > 1 && (
+                        <span style={{ background: "rgba(11,37,89,0.85)", color: "white", fontSize: "11px", fontWeight: 800, padding: "4px 9px", borderRadius: "9999px" }}>
+                          📷 {profile.photos.length} photos
+                        </span>
+                      )}
+                    </div>
 
                     {/* Watermark de confidentialité */}
                     <span className="secure-watermark">Meet Me Club • Confidentiel</span>
@@ -1445,6 +1474,35 @@ export default function DecouvertePage() {
           </div>
         </div>
       )}
+
+      {/* Fiche complète du membre : toutes ses photos, bio et informations */}
+      {sheetProfile && (
+        <PartnerSheet
+          member={{
+            userId: sheetProfile.userId || sheetProfile.id,
+            firstName: sheetProfile.firstName,
+            pseudo: sheetProfile.pseudo || undefined,
+            photoUrl: (sheetProfile.photos?.find((p) => p.isMain) || sheetProfile.photos?.[0])?.url,
+            photos: sheetProfile.photos || [],
+            city: sheetProfile.city,
+            neighborhood: sheetProfile.neighborhood || undefined,
+            bio: sheetProfile.bio || undefined,
+            profession: sheetProfile.profession || undefined,
+            relationshipGoal: sheetProfile.relationshipGoal,
+            age: computeAge(sheetProfile) || undefined,
+            plan: sheetProfile.plan,
+          }}
+          online={rt.isOnline(sheetProfile.userId || sheetProfile.id)}
+          onClose={() => setSheetProfile(null)}
+          onOpenImage={setLightboxUrl}
+          onMessage={() => {
+            const p = sheetProfile;
+            setSheetProfile(null);
+            handleInitiateExchange(p, "CHAT");
+          }}
+        />
+      )}
+      {lightboxUrl && <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
 
       {/* Match Modal */}
       {matchModal && (

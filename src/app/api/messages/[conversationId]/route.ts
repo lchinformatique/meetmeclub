@@ -21,6 +21,21 @@ export async function GET(
   const cursor = searchParams.get("cursor"); // message id for pagination
   const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
 
+  // Seuls les deux participants peuvent lire une conversation
+  if (!conversationId.includes("victoire")) {
+    try {
+      const { getSupabaseAdmin } = await import("@/lib/supabase-server");
+      const { data: conv } = await getSupabaseAdmin()
+        .from("conversations")
+        .select("participantA, participantB")
+        .eq("id", conversationId)
+        .maybeSingle();
+      if (conv && conv.participantA !== session.userId && conv.participantB !== session.userId) {
+        return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+      }
+    } catch {}
+  }
+
   let messages: any[] = [];
 
   // 1. Tenter via Prisma

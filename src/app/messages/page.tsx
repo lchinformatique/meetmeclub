@@ -1,4345 +1,838 @@
 "use client";
 // src/app/messages/page.tsx
-// Secure member messaging — Photo upload, GPS Location, Voice Notes (Audio messages), and Live Video Call
+// Messagerie Meet Me Club — style WhatsApp aux couleurs du club :
+// discussions en temps réel, membres en ligne, photos, notes vocales, position,
+// appels audio/vidéo (VIP), accusés de lecture et notifications.
 
-import { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  BellRing,
+  CalendarHeart,
+  Lock,
+  MessageCircle,
+  MessageCirclePlus,
+  MoreVertical,
+  Phone,
+  Search,
+  ShieldCheck,
+  UserRound,
+  Users,
+  Video,
+} from "lucide-react";
 import Header from "@/components/Header";
-import { Video, Phone, PhoneCall, PhoneOff, Volume2, MicOff, Calendar, MoreVertical, Paperclip, Send, Mic, MapPin, ArrowLeft, User, MessageSquare } from "lucide-react";
+import { useRealtime } from "@/components/realtime/RealtimeProvider";
+import styles from "./messages.module.css";
+import Avatar from "./_components/Avatar";
+import MessageBubble from "./_components/MessageBubble";
+import Composer from "./_components/Composer";
+import { LocationModal, Lightbox, PartnerSheet, PlanBadge, QuotaModal, RulesModal, VipModal } from "./_components/Modals";
+import {
+  VICTOIRE_CONVERSATION,
+  VICTOIRE_ID,
+  compressImage,
+  dayLabel,
+  formatListTime,
+  previewText,
+  readAsDataUrl,
+  toChatMessage,
+  type ChatMessage,
+  type Conversation,
+  type Member,
+} from "./_lib/chat-utils";
 
-// ── Types ─────────────────────────────────────────────────────
-interface ChatMessage {
-  id: string;
-  senderId: string;
-  body: string;
-  imageUrl?: string;
-  videoUrl?: string;
-  audioUrl?: string;
-  audioDuration?: number; // duration in seconds
-  location?: {
-    label: string;
-    latitude?: number;
-    longitude?: number;
-    mapsUrl: string;
-  };
-  createdAt: string;
-  status: "SENT" | "DELIVERED" | "READ";
-}
+const FREE_MAX_PARTNERS = 3;
+const MAX_VIDEO_BYTES = 3 * 1024 * 1024;
 
-interface Conversation {
-  id: string;
-  participantId: string;
-  firstName: string;
-  pseudo: string;
-  photoUrl: string;
-  lastMessage: string;
-  lastMessageAt: string;
-  unreadCount: number;
-  isOnline: boolean;
-  isVerified: boolean;
-}
-
-const ME_ID = "me";
-
-// Conversation officielle d'accueil avec Victoire pour garantir un échange immédiat
-export const VICTOIRE_CONVERSATION: Conversation = {
-  id: "conv_victoire_welcome",
-  participantId: "user_victoire_lome",
-  firstName: "Victoire",
-  pseudo: "@victoire_lome",
-  photoUrl: "/victoire_profile.jpg",
-  lastMessage: "En ligne à Lomé · Cliquez pour lui écrire",
-  lastMessageAt: new Date().toISOString(),
-  unreadCount: 0,
-  isOnline: true,
-  isVerified: true,
-};
-
-const INITIAL_CONVERSATIONS: Conversation[] = [VICTOIRE_CONVERSATION];
-
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {};
-
-const LOME_SPOTS = [
-  { name: "🏖️ Plage de Lomé (Boulevard du Mono)", lat: 6.1264, lng: 1.2255 },
-  { name: "🍹 Bè Plage — Restaurant Coco Beach", lat: 6.1320, lng: 1.2580 },
-  { name: "🏨 Hôtel 2 Février Lomé (Place de l'Indépendance)", lat: 6.1305, lng: 1.2162 },
-  { name: "☕ Tokoin — Café & Lounge Byblos", lat: 6.1450, lng: 1.2180 },
-  { name: "🌴 Agoè-Nyivé (Carrefour 2 Lions)", lat: 6.2050, lng: 1.1980 },
-];
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
-  if (diffDays === 0) return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  if (diffDays === 1) return "hier";
-  if (diffDays < 7) return d.toLocaleDateString("fr-FR", { weekday: "short" });
-  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-}
-
-function MessagesContent() {
+function MessagesApp() {
   const searchParams = useSearchParams();
+  const convParam = searchParams.get("conv");
   const contactParam = searchParams.get("contact") || searchParams.get("user");
-  const isWelcome = searchParams.get("welcome") === "1";
 
-  const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
-  const [activeConvId, setActiveConvId] = useState<string>("conv_victoire_welcome");
-  const [mobileView, setMobileView] = useState<"list" | "chat">(contactParam ? "chat" : "list");
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
-  const [draft, setDraft] = useState("");
+  const rt = useRealtime();
+
+  const [authState, setAuthState] = useState<"loading" | "in" | "out">("loading");
   const [myProfile, setMyProfile] = useState<any>(null);
-  const [sidebarTab, setSidebarTab] = useState<"conversations" | "online">("conversations");
-  const [selectedPartnerModal, setSelectedPartnerModal] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [conversations, setConversations] = useState<Conversation[]>([VICTOIRE_CONVERSATION]);
+  const [convsLoaded, setConvsLoaded] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<"list" | "chat">(convParam || contactParam ? "chat" : "list");
+  const [messagesByConv, setMessagesByConv] = useState<Record<string, ChatMessage[]>>({});
+  const [members, setMembers] = useState<Member[]>([]);
+  const [tab, setTab] = useState<"chats" | "online">("chats");
+  const [search, setSearch] = useState("");
+  const [typingAt, setTypingAt] = useState<Record<string, number>>({});
+  const [partnerTypingBot, setPartnerTypingBot] = useState(false);
+  const [sheetMember, setSheetMember] = useState<Member | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [vipOpen, setVipOpen] = useState(false);
+  const [quotaOpen, setQuotaOpen] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [, forceTick] = useState(0);
 
-  // Modals
-  const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
-  const [rulesModalOpen, setRulesModalOpen] = useState(false);
-  const [quotaModalOpen, setQuotaModalOpen] = useState(false);
-  const [securityModalOpen, setSecurityModalOpen] = useState(false);
-  const [vipModalOpen, setVipModalOpen] = useState(false);
-  const [partnerModalOpen, setPartnerModalOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
-  const [chatMenuOpen, setChatMenuOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pendingPayloads = useRef<Record<string, { body: string; mediaUrl?: string; convId: string }>>({});
+  const contactHandled = useRef<string | null>(null);
 
-  // Video call state
-  const [videoCallOpen, setVideoCallOpen] = useState(false);
-  const [callDuration, setCallDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isCameraOff, setIsCameraOff] = useState(false);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
+  const myId: string | undefined = rt.me?.userId || myProfile?.userId;
+  const plan: string = (myProfile?.effectivePlan || myProfile?.plan || rt.me?.plan || "FREE").toUpperCase();
+  const isVip = plan === "VIP";
+  const isFree = plan === "FREE";
 
-  // Audio call state (WhatsApp style direct call)
-  const [audioCallOpen, setAudioCallOpen] = useState(false);
-  const [audioCallDuration, setAudioCallDuration] = useState(0);
-  const [audioCallRinging, setAudioCallRinging] = useState(true);
-  const [isAudioCallMuted, setIsAudioCallMuted] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
-  const audioCallStreamRef = useRef<MediaStream | null>(null);
+  const activeConv = useMemo(
+    () => conversations.find((c) => c.id === activeConvId) || null,
+    [conversations, activeConvId]
+  );
 
-  // Voice recording state
-  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
-  const [voiceRecordingSeconds, setVoiceRecordingSeconds] = useState(0);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioStreamRef = useRef<MediaStream | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const selectedAudioMimeRef = useRef<string>("audio/mp4");
-  const voiceTimerRef = useRef<any>(null);
+  const memberById = useMemo(() => {
+    const map: Record<string, Member> = {};
+    for (const m of members) map[m.userId] = m;
+    return map;
+  }, [members]);
 
-  // Voice playback state
-  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
-  const [audioProgress, setAudioProgress] = useState(0);
-  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
-  const audioProgressIntervalRef = useRef<any>(null);
-
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [onlineMembers, setOnlineMembers] = useState<
-    Array<{
-      id: string;
-      userId: string;
-      firstName: string;
-      pseudo?: string;
-      photoUrl?: string;
-      coverUrl?: string;
-      photos?: Array<{ url: string; isMain?: boolean }>;
-      city?: string;
-      bio?: string;
-      profession?: string;
-      relationshipGoal?: string;
-      age?: number;
-    }>
-  >([]);
-
-  // Load user profile & subscription plan
+  // ── Chargements ─────────────────────────────────────────────
   useEffect(() => {
-    async function loadMe() {
-      try {
-        const res = await fetch("/api/profiles/me");
-        if (res.status === 401) {
-          setIsAuthenticated(false);
-          return;
-        }
-        if (res.ok) {
-          const data = await res.json();
-          setMyProfile(data.profile);
-          setIsAuthenticated(true);
-        }
-      } catch (e) {
-        console.warn("Could not load my profile in messages:", e);
-      }
-    }
-    loadMe();
+    fetch("/api/profiles/me")
+      .then(async (res) => {
+        if (res.status === 401) return setAuthState("out");
+        if (!res.ok) return setAuthState("in");
+        const data = await res.json();
+        setMyProfile(data.profile);
+        setAuthState("in");
+      })
+      .catch(() => setAuthState("in"));
   }, []);
 
-  // Load online / connected members for instant chat discovery
-  useEffect(() => {
-    async function loadOnlineMembers() {
-      try {
-        const res = await fetch("/api/profiles");
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.profiles)) {
-            const list = data.profiles.map((p: any) => ({
-              id: p.id,
-              userId: p.userId,
-              firstName: p.firstName,
-              pseudo: p.pseudo || p.firstName,
-              photoUrl: p.photos?.find((ph: any) => ph.isMain)?.url || p.photos?.[0]?.url || "",
-              coverUrl: p.coverUrl || "",
-              photos: p.photos || [],
-              city: p.city || "Lomé",
-              bio: p.bio || "Membre actif du club.",
-              profession: p.profession || "Membre",
-              relationshipGoal: p.relationshipGoal || "SERIOUS",
-              age: p.age || 26,
-            }));
-            setOnlineMembers(list);
-          }
-        }
-      } catch (err) {
-        console.warn("Could not load online members for chat:", err);
-      }
+  const loadConversations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/conversations", { cache: "no-store" });
+      if (res.status === 401) return setAuthState("out");
+      if (!res.ok) return;
+      const data = await res.json();
+      const list: Conversation[] = Array.isArray(data.conversations) ? data.conversations : [];
+      setConversations((prev) => {
+        // Conserve les conversations ouvertes localement qui n'existent pas encore côté serveur
+        const localOnly = prev.filter((c) => !list.some((l) => l.id === c.id) && c.id.startsWith("local_"));
+        const merged = [...localOnly, ...list];
+        if (!merged.some((c) => c.participantId === VICTOIRE_ID)) merged.push(VICTOIRE_CONVERSATION);
+        return merged.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+      });
+    } catch {
+    } finally {
+      setConvsLoaded(true);
     }
-    loadOnlineMembers();
   }, []);
 
-  // Load real conversations from API on mount
   useEffect(() => {
-    async function loadConversations() {
-      try {
-        const res = await fetch("/api/conversations");
-        if (res.status === 401) {
-          setIsAuthenticated(false);
-          return;
-        }
-        if (res.ok) {
-          setIsAuthenticated(true);
-          const data = await res.json();
-          if (data.conversations && data.conversations.length > 0) {
-            setConversations(data.conversations);
-            if (!contactParam && data.conversations.length > 0) {
-              setActiveConvId(data.conversations[0].id);
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("Could not load conversations:", e);
-      }
-    }
     loadConversations();
-  }, [contactParam]);
+  }, [loadConversations]);
 
-  // Load messages for active conversation from API with live 3-second auto-refresh
+  useEffect(() => {
+    fetch("/api/profiles")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!Array.isArray(data?.profiles)) return;
+        setMembers(
+          data.profiles.map((p: any) => ({
+            userId: p.userId,
+            firstName: p.firstName || "Membre",
+            pseudo: p.pseudo,
+            photoUrl: p.photos?.find((ph: any) => ph.isMain)?.url || p.photos?.[0]?.url || p.avatarUrl || "",
+            photos: p.photos || [],
+            city: p.city,
+            neighborhood: p.neighborhood,
+            bio: p.bio,
+            profession: p.profession,
+            relationshipGoal: p.relationshipGoal,
+            age: p.age,
+            plan: p.plan,
+            gender: p.gender,
+          }))
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  const loadMessages = useCallback(async (convId: string) => {
+    try {
+      const res = await fetch(`/api/messages/${encodeURIComponent(convId)}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const serverMsgs: ChatMessage[] = (data.messages || []).map(toChatMessage);
+      setMessagesByConv((prev) => {
+        const pending = (prev[convId] || []).filter((m) => m.id.startsWith("tmp-"));
+        return { ...prev, [convId]: [...serverMsgs, ...pending] };
+      });
+    } catch {}
+  }, []);
+
+  // ── Conversation active ─────────────────────────────────────
+  const chatVisible = Boolean(activeConvId) && (mobileView === "chat" || (typeof window !== "undefined" && window.innerWidth > 768));
+
   useEffect(() => {
     if (!activeConvId) return;
-    async function loadMessages() {
-      try {
-        const res = await fetch(`/api/messages/${activeConvId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.messages && Array.isArray(data.messages)) {
-            setMessages((prev) => ({
-              ...prev,
-              [activeConvId]: data.messages.map((m: any) => {
-                const isVideo =
-                  m.mediaUrl?.startsWith("data:video/") ||
-                  m.mediaUrl?.match(/\.(mp4|webm|mov|ogg)$/i) ||
-                  m.body?.includes("🎥");
-                const isAudio =
-                  m.mediaUrl?.startsWith("data:audio/") ||
-                  m.mediaUrl?.match(/\.(mp3|wav|ogg|webm)$/i) ||
-                  m.body?.startsWith("🎙️");
-                return {
-                  id: m.id,
-                  senderId: m.senderId,
-                  body: m.body,
-                  imageUrl: !isVideo && !isAudio && m.mediaUrl ? m.mediaUrl : undefined,
-                  videoUrl: isVideo ? m.mediaUrl : undefined,
-                  audioUrl: isAudio ? m.mediaUrl : undefined,
-                  createdAt: m.createdAt,
-                  status: m.status,
-                };
-              }),
-            }));
-          }
-        }
-      } catch (e) {
-        console.warn("Could not load messages:", e);
-      }
-    }
-    loadMessages();
-    const intervalTimer = setInterval(loadMessages, 3000);
-    return () => clearInterval(intervalTimer);
-  }, [activeConvId]);
+    loadMessages(activeConvId);
+    const id = setInterval(() => loadMessages(activeConvId), 20_000);
+    return () => clearInterval(id);
+  }, [activeConvId, loadMessages]);
 
-  // Handle auto-selection or creation from ?contact=...
   useEffect(() => {
-    if (!contactParam) return;
-
-    const existing = conversations.find(
-      (c) => c.participantId === contactParam || c.id === contactParam
-    );
-
-    if (existing) {
-      setActiveConvId(existing.id);
-      setMobileView("chat");
-    } else {
-      // Create a real conversation via API
-      async function createConversation() {
-        try {
-          const res = await fetch("/api/conversations", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ targetUserId: contactParam }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.conversation) {
-              setConversations((prev) => {
-                if (prev.find((c) => c.id === data.conversation.id)) return prev;
-                return [data.conversation, ...prev];
-              });
-              setActiveConvId(data.conversation.id);
-              setMobileView("chat");
-            }
-          } else if (res.status === 403) {
-            // Fallback conversation to allow chat without blocking
-            const targetId = contactParam || "contact";
-            const newConv: Conversation = {
-              id: `local_${targetId}`,
-              participantId: targetId,
-              firstName: "Partenaire",
-              pseudo: "@membre",
-              photoUrl: "",
-              lastMessage: "Nouvel échange 👋",
-              lastMessageAt: new Date().toISOString(),
-              unreadCount: 0,
-              isOnline: true,
-              isVerified: true,
-            };
-            setConversations((prev) => [newConv, ...prev]);
-            setActiveConvId(newConv.id);
-            setMobileView("chat");
-          }
-        } catch (e) {
-          console.warn("Could not create conversation:", e);
-          const targetId = contactParam || "contact";
-          const newConv: Conversation = {
-            id: `local_${targetId}`,
-            participantId: targetId,
-            firstName: "Partenaire",
-            pseudo: "@membre",
-            photoUrl: "",
-            lastMessage: "Nouvel échange 👋",
-            lastMessageAt: new Date().toISOString(),
-            unreadCount: 0,
-            isOnline: true,
-            isVerified: true,
-          };
-          setConversations((prev) => [newConv, ...prev]);
-          setActiveConvId(newConv.id);
-          setMobileView("chat");
-        }
-      }
-      createConversation();
+    rt.setActiveConversation(chatVisible ? activeConvId : null);
+    if (chatVisible && activeConvId) {
+      setConversations((prev) => prev.map((c) => (c.id === activeConvId ? { ...c, unreadCount: 0 } : c)));
     }
-  }, [contactParam]);
+    return () => rt.setActiveConversation(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConvId, chatVisible]);
 
-  const startChatWithMember = async (member: {
-    userId: string;
-    firstName: string;
-    pseudo?: string;
-    photoUrl?: string;
-  }) => {
-    const existing = conversations.find(
-      (c) => c.participantId === member.userId || c.id === member.userId
-    );
-    if (existing) {
-      setActiveConvId(existing.id);
-      setMobileView("chat");
-      return;
-    }
+  // Desktop : ouvrir la première conversation par défaut
+  useEffect(() => {
+    if (!convsLoaded || activeConvId || convParam || contactParam) return;
+    if (window.innerWidth > 768 && conversations[0]) setActiveConvId(conversations[0].id);
+  }, [convsLoaded, conversations, activeConvId, convParam, contactParam]);
 
-    try {
-      const res = await fetch("/api/conversations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId: member.userId }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.conversation) {
-          setConversations((prev) => [data.conversation, ...prev.filter((c) => c.id !== data.conversation.id)]);
-          setActiveConvId(data.conversation.id);
-          setMobileView("chat");
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn("Failed creating conversation with member:", e);
-    }
-
-    const newConv: Conversation = {
-      id: `conv_${member.userId}`,
-      participantId: member.userId,
-      firstName: member.firstName,
-      pseudo: member.pseudo || `@${member.firstName.toLowerCase()}`,
-      photoUrl: member.photoUrl || "",
-      lastMessage: "Nouvelle discussion démarrée 👋",
-      lastMessageAt: new Date().toISOString(),
-      unreadCount: 0,
-      isOnline: true,
-      isVerified: true,
-    };
-    setConversations((prev) => [newConv, ...prev.filter((c) => c.id !== newConv.id)]);
-    setActiveConvId(newConv.id);
+  // ?conv=… (depuis une notification)
+  useEffect(() => {
+    if (!convParam || !convsLoaded) return;
+    setActiveConvId(convParam);
     setMobileView("chat");
-  };
+    if (!conversations.some((c) => c.id === convParam)) loadConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convParam, convsLoaded]);
 
-  const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0] || VICTOIRE_CONVERSATION;
-  const currentMessages = messages[activeConv.id] ?? messages[activeConvId] ?? [];
-  const isFreePlan = !myProfile?.plan || myProfile?.plan === "FREE";
-  // Le chat est accessible à tous les membres connectés
-  // La vérification d'identité améliore la confiance mais n'est pas obligatoire pour chatter
-  const isVerifiedForChat = Boolean(myProfile); // tout membre connecté peut chatter
-
-
+  // Défilement automatique vers le dernier message
+  const activeMessages = activeConvId ? messagesByConv[activeConvId] || [] : [];
   useEffect(() => {
-    const timer = setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 60);
-    return () => clearTimeout(timer);
-  }, [activeConvId, currentMessages.length, isPartnerTyping]);
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [activeMessages.length, activeConvId, partnerTypingBot]);
 
-  // Video call duration timer
+  // ── Temps réel ──────────────────────────────────────────────
+  const activeConvRef = useRef(activeConvId);
+  activeConvRef.current = activeConvId;
+
+  const rtSubscribe = rt.subscribe;
   useEffect(() => {
-    let timer: any;
-    if (videoCallOpen) {
-      timer = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    } else {
-      setCallDuration(0);
-    }
-    return () => clearInterval(timer);
-  }, [videoCallOpen]);
-
-  // Audio Call Timer
-  useEffect(() => {
-    let timer: any;
-    if (audioCallOpen && !audioCallRinging) {
-      timer = setInterval(() => {
-        setAudioCallDuration((prev) => prev + 1);
-      }, 1000);
-    } else {
-      setAudioCallDuration(0);
-    }
-    return () => clearInterval(timer);
-  }, [audioCallOpen, audioCallRinging]);
-
-  // Start Video Call - Réservé exclusivement au Pack VIP
-  const isVip = myProfile?.plan === "VIP" || myProfile?.subscriptionTier === "VIP";
-
-  const startAudioCall = async () => {
-    if (!isVip) {
-      setVipModalOpen(true);
-      return;
-    }
-    setAudioCallOpen(true);
-    setAudioCallRinging(true);
-    setTimeout(() => setAudioCallRinging(false), 2200);
-    try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioCallStreamRef.current = stream;
-      }
-    } catch (e) {
-      console.warn("Audio mic access:", e);
-    }
-  };
-
-  const endAudioCall = () => {
-    if (audioCallStreamRef.current) {
-      audioCallStreamRef.current.getTracks().forEach((track) => track.stop());
-      audioCallStreamRef.current = null;
-    }
-    setAudioCallOpen(false);
-    setAudioCallRinging(false);
-
-    const msg: ChatMessage = {
-      id: `call-audio-${Date.now()}`,
-      senderId: ME_ID,
-      body: `📞 Appel vocal terminé · Durée : ${Math.floor(audioCallDuration / 60)}m ${audioCallDuration % 60}s · Échange audio sécurisé ✓`,
-      createdAt: new Date().toISOString(),
-      status: "SENT",
-    };
-    setMessages((prev) => ({
-      ...prev,
-      [activeConvId]: [...(prev[activeConvId] ?? []), msg],
-    }));
-  };
-
-  const toggleAudioCallMute = () => {
-    setIsAudioCallMuted(!isAudioCallMuted);
-    if (audioCallStreamRef.current) {
-      audioCallStreamRef.current.getAudioTracks().forEach((t) => (t.enabled = isAudioCallMuted));
-    }
-  };
-
-  const startVideoCall = async () => {
-    if (!isVip) {
-      setVipModalOpen(true);
-      return;
-    }
-    setVideoCallOpen(true);
-    try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-      }
-    } catch (e) {
-      console.warn("Camera/mic access (permission not granted):", e);
-    }
-  };
-
-  // End Video Call
-  const endVideoCall = () => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
-      localStreamRef.current = null;
-    }
-    setVideoCallOpen(false);
-
-    const msg: ChatMessage = {
-      id: `call-${Date.now()}`,
-      senderId: ME_ID,
-      body: `📹 Appel vidéo terminé · Durée : ${Math.floor(callDuration / 60)}m ${callDuration % 60}s · Contact humain vérifié ✓`,
-      createdAt: new Date().toISOString(),
-      status: "SENT",
-    };
-    setMessages((prev) => ({
-      ...prev,
-      [activeConvId]: [...(prev[activeConvId] ?? []), msg],
-    }));
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach((t) => (t.enabled = isMuted));
-    }
-  };
-
-  const toggleCamera = () => {
-    setIsCameraOff(!isCameraOff);
-    if (localStreamRef.current) {
-      localStreamRef.current.getVideoTracks().forEach((t) => (t.enabled = isCameraOff));
-    }
-  };
-
-  // ── Voice Message Recording ──────────────────────────────────
-  const startVoiceRecording = async () => {
-    const convIndex = conversations.findIndex((c) => c.id === activeConvId);
-    if (isFreePlan && convIndex >= 3) {
-      setQuotaModalOpen(true);
-      return;
-    }
-
-    setIsRecordingVoice(true);
-    setVoiceRecordingSeconds(0);
-    audioChunksRef.current = [];
-
-    // Increment recording timer
-    voiceTimerRef.current = setInterval(() => {
-      setVoiceRecordingSeconds((sec) => sec + 1);
-    }, 1000);
-
-    try {
-      if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
-        // Paramètres audio haute fidélité : réduction de bruit, annulation d'écho et contrôle de gain automatique
-        const audioConstraints: MediaStreamConstraints = {
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 44100,
-            channelCount: 1,
-          },
-        };
-
-        let stream: MediaStream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
-        } catch {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        }
-        audioStreamRef.current = stream;
-
-        // Codecs compatibles iOS Safari, Android Chrome & Desktop
-        let preferredMime = "";
-        const testTypes = [
-          "audio/mp4;codecs=mp4a.40.2",
-          "audio/mp4",
-          "audio/aac",
-          "audio/webm;codecs=opus",
-          "audio/webm",
-        ];
-        for (const t of testTypes) {
-          if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) {
-            preferredMime = t;
-            break;
-          }
-        }
-        selectedAudioMimeRef.current = preferredMime || "audio/mp4";
-
-        const recorderOptions: MediaRecorderOptions = {
-          audioBitsPerSecond: 128000,
-        };
-        if (preferredMime) {
-          recorderOptions.mimeType = preferredMime;
-        }
-
-        let recorder: MediaRecorder;
-        try {
-          recorder = new MediaRecorder(stream, recorderOptions);
-        } catch {
-          recorder = new MediaRecorder(stream);
-        }
-        mediaRecorderRef.current = recorder;
-
-        recorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-          }
-        };
-        recorder.start(100);
-      }
-    } catch (e) {
-      console.warn("Audio mic permission not granted (simulation mode active):", e);
-    }
-  };
-
-  const cancelVoiceRecording = () => {
-    if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
-    if (audioStreamRef.current) {
-      audioStreamRef.current.getTracks().forEach((t) => t.stop());
-      audioStreamRef.current = null;
-    }
-    setIsRecordingVoice(false);
-    setVoiceRecordingSeconds(0);
-  };
-
-  const finishVoiceRecording = () => {
-    if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
-    const recordedSec = voiceRecordingSeconds || 4;
-    const mime = selectedAudioMimeRef.current || "audio/mp4";
-
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.onstop = () => {
-        try {
-          const audioBlob = new Blob(audioChunksRef.current, { type: mime });
-          if (audioStreamRef.current) {
-            audioStreamRef.current.getTracks().forEach((t) => t.stop());
-            audioStreamRef.current = null;
-          }
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64Audio = reader.result as string;
-            dispatchVoiceMessage(base64Audio, recordedSec);
+    let reloadTimer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = rtSubscribe((event, payload) => {
+      const convId = payload?.conversationId as string | undefined;
+      if (event === "message") {
+        if (convId && convId === activeConvRef.current) loadMessages(convId);
+        setTypingAt((prev) => (convId && prev[convId] ? { ...prev, [convId]: 0 } : prev));
+        if (reloadTimer) clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(loadConversations, 400);
+      } else if (event === "typing" && convId) {
+        setTypingAt((prev) => ({ ...prev, [convId]: Date.now() }));
+        setTimeout(() => forceTick((n) => n + 1), 3600);
+      } else if (event === "read" && convId) {
+        setMessagesByConv((prev) => {
+          const list = prev[convId];
+          if (!list) return prev;
+          return {
+            ...prev,
+            [convId]: list.map((m) => (m.senderId !== payload.readerId && m.status !== "READ" && !m.id.startsWith("tmp-") ? { ...m, status: "READ" } : m)),
           };
-          reader.readAsDataURL(audioBlob);
-        } catch {
-          const blobUrl = URL.createObjectURL(new Blob(audioChunksRef.current, { type: mime }));
-          dispatchVoiceMessage(blobUrl, recordedSec);
-        }
-      };
-      mediaRecorderRef.current.stop();
-    } else {
-      if (audioStreamRef.current) {
-        audioStreamRef.current.getTracks().forEach((t) => t.stop());
-        audioStreamRef.current = null;
+        });
       }
-      dispatchVoiceMessage("synth_note", recordedSec);
-    }
-
-    setIsRecordingVoice(false);
-    setVoiceRecordingSeconds(0);
-  };
-
-  const dispatchVoiceMessage = async (url: string, durationSec: number) => {
-    const voiceText = `🎙️ Note vocale (${formatTimer(durationSec)})`;
-    const msg: ChatMessage = {
-      id: `voice-${Date.now()}`,
-      senderId: ME_ID,
-      body: voiceText,
-      audioUrl: url,
-      audioDuration: durationSec,
-      createdAt: new Date().toISOString(),
-      status: "SENT",
+    });
+    const onCallLogged = (e: Event) => {
+      const convId = (e as CustomEvent).detail?.conversationId;
+      if (convId) loadMessages(convId);
+      loadConversations();
     };
+    window.addEventListener("mmc:call-logged", onCallLogged);
+    return () => {
+      unsubscribe();
+      window.removeEventListener("mmc:call-logged", onCallLogged);
+      if (reloadTimer) clearTimeout(reloadTimer);
+    };
+  }, [rtSubscribe, loadMessages, loadConversations]);
 
-    setMessages((prev) => ({
-      ...prev,
-      [activeConvId]: [...(prev[activeConvId] ?? []), msg],
-    }));
+  const isTyping = (convId: string) => Date.now() - (typingAt[convId] || 0) < 3500;
 
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConvId
-          ? { ...c, lastMessage: voiceText, lastMessageAt: new Date().toISOString() }
-          : c
-      )
-    );
+  // ── Démarrer une discussion avec un membre ──────────────────
+  const realPartnersCount = conversations.filter((c) => c.participantId !== VICTOIRE_ID).length;
 
-    try {
-      await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId: activeConvId,
-          body: voiceText,
-          mediaUrl: url.startsWith("blob:") ? undefined : url,
-        }),
-      });
-    } catch (err) {
-      console.warn("Could not sync voice message to server:", err);
-    }
-
-    // Si on échange avec Victoire, réponse automatique à la note vocale
-    if (
-      activeConv?.participantId === "user_victoire_lome" ||
-      activeConvId.includes("victoire") ||
-      activeConv?.firstName === "Victoire"
-    ) {
-      setIsPartnerTyping(true);
-      setTimeout(async () => {
-        setIsPartnerTyping(false);
-        const { getVictoireReply } = await import("@/lib/victoire-bot");
-        const replyText = getVictoireReply(voiceText, "audio");
-        const autoReply: ChatMessage = {
-          id: `victoire-${Date.now()}`,
-          senderId: "user_victoire_lome",
-          body: replyText,
-          createdAt: new Date().toISOString(),
-          status: "DELIVERED",
-        };
-        setMessages((prev) => ({
-          ...prev,
-          [activeConvId]: [...(prev[activeConvId] ?? []), autoReply],
-        }));
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === activeConvId
-              ? { ...c, lastMessage: replyText, lastMessageAt: new Date().toISOString() }
-              : c
-          )
-        );
-      }, 1600);
-    }
+  const openConversation = (convId: string) => {
+    setActiveConvId(convId);
+    setMobileView("chat");
+    setMenuOpen(false);
   };
 
-  // ── Voice Message Playback ───────────────────────────────────
-  const playVoiceMessage = (msgId: string, audioUrl?: string, duration: number = 8) => {
-    if (playingAudioId === msgId) {
-      // Pause
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-      }
-      if (audioProgressIntervalRef.current) {
-        clearInterval(audioProgressIntervalRef.current);
-      }
-      setPlayingAudioId(null);
-      return;
-    }
+  const startChatWith = useCallback(
+    async (member: { userId: string; firstName: string; pseudo?: string; photoUrl?: string }) => {
+      setSheetMember(null);
+      const existing = conversations.find((c) => c.participantId === member.userId);
+      if (existing) return openConversation(existing.id);
+      if (member.userId === myId) return;
+      if (isFree && realPartnersCount >= FREE_MAX_PARTNERS) return setQuotaOpen(true);
 
-    // Stop previously playing audio
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
-      audioPlayerRef.current = null;
-    }
-    if (audioProgressIntervalRef.current) {
-      clearInterval(audioProgressIntervalRef.current);
-    }
-
-    setPlayingAudioId(msgId);
-    setAudioProgress(0);
-
-    const isPlayable = audioUrl && (audioUrl.startsWith("data:") || audioUrl.startsWith("blob:") || audioUrl.startsWith("http"));
-
-    if (isPlayable) {
+      let conv: Conversation | null = null;
       try {
-        const audio = new Audio(audioUrl);
-        audioPlayerRef.current = audio;
-        audio.ontimeupdate = () => {
-          if (audio.duration && audio.duration > 0) {
-            setAudioProgress((audio.currentTime / audio.duration) * 100);
-          }
-        };
-        audio.onended = () => {
-          setPlayingAudioId(null);
-          setAudioProgress(0);
-          if (audioProgressIntervalRef.current) clearInterval(audioProgressIntervalRef.current);
-        };
-        audio.play().catch(() => {
-          startSyntheticTone(duration);
+        const res = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetUserId: member.userId }),
         });
-      } catch {
-        startSyntheticTone(duration);
+        if (res.status === 403) return setQuotaOpen(true);
+        if (res.ok) conv = (await res.json()).conversation;
+      } catch {}
+      if (!conv) {
+        conv = {
+          id: `local_${member.userId}`,
+          participantId: member.userId,
+          firstName: member.firstName,
+          pseudo: member.pseudo || member.firstName,
+          photoUrl: member.photoUrl || "",
+          lastMessage: "Nouvelle discussion",
+          lastMessageAt: new Date().toISOString(),
+          unreadCount: 0,
+          isVerified: true,
+        };
       }
-    } else {
-      startSyntheticTone(duration);
-    }
+      const finalConv = { ...conv, firstName: conv.firstName === "Membre" ? member.firstName : conv.firstName, photoUrl: conv.photoUrl || member.photoUrl || "" };
+      setConversations((prev) => [finalConv, ...prev.filter((c) => c.id !== finalConv.id)]);
+      openConversation(finalConv.id);
+    },
+    [conversations, isFree, realPartnersCount, myId]
+  );
 
-    // Advance progress bar smoothly
-    const intervalTimeMs = 100;
-    const totalSteps = (duration * 1000) / intervalTimeMs;
-    let stepCount = 0;
+  // ?contact=… (depuis une fiche membre)
+  useEffect(() => {
+    if (!contactParam || !convsLoaded || contactHandled.current === contactParam) return;
+    contactHandled.current = contactParam;
+    const m = memberById[contactParam];
+    startChatWith({ userId: contactParam, firstName: m?.firstName || "Membre", pseudo: m?.pseudo, photoUrl: m?.photoUrl });
+  }, [contactParam, convsLoaded, memberById, startChatWith]);
 
-    audioProgressIntervalRef.current = setInterval(() => {
-      stepCount += 1;
-      const progress = Math.min(100, (stepCount / totalSteps) * 100);
-      setAudioProgress((prev) => Math.max(prev, progress));
-
-      if (progress >= 100) {
-        clearInterval(audioProgressIntervalRef.current);
-        setPlayingAudioId(null);
-        setAudioProgress(0);
-      }
-    }, intervalTimeMs);
+  // ── Envoi ───────────────────────────────────────────────────
+  const migrateConversationId = (oldId: string, newId: string) => {
+    if (oldId === newId) return;
+    setConversations((prev) => prev.map((c) => (c.id === oldId ? { ...c, id: newId } : c)));
+    setMessagesByConv((prev) => {
+      const { [oldId]: moved = [], ...rest } = prev;
+      return { ...rest, [newId]: [...(rest[newId] || []), ...moved] };
+    });
+    setActiveConvId((cur) => (cur === oldId ? newId : cur));
   };
 
-  const startSyntheticTone = (duration: number) => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 harmonic chime
-        notes.forEach((freq, idx) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "sine";
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.16);
-          gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.16);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.16 + 0.45);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + idx * 0.16);
-          osc.stop(ctx.currentTime + idx * 0.16 + 0.5);
-        });
-      }
-    } catch {}
+  const touchConversation = (convId: string, body: string) => {
+    setConversations((prev) => {
+      const target = prev.find((c) => c.id === convId);
+      if (!target) return prev;
+      const updated = { ...target, lastMessage: body, lastMessageAt: new Date().toISOString(), lastMessageSenderId: myId };
+      return [updated, ...prev.filter((c) => c.id !== convId)];
+    });
   };
 
-  // Send Text Message — posts to real API
-  const handleSend = useCallback(async () => {
-    if (!draft.trim()) return;
+  const deliver = async (tmpId: string) => {
+    const payload = pendingPayloads.current[tmpId];
+    if (!payload) return;
+    const { convId, body, mediaUrl } = payload;
+    const setStatus = (status: ChatMessage["status"]) =>
+      setMessagesByConv((prev) => ({
+        ...prev,
+        [convId]: (prev[convId] || []).map((m) => (m.id === tmpId ? { ...m, status } : m)),
+      }));
+    setStatus("PENDING");
 
-    const convIndex = conversations.findIndex((c) => c.id === activeConvId);
-    if (isFreePlan && convIndex >= 3) {
-      setQuotaModalOpen(true);
-      return;
-    }
-
-    const msgBody = draft.trim();
-    const optimisticMsg: ChatMessage = {
-      id: `m-${Date.now()}`,
-      senderId: ME_ID,
-      body: msgBody,
-      createdAt: new Date().toISOString(),
-      status: "SENT",
-    };
-
-    // Optimistic UI update
-    setMessages((prev) => ({
-      ...prev,
-      [activeConvId]: [...(prev[activeConvId] ?? []), optimisticMsg],
-    }));
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConvId
-          ? { ...c, lastMessage: msgBody, lastMessageAt: new Date().toISOString() }
-          : c
-      )
-    );
-    setDraft("");
-    inputRef.current?.focus();
-
-    // POST to real API (non-blocking)
     try {
       const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: activeConvId, body: msgBody }),
+        body: JSON.stringify({ conversationId: convId, body, mediaUrl }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.reply) {
-          setIsPartnerTyping(true);
-          setTimeout(() => {
-            setIsPartnerTyping(false);
-            setMessages((prev) => ({
-              ...prev,
-              [activeConvId]: [...(prev[activeConvId] ?? []), data.reply],
-            }));
-            setConversations((prev) =>
-              prev.map((c) =>
-                c.id === activeConvId
-                  ? { ...c, lastMessage: data.reply.body, lastMessageAt: new Date().toISOString() }
-                  : c
-              )
-            );
-          }, 1400);
-          return;
-        }
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      delete pendingPayloads.current[tmpId];
+      const saved = toChatMessage({ ...data.message, mediaUrl: data.message?.mediaUrl || mediaUrl });
+      const realConvId: string = data.message?.conversationId || convId;
+      setMessagesByConv((prev) => ({
+        ...prev,
+        [convId]: (prev[convId] || []).map((m) => (m.id === tmpId ? { ...saved, senderId: myId || saved.senderId } : m)),
+      }));
+      migrateConversationId(convId, realConvId);
+
+      if (data.reply) {
+        setPartnerTypingBot(true);
+        setTimeout(() => {
+          setPartnerTypingBot(false);
+          setMessagesByConv((prev) => ({ ...prev, [realConvId]: [...(prev[realConvId] || []), toChatMessage(data.reply)] }));
+          touchConversation(realConvId, data.reply.body);
+        }, 1400);
       }
-    } catch (e) {
-      console.warn("Message send error (optimistic UI preserved):", e);
+    } catch {
+      setStatus("FAILED");
     }
+  };
 
-    // Client-side fallback reply if talking to Victoire
-    const isTalkingToVictoire =
-      activeConv?.participantId === "user_victoire_lome" ||
-      activeConvId.includes("victoire") ||
-      activeConv?.firstName === "Victoire";
+  const sendMessage = (body: string, mediaUrl?: string) => {
+    if (!activeConv) return;
+    const convId = activeConv.id;
+    const tmpId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    pendingPayloads.current[tmpId] = { convId, body, mediaUrl };
+    const optimistic = { ...toChatMessage({ id: tmpId, senderId: myId || "me", body, mediaUrl, createdAt: new Date().toISOString() }), status: "PENDING" as const };
+    setMessagesByConv((prev) => ({ ...prev, [convId]: [...(prev[convId] || []), optimistic] }));
+    touchConversation(convId, previewText(body));
+    deliver(tmpId);
+  };
 
-    if (isTalkingToVictoire) {
-      setIsPartnerTyping(true);
-      setTimeout(async () => {
-        setIsPartnerTyping(false);
-        const { getVictoireReply } = await import("@/lib/victoire-bot");
-        const replyText = getVictoireReply(msgBody);
-        const autoReply: ChatMessage = {
-          id: `victoire-${Date.now()}`,
-          senderId: "user_victoire_lome",
-          body: replyText,
-          createdAt: new Date().toISOString(),
-          status: "DELIVERED",
-        };
-        setMessages((prev) => ({
-          ...prev,
-          [activeConvId]: [...(prev[activeConvId] ?? []), autoReply],
-        }));
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === activeConvId
-              ? { ...c, lastMessage: replyText, lastMessageAt: new Date().toISOString() }
-              : c
-          )
-        );
-      }, 1500);
-    }
-  }, [draft, activeConvId, isFreePlan, conversations, activeConv]);
-
-  // Send Photo, Video or Document from Device
-  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const convIndex = conversations.findIndex((c) => c.id === activeConvId);
-    if (isFreePlan && convIndex >= 3) {
-      setQuotaModalOpen(true);
+  const sendFile = async (file: File) => {
+    if (file.type.startsWith("video/")) {
+      if (file.size > MAX_VIDEO_BYTES) {
+        setNotice("Vidéo trop lourde (3 Mo maximum). Envoyez une vidéo plus courte.");
+        return;
+      }
+      sendMessage("🎥 Vidéo", await readAsDataUrl(file));
       return;
     }
-
-    const isVideo = file.type.startsWith("video/");
-    const isDoc = file.type.includes("pdf") || file.type.includes("document") || file.type.includes("text") || file.name.match(/\.(pdf|docx?|txt)$/i);
-    const mediaLabel = isVideo ? "🎥 Vidéo partagée" : isDoc ? `📄 Document : ${file.name}` : "📷 Photo partagée";
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const mediaUrl = event.target?.result as string;
-      const msg: ChatMessage = {
-        id: `media-${Date.now()}`,
-        senderId: ME_ID,
-        body: mediaLabel,
-        imageUrl: isVideo ? undefined : mediaUrl,
-        videoUrl: isVideo ? mediaUrl : undefined,
-        createdAt: new Date().toISOString(),
-        status: "SENT",
-      };
-      setMessages((prev) => ({
-        ...prev,
-        [activeConvId]: [...(prev[activeConvId] ?? []), msg],
-      }));
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === activeConvId
-            ? { ...c, lastMessage: mediaLabel, lastMessageAt: new Date().toISOString() }
-            : c
-        )
-      );
-
-      // Persist to server
-      try {
-        await fetch("/api/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            conversationId: activeConvId,
-            body: mediaLabel,
-            mediaUrl,
-          }),
-        });
-      } catch (err) {
-        console.warn("Could not sync media to server:", err);
-      }
-
-      // If talking to Victoire, reply to photo/media
-      if (
-        activeConv?.participantId === "user_victoire_lome" ||
-        activeConvId.includes("victoire") ||
-        activeConv?.firstName === "Victoire"
-      ) {
-        setIsPartnerTyping(true);
-        setTimeout(async () => {
-          setIsPartnerTyping(false);
-          const { getVictoireReply } = await import("@/lib/victoire-bot");
-          const replyText = getVictoireReply(mediaLabel, "image");
-          const autoReply: ChatMessage = {
-            id: `victoire-${Date.now()}`,
-            senderId: "user_victoire_lome",
-            body: replyText,
-            createdAt: new Date().toISOString(),
-            status: "DELIVERED",
-          };
-          setMessages((prev) => ({
-            ...prev,
-            [activeConvId]: [...(prev[activeConvId] ?? []), autoReply],
-          }));
-          setConversations((prev) =>
-            prev.map((c) =>
-              c.id === activeConvId
-                ? { ...c, lastMessage: replyText, lastMessageAt: new Date().toISOString() }
-                : c
-            )
-          );
-        }, 1800);
-      }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
+    if (!file.type.startsWith("image/")) {
+      setNotice("Format non pris en charge. Envoyez une photo ou une vidéo.");
+      return;
+    }
+    sendMessage("📷 Photo", await compressImage(file));
   };
 
-  // Share GPS Location
-  const shareLocation = (spotName?: string, lat?: number, lng?: number) => {
-    const latitude = lat || 6.1375;
-    const longitude = lng || 1.2125;
-    const label = spotName || "📍 Position GPS en direct (Lomé, Togo)";
-    const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+  const sendVoice = (dataUrl: string, seconds: number) => {
+    sendMessage(`🎙️ Note vocale (${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")})`, dataUrl);
+  };
 
-    const msg: ChatMessage = {
-      id: `loc-${Date.now()}`,
-      senderId: ME_ID,
-      body: `📍 Localisation partagée : ${label}`,
-      location: {
-        label,
-        latitude,
-        longitude,
-        mapsUrl,
-      },
-      createdAt: new Date().toISOString(),
-      status: "SENT",
-    };
+  const shareLocation = (label: string, lat: number, lng: number) => {
+    setLocationOpen(false);
+    sendMessage(`📍 ${label} (https://www.google.com/maps?q=${lat.toFixed(6)},${lng.toFixed(6)})`);
+  };
 
-    setMessages((prev) => ({
-      ...prev,
-      [activeConvId]: [...(prev[activeConvId] ?? []), msg],
-    }));
-
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === activeConvId
-          ? { ...c, lastMessage: `📍 ${label}`, lastMessageAt: new Date().toISOString() }
-          : c
-      )
+  // ── Appels ──────────────────────────────────────────────────
+  const callPartner = (kind: "audio" | "video", conv: Conversation | null = activeConv) => {
+    setMenuOpen(false);
+    if (!conv) return;
+    if (conv.participantId === VICTOIRE_ID) {
+      setNotice("Victoire est l'hôtesse d'accueil du club : les appels sont disponibles avec les membres.");
+      return;
+    }
+    if (!isVip) return setVipOpen(true);
+    const m = memberById[conv.participantId];
+    rt.startCall(
+      { userId: conv.participantId, firstName: conv.firstName || m?.firstName || "Membre", photoUrl: conv.photoUrl || m?.photoUrl || null },
+      kind,
+      conv.id.startsWith("local_") ? undefined : conv.id
     );
-
-    // Persist location message to server
-    try {
-      fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId: activeConvId,
-          body: `📍 Localisation partagée : ${label} (${mapsUrl})`,
-        }),
-      }).catch((e) => console.warn("Location sync warning:", e));
-    } catch {}
-
-    // If talking to Victoire, reply to location
-    if (
-      activeConv?.participantId === "user_victoire_lome" ||
-      activeConvId.includes("victoire") ||
-      activeConv?.firstName === "Victoire"
-    ) {
-      setIsPartnerTyping(true);
-      setTimeout(async () => {
-        setIsPartnerTyping(false);
-        const { getVictoireReply } = await import("@/lib/victoire-bot");
-        const replyText = getVictoireReply(label, "location");
-        const autoReply: ChatMessage = {
-          id: `victoire-${Date.now()}`,
-          senderId: "user_victoire_lome",
-          body: replyText,
-          createdAt: new Date().toISOString(),
-          status: "DELIVERED",
-        };
-        setMessages((prev) => ({
-          ...prev,
-          [activeConvId]: [...(prev[activeConvId] ?? []), autoReply],
-        }));
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === activeConvId
-              ? { ...c, lastMessage: replyText, lastMessageAt: new Date().toISOString() }
-              : c
-          )
-        );
-      }, 1500);
-    }
-
-    setLocationModalOpen(false);
   };
 
-  // Live GPS from phone
-  const requestLiveGPS = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          shareLocation(
-            `📍 Position GPS en direct (Précision ±${Math.round(pos.coords.accuracy)}m)`,
-            pos.coords.latitude,
-            pos.coords.longitude
-          );
-        },
-        () => {
-          shareLocation("📍 Lomé, Togo (Centre-ville)", 6.1375, 1.2125);
-        }
-      );
-    } else {
-      shareLocation("📍 Lomé, Togo", 6.1375, 1.2125);
-    }
-  };
+  // Mobile : la conversation reste fixée à l'écran, même clavier ouvert (iPhone & Android)
+  useEffect(() => {
+    if (mobileView !== "chat" || window.innerWidth > 768) return;
+    const root = document.documentElement;
+    const vv = window.visualViewport;
+    const apply = () => {
+      root.style.setProperty("--chat-height", `${Math.round(vv ? vv.height : window.innerHeight)}px`);
+      root.style.setProperty("--chat-top", `${Math.round(vv ? vv.offsetTop : 0)}px`);
+    };
+    apply();
+    vv?.addEventListener("resize", apply);
+    vv?.addEventListener("scroll", apply);
+    window.addEventListener("orientationchange", apply);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      vv?.removeEventListener("resize", apply);
+      vv?.removeEventListener("scroll", apply);
+      window.removeEventListener("orientationchange", apply);
+      document.body.style.overflow = prevOverflow;
+      root.style.removeProperty("--chat-height");
+      root.style.removeProperty("--chat-top");
+    };
+  }, [mobileView]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  useEffect(() => {
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 4500);
+    return () => clearTimeout(id);
+  }, [notice]);
 
-  const currentPlan = myProfile?.plan || "FREE";
-  const contactedCount = myProfile?.partnersContacted?.length || conversations.length;
+  // ── Données d'affichage ─────────────────────────────────────
+  const unreadFor = (c: Conversation) => (c.id === activeConvId && chatVisible ? 0 : rt.unreadByConversation[c.id] ?? c.unreadCount ?? 0);
 
-  const formatTimer = (sec: number) => {
-    const mins = Math.floor(sec / 60);
-    const secs = sec % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
+  const filteredConversations = conversations.filter((c) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return c.firstName.toLowerCase().includes(q) || c.pseudo?.toLowerCase().includes(q) || c.lastMessage?.toLowerCase().includes(q);
+  });
+
+  const onlineMembers: Member[] = useMemo(() => {
+    // Seuls les membres que mon plan me permet de voir (liste /api/profiles déjà filtrée),
+    // ou ceux avec qui j'ai déjà une discussion
+    return Object.values(rt.online)
+      .filter((p) => p.userId !== myId)
+      .filter((p) => memberById[p.userId] || conversations.some((c) => c.participantId === p.userId))
+      .map((p) => {
+        const m = memberById[p.userId];
+        return m
+          ? { ...m, photoUrl: m.photoUrl || p.photoUrl || "" }
+          : { userId: p.userId, firstName: p.firstName, photoUrl: p.photoUrl || "", photos: [], city: p.city, plan: p.plan };
+      })
+      .sort((a, b) => (b.plan === "VIP" ? 1 : 0) - (a.plan === "VIP" ? 1 : 0));
+  }, [rt.online, memberById, myId, conversations]);
+
+  const filteredOnline = onlineMembers.filter((m) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return [m.firstName, m.pseudo, m.city, m.profession, m.bio].some((v) => v?.toLowerCase().includes(q));
+  });
+
+  const offlineSuggestions = members
+    .filter((m) => m.userId !== myId && !rt.isOnline(m.userId) && m.userId !== VICTOIRE_ID)
+    .slice(0, 12);
+
+  const partnerMember: Member | null = activeConv
+    ? memberById[activeConv.participantId] || {
+        userId: activeConv.participantId,
+        firstName: activeConv.firstName,
+        pseudo: activeConv.pseudo,
+        photoUrl: activeConv.photoUrl,
+        photos: activeConv.photoUrl ? [{ url: activeConv.photoUrl, isMain: true }] : [],
+      }
+    : null;
+  const partnerOnline = activeConv ? activeConv.participantId === VICTOIRE_ID || rt.isOnline(activeConv.participantId) : false;
+  const partnerTyping = activeConv ? partnerTypingBot || isTyping(activeConv.id) : false;
+  const partnerStatus = partnerTyping ? "écrit…" : partnerOnline ? "en ligne" : "hors ligne";
+
+  // ── Non connecté ────────────────────────────────────────────
+  if (authState === "out") {
+    return (
+      <div className={styles.page}>
+        <Header />
+        <div className={styles.signedOut}>
+          <div className={styles.signedOutCard}>
+            <span className={styles.signedOutIcon}>
+              <MessageCircle size={30} />
+            </span>
+            <h2>Votre messagerie Meet Me Club</h2>
+            <p>Connectez-vous pour lire vos messages, voir qui est en ligne et discuter en toute sécurité.</p>
+            <Link href="/connexion?callbackUrl=/messages" className={styles.primaryBtn}>
+              Se connecter
+            </Link>
+            <Link href="/inscription" className={styles.secondaryBtn}>
+              Créer un compte gratuit
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Rendu ───────────────────────────────────────────────────
+  let lastDay = "";
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#F8FAFC", display: "flex", flexDirection: "column" }}>
-      {/* ── Top Standardized Header (masqué sur mobile pendant le chat pour plein écran WhatsApp) ── */}
+    <div className={styles.page}>
       <div className={mobileView === "chat" ? "hidden-on-mobile" : ""}>
         <Header />
       </div>
 
-      {/* ── État non-connecté ── */}
-      {isAuthenticated === false && (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
-          <div style={{ maxWidth: "480px", width: "100%", background: "white", borderRadius: "24px", padding: "36px 28px", textAlign: "center", boxShadow: "0 10px 40px rgba(11,37,89,0.08)", border: "1px solid #E2E8F0" }}>
-            <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#EEF2FB", color: "#0B2559", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: "28px" }}>
-              💬
-            </div>
-            <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
-              Messagerie & Espace de Chat
-            </h2>
-            <p style={{ fontSize: "14px", color: "#64748B", lineHeight: 1.6, marginBottom: "24px" }}>
-              Connectez-vous à votre compte pour lire vos messages reçus, discuter avec vos partenaires et accéder à vos échanges privés.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <Link
-                href="/connexion?callbackUrl=/messages"
-                className="btn btn-primary"
-                style={{ width: "100%", justifyContent: "center", fontWeight: 700, padding: "14px", borderRadius: "12px", background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)", color: "white", textDecoration: "none" }}
-              >
-                Se connecter à mon compte
-              </Link>
-              <Link
-                href="/inscription"
-                className="btn"
-                style={{ width: "100%", justifyContent: "center", fontWeight: 700, padding: "14px", borderRadius: "12px", background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)", color: "white", textDecoration: "none", boxShadow: "0 4px 14px rgba(225,6,0,0.25)" }}
-              >
-                Créer un compte gratuit
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-
-      {/* ── Main Split View (Utilisateur connecté) ───────────── */}
-      {isAuthenticated !== false && (
-      <div
-        className="messages-split-view"
-        style={{
-          flex: 1,
-          maxWidth: "1400px",
-          margin: "0 auto",
-          width: "100%",
-          height: "calc(100dvh - var(--header-height))",
-          overflow: "hidden",
-        }}
-      >
-        {/* ── Sidebar Conversations ───────────────────────────── */}
-        <aside
-          className={`messages-sidebar ${mobileView === "chat" ? "hidden-on-mobile" : ""}`}
-          style={{
-            background: "white",
-            borderRight: "1px solid #E2E8F0",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
-          {/* Plan Quota Pill */}
-          <div
-            style={{
-              padding: "12px 18px",
-              background: isFreePlan ? "#EFF6FF" : "#ECFDF5",
-              borderBottom: "1px solid #E2E8F0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div>
-              <div style={{ fontSize: "12px", fontWeight: 800, color: isFreePlan ? "#0B2559" : "#065F46" }}>
-                {isFreePlan ? `⭐ Plan Gratuit · ${contactedCount}/3 partenaires` : `👑 Pass ${currentPlan} · Illimité`}
-              </div>
-              <div style={{ fontSize: "11px", color: "#64748B" }}>
-                {isFreePlan ? "Vocaux, Photos, GPS & Vidéo inclus" : "Discutez sans aucune limite"}
-              </div>
-            </div>
-            {isFreePlan && (
-              <Link
-                href="/tarifs"
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 800,
-                  color: "#E10600",
-                  textDecoration: "underline",
-                }}
-              >
-                Pass Illimité (3 000 F)
-              </Link>
-            )}
-          </div>
-
-          {/* Sidebar Header */}
-          <div style={{ padding: "16px 20px 12px", borderBottom: "1px solid #F1F5F9" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-              <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
-                {sidebarTab === "conversations" ? "Discussions" : "Membres en ligne"}
-              </h1>
-              {isFreePlan && (
-                <button
-                  type="button"
-                  onClick={() => setQuotaModalOpen(true)}
-                  style={{
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    color: "#B45309",
-                    background: "#FEF3C7",
-                    border: "1px solid #FDE68A",
-                    padding: "3px 8px",
-                    borderRadius: "100px",
-                    cursor: "pointer",
-                  }}
-                  title="Plan Gratuit : 3 partenaires maximum"
-                >
-                  Plan Gratuit (3 max) ⚡
-                </button>
-              )}
-            </div>
-
-            {/* Onglets rapides Discussions vs Membres en ligne */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-              <button
-                type="button"
-                onClick={() => setSidebarTab("conversations")}
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  borderRadius: "10px",
-                  border: "none",
-                  background: sidebarTab === "conversations" ? "#0B2559" : "#F1F5F9",
-                  color: sidebarTab === "conversations" ? "white" : "#475569",
-                  fontWeight: 800,
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <span>💬 Discussions</span>
-                <span
-                  style={{
-                    background: sidebarTab === "conversations" ? "rgba(255,255,255,0.25)" : "#E2E8F0",
-                    color: sidebarTab === "conversations" ? "white" : "#0F172A",
-                    fontSize: "11px",
-                    padding: "1px 6px",
-                    borderRadius: "100px",
-                    fontWeight: 800,
-                  }}
-                >
-                  {conversations.length}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSidebarTab("online")}
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  borderRadius: "10px",
-                  border: "none",
-                  background: sidebarTab === "online" ? "#059669" : "#F1F5F9",
-                  color: sidebarTab === "online" ? "white" : "#475569",
-                  fontWeight: 800,
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 6px #10B981" }} />
-                <span>En ligne</span>
-                <span
-                  style={{
-                    background: sidebarTab === "online" ? "rgba(255,255,255,0.25)" : "#E2E8F0",
-                    color: sidebarTab === "online" ? "white" : "#0F172A",
-                    fontSize: "11px",
-                    padding: "1px 6px",
-                    borderRadius: "100px",
-                    fontWeight: 800,
-                  }}
-                >
-                  {onlineMembers.length}
-                </span>
-              </button>
-            </div>
-
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={sidebarTab === "conversations" ? "🔍 Filtrer les conversations..." : "🔍 Filtrer les membres connectés..."}
-              className="input"
-              style={{ fontSize: "13px", height: "38px", marginBottom: "8px" }}
-            />
-          </div>
-
-          {/* ── Contenu Onglet 1 : Conversations ───────────────── */}
-          {sidebarTab === "conversations" && (
-            <>
-              {/* Online Members Horizontal Tray */}
-              {onlineMembers.length > 0 && (
-                <div style={{ padding: "10px 16px", borderBottom: "1px solid #F1F5F9", background: "#F8FAFC" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0B2559", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ width: "7px", height: "7px", background: "#10B981", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #10B981" }} />
-                      En ligne ({onlineMembers.length})
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSidebarTab("online")}
-                      style={{ background: "none", border: "none", fontSize: "11px", color: "#2563EB", fontWeight: 700, cursor: "pointer", padding: 0 }}
-                    >
-                      Voir tous →
-                    </button>
-                  </div>
-                  <div style={{ display: "flex", gap: "12px", overflowX: "auto", paddingBottom: "4px", scrollbarWidth: "none" }}>
-                    {onlineMembers.map((m) => (
-                      <button
-                        key={m.userId}
-                        type="button"
-                        onClick={() => startChatWithMember(m)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          cursor: "pointer",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: "4px",
-                          minWidth: "54px",
-                        }}
-                        title={`Discuter en direct avec ${m.firstName}`}
-                      >
-                        <div style={{ position: "relative" }}>
-                          {m.photoUrl && (m.photoUrl.startsWith("http") || m.photoUrl.startsWith("/")) ? (
-                            <Image
-                              src={m.photoUrl}
-                              alt={m.firstName}
-                              width={44}
-                              height={44}
-                              unoptimized
-                              style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #2563EB" }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                width: "44px",
-                                height: "44px",
-                                borderRadius: "50%",
-                                background: "#EFF6FF",
-                                color: "#1D4ED8",
-                                fontWeight: 800,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                border: "2px solid #2563EB",
-                                fontSize: "15px",
-                              }}
-                            >
-                              {m.firstName.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <span
-                            style={{
-                              position: "absolute",
-                              bottom: "0px",
-                              right: "0px",
-                              width: "12px",
-                              height: "12px",
-                              background: "#10B981",
-                              border: "2px solid white",
-                              borderRadius: "50%",
-                            }}
-                          />
-                        </div>
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            color: "#1E293B",
-                            maxWidth: "54px",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {m.firstName}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Conversation List */}
-              <div style={{ flex: 1, overflowY: "auto" }}>
-                {conversations
-                  .filter((conv) => {
-                    if (!searchQuery.trim()) return true;
-                    const q = searchQuery.toLowerCase();
-                    return (
-                      conv.firstName.toLowerCase().includes(q) ||
-                      conv.pseudo.toLowerCase().includes(q) ||
-                      conv.lastMessage.toLowerCase().includes(q)
-                    );
-                  })
-                  .map((conv, index) => {
-                    const isSelected = activeConvId === conv.id;
-                    const isQuotaExceeded = isFreePlan && index >= 3;
-                    const matchedOnline = onlineMembers.find((m) => m.userId === conv.participantId);
-                    const effectivePic = conv.photoUrl || matchedOnline?.photoUrl || (conv.id.includes("victoire") ? "/victoire_profile.jpg" : "");
-
-                    return (
-                      <button
-                        key={conv.id}
-                        onClick={() => {
-                          if (isQuotaExceeded) {
-                            setQuotaModalOpen(true);
-                            return;
-                          }
-                          setActiveConvId(conv.id);
-                          setMobileView("chat");
-                        }}
-                        style={{
-                          width: "100%",
-                          padding: "14px 18px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                          border: "none",
-                          borderBottom: "1px solid #F1F5F9",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          background: isSelected ? "#F8FAFC" : "white",
-                          borderLeft: isSelected ? "4px solid #E10600" : "4px solid transparent",
-                          transition: "all 0.15s ease",
-                        }}
-                      >
-                        <div style={{ position: "relative", flexShrink: 0 }}>
-                          {effectivePic && (effectivePic.startsWith("http") || effectivePic.startsWith("/")) ? (
-                            <Image
-                              src={effectivePic}
-                              alt={conv.firstName}
-                              width={48}
-                              height={48}
-                              unoptimized
-                              style={{
-                                borderRadius: "50%",
-                                objectFit: "cover",
-                                border: "2px solid #CBD5E1",
-                              }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                width: "48px",
-                                height: "48px",
-                                borderRadius: "50%",
-                                background: "#EEF2FB",
-                                color: "#0B2559",
-                                fontWeight: 800,
-                                fontSize: "17px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                border: "2px solid #CBD5E1",
-                              }}
-                            >
-                              {conv.firstName ? conv.firstName.charAt(0).toUpperCase() : "M"}
-                            </div>
-                          )}
-                          {(conv.isOnline || Boolean(matchedOnline)) && (
-                            <span
-                              style={{
-                                position: "absolute",
-                                bottom: "1px",
-                                right: "1px",
-                                width: "12px",
-                                height: "12px",
-                                background: "#10B981",
-                                border: "2px solid white",
-                                borderRadius: "50%",
-                              }}
-                            />
-                          )}
-                        </div>
-
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                            <span style={{ fontWeight: 800, fontSize: "15px", color: "#0F172A" }}>
-                              {conv.firstName}
-                            </span>
-                            <span style={{ fontSize: "11px", color: "#64748B", flexShrink: 0, fontWeight: 500 }}>
-                              {formatTime(conv.lastMessageAt)}
-                            </span>
-                          </div>
-
-                          <div style={{ fontSize: "13px", color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {conv.lastMessage}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-              </div>
-            </>
-          )}
-
-          {/* ── Contenu Onglet 2 : Rubrique Membres Connectés (Fiches détaillées & 4 photos) ── */}
-          {sidebarTab === "online" && (
-            <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
-              <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "10px", paddingInline: "4px" }}>
-                {onlineMembers.length} membre{onlineMembers.length > 1 ? "s" : ""} connecté{onlineMembers.length > 1 ? "s" : ""} maintenant. Consultez leurs photos et échangez en direct !
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {onlineMembers
-                  .filter((m) => {
-                    if (!searchQuery.trim()) return true;
-                    const q = searchQuery.toLowerCase();
-                    return (
-                      m.firstName.toLowerCase().includes(q) ||
-                      (m.pseudo && m.pseudo.toLowerCase().includes(q)) ||
-                      (m.city && m.city.toLowerCase().includes(q)) ||
-                      (m.profession && m.profession.toLowerCase().includes(q)) ||
-                      (m.bio && m.bio.toLowerCase().includes(q))
-                    );
-                  })
-                  .map((m) => {
-                    const photosList = Array.isArray(m.photos) && m.photos.length > 0
-                      ? m.photos.slice(0, 4)
-                      : m.photoUrl
-                      ? [{ url: m.photoUrl, isMain: true }]
-                      : [];
-
-                    return (
-                      <div
-                        key={m.userId}
-                        style={{
-                          background: "white",
-                          borderRadius: "16px",
-                          border: "1.5px solid #E2E8F0",
-                          padding: "14px",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "10px",
-                        }}
-                      >
-                        {/* Haut : Avatar, Nom, Âge, Ville & Badge En ligne */}
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-                          <div style={{ position: "relative", flexShrink: 0 }}>
-                            {m.photoUrl ? (
-                              <Image
-                                src={m.photoUrl}
-                                alt={m.firstName}
-                                width={54}
-                                height={54}
-                                unoptimized
-                                style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #10B981" }}
-                              />
-                            ) : (
-                              <div
-                                style={{
-                                  width: "54px",
-                                  height: "54px",
-                                  borderRadius: "50%",
-                                  background: "#EFF6FF",
-                                  color: "#1D4ED8",
-                                  fontWeight: 800,
-                                  fontSize: "18px",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  border: "2px solid #10B981",
-                                }}
-                              >
-                                {m.firstName.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                            <span
-                              style={{
-                                position: "absolute",
-                                bottom: "2px",
-                                right: "2px",
-                                width: "13px",
-                                height: "13px",
-                                background: "#10B981",
-                                border: "2px solid white",
-                                borderRadius: "50%",
-                                boxShadow: "0 0 6px rgba(16,185,129,0.8)",
-                              }}
-                            />
-                          </div>
-
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
-                                {m.firstName}
-                                {m.age ? `, ${m.age} ans` : ""}
-                              </h3>
-                              <span style={{ fontSize: "11px", fontWeight: 700, color: "#059669", background: "#ECFDF5", padding: "2px 8px", borderRadius: "100px" }}>
-                                🟢 En ligne
-                              </span>
-                            </div>
-                            <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, marginTop: "2px" }}>
-                              {m.pseudo ? `@${m.pseudo.replace(/^@/, "")}` : `@${m.firstName.toLowerCase()}`} · 📍 {m.city || "Lomé"}
-                            </div>
-                            {m.profession && (
-                              <div style={{ fontSize: "12px", color: "#334155", marginTop: "2px", fontWeight: 500 }}>
-                                💼 {m.profession}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Bio snippet */}
-                        {m.bio && (
-                          <div style={{ fontSize: "13px", color: "#475569", lineHeight: 1.5, background: "#F8FAFC", padding: "8px 10px", borderRadius: "10px", border: "1px solid #F1F5F9" }}>
-                            {m.bio.length > 120 ? `${m.bio.substring(0, 120)}...` : m.bio}
-                          </div>
-                        )}
-
-                        {/* Mini Galerie Photos de Bio (Jusqu'à 4 photos) */}
-                        {photosList.length > 0 && (
-                          <div>
-                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
-                              Photos du profil ({photosList.length}/4) :
-                            </div>
-                            <div style={{ display: "flex", gap: "6px", overflowX: "auto" }}>
-                              {photosList.map((ph: any, pIdx: number) => (
-                                <div
-                                  key={pIdx}
-                                  onClick={() => setEnlargedImage(ph.url)}
-                                  style={{
-                                    width: "60px",
-                                    height: "60px",
-                                    borderRadius: "8px",
-                                    overflow: "hidden",
-                                    border: ph.isMain ? "2px solid #2563EB" : "1px solid #CBD5E1",
-                                    cursor: "pointer",
-                                    position: "relative",
-                                    flexShrink: 0,
-                                  }}
-                                  title="Cliquer pour agrandir"
-                                >
-                                  <Image src={ph.url} alt={`Photo ${pIdx + 1}`} fill unoptimized style={{ objectFit: "cover" }} />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Boutons d'action */}
-                        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedPartnerModal(m);
-                              setPartnerModalOpen(true);
-                            }}
-                            style={{
-                              flex: 1,
-                              padding: "8px 10px",
-                              borderRadius: "10px",
-                              border: "1.5px solid #CBD5E1",
-                              background: "white",
-                              color: "#0B2559",
-                              fontSize: "12px",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: "4px",
-                            }}
-                          >
-                            👁️ Voir Profil
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => startChatWithMember(m)}
-                            style={{
-                              flex: 1,
-                              padding: "8px 10px",
-                              borderRadius: "10px",
-                              border: "none",
-                              background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
-                              color: "white",
-                              fontSize: "12px",
-                              fontWeight: 800,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: "4px",
-                              boxShadow: "0 2px 6px rgba(5,150,105,0.25)",
-                            }}
-                          >
-                            💬 Discuter
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
-
-          <div style={{ padding: "14px 18px", borderTop: "1px solid #E2E8F0" }}>
-            <Link
-              href="/decouverte"
-              className="btn btn-outline-blue"
-              style={{ width: "100%", justifyContent: "center", fontSize: "13px", fontWeight: 700 }}
-            >
-              🧭 Découvrir tous les membres
-            </Link>
-          </div>
-        </aside>
-
-        {/* ── Chat Thread Area ───────────────────────────────── */}
-        {activeConv ? (
-          <main
-            className={`messages-chat-pane ${mobileView === "list" ? "hidden-on-mobile" : ""}`}
-            style={{ display: "flex", flexDirection: "column", overflow: "hidden", background: "#F8FAFC", flex: 1 }}
-          >
-            {/* Active Contact Header (WhatsApp Style) */}
-            <div
-              style={{
-                background: "white",
-                borderBottom: "1px solid #E2E8F0",
-                padding: "10px 16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                boxShadow: "0 1px 4px rgba(0, 0, 0, 0.03)",
-                minHeight: "62px",
-                position: "relative",
-                zIndex: 40,
-              }}
-            >
-              {/* Left: Partner Profile Info (Back arrow + Avatar + Name + Online presence) */}
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1, marginRight: "12px" }}>
-                {/* Bouton retour vers la liste sur smartphone */}
-                <button
-                  type="button"
-                  onClick={() => setMobileView("list")}
-                  className="mobile-back-to-list-btn"
-                  style={{
-                    background: "#F1F5F9",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: "36px",
-                    height: "36px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: "#0F172A",
-                    flexShrink: 0,
-                    transition: "all 0.15s ease",
-                  }}
-                  title="Retour aux conversations"
-                  aria-label="Retour aux conversations"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-
-                {/* Avatar cliquable pour voir profil */}
-                <div
-                  onClick={() => setPartnerModalOpen(true)}
-                  style={{ position: "relative", flexShrink: 0, cursor: "pointer" }}
-                  title="Voir les photos et critères de ce profil"
-                >
-                  {activeConv.photoUrl && (activeConv.photoUrl.startsWith("http") || activeConv.photoUrl.startsWith("/")) && !activeConv.photoUrl.includes("dicebear.com/7.x/initials") ? (
-                    <Image
-                      src={activeConv.photoUrl}
-                      alt={activeConv.firstName}
-                      width={44}
-                      height={44}
-                      style={{
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        border: "2px solid #E2E8F0",
-                        display: "block",
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: "44px",
-                        height: "44px",
-                        borderRadius: "50%",
-                        background: "linear-gradient(135deg, #0B2559 0%, #1E3A8A 100%)",
-                        color: "white",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "2px solid #E2E8F0",
-                      }}
-                    >
-                      <User size={22} style={{ color: "rgba(255,255,255,0.9)" }} />
-                    </div>
-                  )}
-                  {activeConv.isOnline && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        bottom: "1px",
-                        right: "1px",
-                        width: "12px",
-                        height: "12px",
-                        background: "#10B981",
-                        border: "2px solid white",
-                        borderRadius: "50%",
-                        boxShadow: "0 0 4px rgba(16,185,129,0.5)",
-                      }}
-                    />
-                  )}
-                </div>
-
-                {/* Nom, Vérification & Présence (Cliquer ouvre le profil du partenaire) */}
-                <div
-                  onClick={() => setPartnerModalOpen(true)}
-                  style={{ minWidth: 0, cursor: "pointer", flex: 1 }}
-                  title="Voir les informations complètes et critères"
-                >
-                  <div style={{ fontWeight: 800, fontSize: "15px", color: "#0F172A", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{activeConv.firstName}</span>
-                    <span style={{ fontSize: "11px", color: "#10B981", background: "#ECFDF5", padding: "1px 6px", borderRadius: "100px", fontWeight: 700, flexShrink: 0 }}>
-                      ✓ Vérifié
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "12px", color: activeConv.isOnline ? "#059669" : "#64748B", fontWeight: 600, display: "flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap", marginTop: "1px" }}>
-                    <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: activeConv.isOnline ? "#10B981" : "#94A3B8" }} />
-                    <span style={{ whiteSpace: "nowrap" }}>{activeConv.isOnline ? "En ligne" : "Vu récemment"}</span>
-                    <span style={{ color: "#94A3B8" }}>·</span>
-                    <span style={{ whiteSpace: "nowrap", color: "#64748B" }}>Lomé</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: Actions de Communication Spacieuses & Claires (Style Vrai Chat App) */}
-              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexShrink: 0, position: "relative" }}>
-                {/* 📞 Bouton Appel Vocal */}
-                <button
-                  type="button"
-                  onClick={startAudioCall}
-                  style={{
-                    background: isVip ? "#ECFDF5" : "#F8FAFC",
-                    border: isVip ? "1.5px solid #A7F3D0" : "1px solid #E2E8F0",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: isVip ? "#059669" : "#475569",
-                    transition: "all 0.18s ease",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                  }}
-                  title={isVip ? "Appel vocal sécurisé" : "Appel vocal direct (Pass requis)"}
-                  aria-label="Appel vocal"
-                >
-                  <Phone size={19} />
-                </button>
-
-                {/* 📹 Bouton Appel Vidéo Direct */}
-                <button
-                  type="button"
-                  onClick={startVideoCall}
-                  style={{
-                    background: isVip ? "#ECFDF5" : "#F8FAFC",
-                    border: isVip ? "1.5px solid #A7F3D0" : "1px solid #E2E8F0",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: isVip ? "#059669" : "#475569",
-                    transition: "all 0.18s ease",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                  }}
-                  title={isVip ? "Appel Vidéo en direct" : "Appel Vidéo direct (Pass requis)"}
-                  aria-label="Appel Vidéo"
-                >
-                  <Video size={20} />
-                </button>
-
-                {/* 📅 Bouton Proposer une sortie / RDV */}
-                <Link
-                  href={`/rendez-vous/nouveau?avec=${activeConv.participantId}`}
-                  style={{
-                    background: "#EFF6FF",
-                    border: "1.5px solid #BFDBFE",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#1D4ED8",
-                    textDecoration: "none",
-                    transition: "all 0.18s ease",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                  }}
-                  title="Proposer une sortie ou un rendez-vous à Lomé"
-                  aria-label="Proposer une sortie"
-                >
-                  <Calendar size={19} />
-                </Link>
-
-                {/* ⋮ Bouton Menu Options */}
-                <button
-                  type="button"
-                  onClick={() => setChatMenuOpen(!chatMenuOpen)}
-                  style={{
-                    background: chatMenuOpen ? "#E2E8F0" : "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: "#0F172A",
-                    transition: "all 0.18s ease",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                  }}
-                  title="Options de discussion"
-                  aria-label="Options de discussion"
-                >
-                  <MoreVertical size={20} />
-                </button>
-
-                {/* Dropdown Menu Moderne */}
-                {chatMenuOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "48px",
-                      right: "0",
-                      background: "white",
-                      borderRadius: "14px",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-                      border: "1px solid #E2E8F0",
-                      padding: "8px 0",
-                      minWidth: "250px",
-                      zIndex: 100,
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPartnerModalOpen(true);
-                        setChatMenuOpen(false);
-                      }}
-                      style={{
-                        padding: "10px 16px",
-                        background: "none",
-                        border: "none",
-                        textAlign: "left",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        color: "#0B2559",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <User size={16} style={{ color: "#2563EB" }} />
-                      <span>Voir le profil de {activeConv.firstName}</span>
-                    </button>
-
-                    <Link
-                      href="/profil"
-                      onClick={() => setChatMenuOpen(false)}
-                      style={{
-                        padding: "10px 16px",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#475569",
-                        textDecoration: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <span>⚙️</span>
-                      <span>Mon Profil & Paramètres</span>
-                    </Link>
-
-                    <div style={{ height: "1px", background: "#F1F5F9", margin: "4px 0" }} />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRulesModalOpen(true);
-                        setChatMenuOpen(false);
-                      }}
-                      style={{
-                        padding: "10px 16px",
-                        background: "none",
-                        border: "none",
-                        textAlign: "left",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#0F172A",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <span>📜</span> Règles du chat
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLocationModalOpen(true);
-                        setChatMenuOpen(false);
-                      }}
-                      style={{
-                        padding: "10px 16px",
-                        background: "none",
-                        border: "none",
-                        textAlign: "left",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#0F172A",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <span>📍</span> Partager un lieu à Lomé
-                    </button>
-
-                    <Link
-                      href="/decouverte"
-                      onClick={() => setChatMenuOpen(false)}
-                      style={{
-                        padding: "10px 16px",
-                        background: "none",
-                        border: "none",
-                        textAlign: "left",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#0F172A",
-                        textDecoration: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <span>🔍</span> Découvrir d&apos;autres profils
-                    </Link>
-
-                    <div style={{ height: "1px", background: "#F1F5F9", margin: "4px 0" }} />
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setChatMenuOpen(false);
-                        alert("Signalement enregistré. Notre équipe de modération veille à votre sécurité.");
-                      }}
-                      style={{
-                        padding: "10px 16px",
-                        background: "none",
-                        border: "none",
-                        textAlign: "left",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#DC2626",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <span>🚫</span> Bloquer ou signaler
-                    </button>
-                  </div>
+      <div className={`${styles.shell} ${mobileView === "chat" ? styles.shellChat : ""}`}>
+        {/* ── Colonne gauche : discussions & membres en ligne ── */}
+        <aside className={`${styles.sidebar} ${mobileView === "chat" ? styles.hideMobile : ""}`}>
+          <div className={styles.sideHeader}>
+            <div className={styles.sideTitleRow}>
+              <h1>Discussions</h1>
+              <div className={styles.sideMe}>
+                {!isFree ? <PlanBadge plan={plan} /> : (
+                  <Link href="/tarifs" className={styles.freePill}>
+                    Gratuit · {Math.min(realPartnersCount, FREE_MAX_PARTNERS)}/{FREE_MAX_PARTNERS}
+                  </Link>
                 )}
+                <Link href="/profil" aria-label="Mon profil">
+                  <Avatar name={myProfile?.firstName || rt.me?.firstName || "Moi"} url={rt.me?.photoUrl || myProfile?.photos?.[0]?.url} size={36} />
+                </Link>
               </div>
             </div>
 
+            <label className={styles.searchBox}>
+              <Search size={17} />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={tab === "chats" ? "Rechercher une discussion" : "Rechercher un membre en ligne"}
+              />
+            </label>
 
-            {/* Messages Container */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: "20px 24px 12px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
-              <div style={{ textAlign: "center", marginBlock: "4px 12px" }}>
-                <span
-                  style={{
-                    background: "#E2E8F0",
-                    fontSize: "12px",
-                    color: "#334155",
-                    padding: "4px 14px",
-                    borderRadius: "9999px",
-                    fontWeight: 600,
-                  }}
-                >
-                  🔒 Échanges chiffrés · Vocaux, Photos, GPS & Vidéo
-                </span>
-              </div>
-
-              {currentMessages.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", margin: "auto 0" }}>
-                  <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "#EEF2FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px" }}>
-                    💬
-                  </div>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
-                    Discussion avec {activeConv.firstName}
-                  </h3>
-                  <p style={{ fontSize: "13px", color: "#64748B", maxWidth: "340px", margin: 0, lineHeight: 1.5 }}>
-                    Prenez l&apos;initiative ! Envoyez un premier message ou une note vocale pour faire connaissance.
-                  </p>
-                </div>
-              )}
-
-              {currentMessages.map((msg) => {
-                const myId = myProfile?.userId || myProfile?.id;
-                const isMe =
-                  msg.senderId === ME_ID ||
-                  (Boolean(myId) && msg.senderId === myId) ||
-                  (Boolean(activeConv?.participantId) && msg.senderId !== activeConv.participantId && msg.senderId !== "user_victoire_lome");
-                const isPlaying = playingAudioId === msg.id;
-
-                // Extraction des coordonnées pour la carte Google Map interactive
-                let mapCoords: { lat: number; lng: number; label: string } | null = null;
-                if (msg.location) {
-                  mapCoords = {
-                    lat: msg.location.latitude || 6.1375,
-                    lng: msg.location.longitude || 1.2125,
-                    label: msg.location.label || "Lomé, Togo",
-                  };
-                } else if (msg.body && (msg.body.includes("maps.google.com") || msg.body.includes("Localisation partagée"))) {
-                  const match = msg.body.match(/q=([0-9.-]+),([0-9.-]+)/);
-                  if (match) {
-                    mapCoords = {
-                      lat: parseFloat(match[1]),
-                      lng: parseFloat(match[2]),
-                      label: "Position partagée (Lomé)",
-                    };
-                  } else {
-                    mapCoords = { lat: 6.1375, lng: 1.2125, label: "Lomé, Togo" };
-                  }
-                }
-
-                return (
-                  <div
-                    key={msg.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: isMe ? "flex-end" : "flex-start",
-                      alignItems: "flex-end",
-                      gap: "8px",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    {/* Avatar partenaire pour les messages reçus (Style WhatsApp authentique) */}
-                    {!isMe && (
-                      <div
-                        onClick={() => setPartnerModalOpen(true)}
-                        title="Voir le profil du membre"
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "50%",
-                          overflow: "hidden",
-                          flexShrink: 0,
-                          marginBottom: "4px",
-                          border: "1.5px solid #CBD5E1",
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {activeConv.photoUrl ? (
-                          <Image
-                            src={activeConv.photoUrl}
-                            alt={activeConv.firstName}
-                            width={32}
-                            height={32}
-                            unoptimized
-                            style={{ objectFit: "cover", width: "100%", height: "100%" }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              background: "#0B2559",
-                              color: "white",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontWeight: 800,
-                              fontSize: "12px",
-                            }}
-                          >
-                            {activeConv.firstName?.charAt(0) || "M"}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div
-                      style={{
-                        maxWidth: "min(420px, 78%)",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: isMe ? "flex-end" : "flex-start",
-                      }}
-                    >
-                      <div
-                        style={{
-                          background: isMe ? "#D9FDD3" : "#FFFFFF",
-                          color: "#111B21",
-                          padding: "10px 14px",
-                          borderRadius: isMe ? "16px 16px 2px 16px" : "16px 16px 16px 2px",
-                          fontSize: "14.5px",
-                          lineHeight: 1.5,
-                          boxShadow: isMe
-                            ? "0 1px 2px rgba(11, 20, 26, 0.12)"
-                            : "0 1px 2px rgba(11, 20, 26, 0.08)",
-                          border: isMe ? "none" : "1px solid #E2E8F0",
-                          wordBreak: "break-word",
-                          fontWeight: 450,
-                          position: "relative",
-                        }}
-                      >
-                        {/* Prénom de l'expéditeur si message reçu */}
-                        {!isMe && (
-                          <div
-                            onClick={() => setPartnerModalOpen(true)}
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: 800,
-                              color: "#008069",
-                              marginBottom: "3px",
-                              letterSpacing: "-0.2px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            {activeConv.firstName}
-                          </div>
-                        )}
-
-                        {/* 🎙️ Voice Note / Audio Message Player */}
-                        {msg.audioUrl && (
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                              padding: "4px 2px",
-                              minWidth: "220px",
-                              marginBottom:
-                                msg.body &&
-                                msg.body !== "🎙️ Note vocale" &&
-                                !msg.body.startsWith("🎙️ Note vocale")
-                                  ? "8px"
-                                  : "0",
-                            }}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => playVoiceMessage(msg.id, msg.audioUrl, msg.audioDuration || 8)}
-                              style={{
-                                width: "42px",
-                                height: "42px",
-                                borderRadius: "50%",
-                                background: isMe ? "#008069" : "#0B2559",
-                                color: "white",
-                                border: "none",
-                                fontSize: "16px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-                                flexShrink: 0,
-                                boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-                              }}
-                              title={isPlaying ? "Mettre en pause" : "Écouter la note vocale"}
-                            >
-                              {isPlaying ? "⏸️" : "▶️"}
-                            </button>
-
-                            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                              {/* Audio Waveform visualization */}
-                              <div style={{ display: "flex", alignItems: "center", gap: "3px", height: "24px" }}>
-                                {[35, 70, 95, 50, 80, 100, 65, 30, 85, 95, 60, 45, 75, 55, 90].map((barH, idx) => {
-                                  const isPassed = isPlaying ? (idx / 15) * 100 <= audioProgress : false;
-                                  return (
-                                    <div
-                                      key={idx}
-                                      style={{
-                                        flex: 1,
-                                        height: `${barH * 0.22}px`,
-                                        background: isPassed
-                                          ? isMe
-                                            ? "#F59E0B"
-                                            : "#E10600"
-                                          : isMe
-                                          ? "rgba(255,255,255,0.4)"
-                                          : "#CBD5E1",
-                                        borderRadius: "2px",
-                                        transition: "background 0.1s ease",
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </div>
-
-                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", opacity: 0.9, fontWeight: 700 }}>
-                                <span>
-                                  {isPlaying
-                                    ? formatTimer(Math.round((audioProgress / 100) * (msg.audioDuration || 8)))
-                                    : "🎙️ Note vocale"}
-                                </span>
-                                <span>{formatTimer(msg.audioDuration || 8)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 🎥 Video Display */}
-                        {msg.videoUrl && (
-                          <div style={{ marginBottom: msg.body && msg.body !== "🎥 Vidéo partagée" ? "8px" : "0" }}>
-                            <video
-                              src={msg.videoUrl}
-                              controls
-                              controlsList="nodownload noplaybackrate"
-                              disablePictureInPicture
-                              onContextMenu={(e) => e.preventDefault()}
-                              style={{
-                                maxWidth: "100%",
-                                maxHeight: "280px",
-                                borderRadius: "12px",
-                                background: "#000",
-                                border: isMe ? "2px solid rgba(255,255,255,0.4)" : "2px solid #E2E8F0",
-                              }}
-                            />
-                          </div>
-                        )}
-
-                        {/* 📷 Photo Display */}
-                        {msg.imageUrl && (
-                          <div style={{ marginBottom: msg.body && msg.body !== "📷 Photo partagée" ? "8px" : "0" }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={msg.imageUrl}
-                              alt="Photo envoyée"
-                              onClick={() => setEnlargedImage(msg.imageUrl || null)}
-                              onContextMenu={(e) => e.preventDefault()}
-                              style={{
-                                maxWidth: "100%",
-                                maxHeight: "260px",
-                                borderRadius: "12px",
-                                objectFit: "cover",
-                                cursor: "pointer",
-                                userSelect: "none",
-                                border: isMe ? "2px solid rgba(255,255,255,0.4)" : "2px solid #E2E8F0",
-                              }}
-                            />
-                            <div style={{ fontSize: "11px", opacity: 0.85, marginTop: "4px" }}>
-                              🔍 Cliquez pour agrandir
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 📍 Google Maps Intégré Directement (Pas une simple image) */}
-                        {mapCoords && (
-                          <div
-                            style={{
-                              borderRadius: "14px",
-                              overflow: "hidden",
-                              margin: "8px 0 4px",
-                              background: isMe ? "rgba(255,255,255,0.08)" : "#F8FAFC",
-                              border: isMe ? "1px solid rgba(255,255,255,0.25)" : "1.5px solid #CBD5E1",
-                              boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-                            }}
-                          >
-                            <div
-                              style={{
-                                padding: "8px 12px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                fontWeight: 700,
-                                fontSize: "13px",
-                              }}
-                            >
-                              <span>📍</span> <span>{mapCoords.label}</span>
-                            </div>
-                            <iframe
-                              title={mapCoords.label}
-                              src={`https://maps.google.com/maps?q=${mapCoords.lat},${mapCoords.lng}&hl=fr&z=15&output=embed`}
-                              width="100%"
-                              height="180"
-                              style={{ border: 0, display: "block" }}
-                              loading="lazy"
-                              allowFullScreen
-                              referrerPolicy="no-referrer-when-downgrade"
-                            />
-                            <div
-                              style={{
-                                padding: "8px 12px",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                background: isMe ? "rgba(0,0,0,0.2)" : "#F1F5F9",
-                              }}
-                            >
-                              <span style={{ fontSize: "11px", opacity: 0.85 }}>Lomé, Togo · GPS direct</span>
-                              <a
-                                href={`https://www.google.com/maps?q=${mapCoords.lat},${mapCoords.lng}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  padding: "5px 12px",
-                                  borderRadius: "8px",
-                                  background: isMe ? "white" : "#0B2559",
-                                  color: isMe ? "#0B2559" : "white",
-                                  fontSize: "11px",
-                                  fontWeight: 800,
-                                  textDecoration: "none",
-                                }}
-                              >
-                                Ouvrir Google Maps ↗
-                              </a>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Document partagé */}
-                        {msg.body?.startsWith("📄") && (
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              background: isMe ? "rgba(0,0,0,0.06)" : "#F1F5F9",
-                              padding: "10px 12px",
-                              borderRadius: "12px",
-                              margin: "4px 0",
-                            }}
-                          >
-                            <span style={{ fontSize: "22px" }}>📄</span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, fontSize: "13px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {msg.body.replace("📄 Document :", "").trim()}
-                              </div>
-                              <span style={{ fontSize: "11px", color: "#64748B" }}>Document prêt à consulter</span>
-                            </div>
-                            {msg.imageUrl && (
-                              <a
-                                href={msg.imageUrl}
-                                download="document_meetmeclub"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  padding: "5px 11px",
-                                  background: "#0B2559",
-                                  color: "white",
-                                  borderRadius: "8px",
-                                  fontSize: "11px",
-                                  fontWeight: 700,
-                                  textDecoration: "none",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                Ouvrir
-                              </a>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Plain text body if not just an attachment title or map link */}
-                        {(!msg.imageUrl || msg.body !== "📷 Photo partagée") &&
-                          (!msg.videoUrl || msg.body !== "🎥 Vidéo partagée") &&
-                          (!msg.body?.startsWith("📄")) &&
-                          (!msg.audioUrl || !msg.body.startsWith("🎙️ Note vocale")) &&
-                          (!mapCoords || (!msg.body.startsWith("📍 Localisation") && !msg.body.includes("maps.google.com"))) && (
-                            <div>{msg.body}</div>
-                          )}
-                      </div>
-
-                      {/* Horodatage & Status Lu (Style WhatsApp) */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          marginTop: "3px",
-                          paddingInline: "4px",
-                        }}
-                      >
-                        <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 500 }}>
-                          {formatTime(msg.createdAt)}
-                        </span>
-                        {isMe && (
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              color: msg.status === "READ" ? "#53BDEB" : "#8696A0",
-                              fontWeight: 800,
-                              lineHeight: 1,
-                            }}
-                            title={msg.status === "READ" ? "Lu" : "Envoyé"}
-                          >
-                            ✓✓
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {isPartnerTyping && (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "12px 16px 4px" }}>
-                  <div style={{ width: "32px", height: "32px", borderRadius: "50%", overflow: "hidden", border: "2px solid #2563EB", flexShrink: 0 }}>
-                    <Image
-                      src={activeConv.photoUrl || "/victoire_profile.jpg"}
-                      alt={activeConv.firstName}
-                      width={32}
-                      height={32}
-                      style={{ objectFit: "cover" }}
-                    />
-                  </div>
-                  <div style={{ background: "white", padding: "8px 14px", borderRadius: "18px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #E2E8F0", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontWeight: 700, fontSize: "13px", color: "#0B2559" }}>{activeConv.firstName}</span>
-                    <span style={{ fontSize: "12px", color: "#64748B" }}>est en train d&apos;écrire</span>
-                    <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "#10B981" }} />
-                  </div>
-                </div>
-              )}
-              <div ref={bottomRef} />
+            <div className={styles.tabs} role="tablist">
+              <button type="button" role="tab" aria-selected={tab === "chats"} className={tab === "chats" ? styles.tabActive : ""} onClick={() => setTab("chats")}>
+                <MessageCircle size={16} /> Discussions
+                {rt.unreadTotal > 0 && <span className={styles.tabBadge}>{rt.unreadTotal}</span>}
+              </button>
+              <button type="button" role="tab" aria-selected={tab === "online"} className={tab === "online" ? styles.tabActive : ""} onClick={() => setTab("online")}>
+                <span className={styles.liveDot} /> En ligne
+                <span className={styles.tabCount}>{onlineMembers.length}</span>
+              </button>
             </div>
+          </div>
 
-            {/* WhatsApp Bottom Area (Input Bar) */}
-            <div style={{ background: "white", borderTop: "1px solid #E2E8F0", paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}>
-              {/* Chat Input Bar */}
-              <div style={{ padding: "8px 12px 8px" }}>
-                {/* Hidden file input for photos and videos */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*,video/*,.pdf,.doc,.docx"
-                  onChange={handleMediaSelect}
-                  style={{ display: "none" }}
-                />
+          {rt.push.supported && rt.push.permission === "default" && (
+            <button type="button" className={styles.pushStrip} onClick={() => rt.push.enable()}>
+              <BellRing size={16} /> Activer les notifications sur ce téléphone
+            </button>
+          )}
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    alignItems: "center",
-                    background: isRecordingVoice ? "#FEF2F2" : "#F1F5F9",
-                    borderRadius: "26px",
-                    border: isRecordingVoice ? "1.5px solid #EF4444" : "1px solid #E2E8F0",
-                    padding: "6px 10px",
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  {/* When LIVE VOICE RECORDING is active */}
-                  {isRecordingVoice ? (
-                    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "12px", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <span
-                          style={{
-                            width: "12px",
-                            height: "12px",
-                            borderRadius: "50%",
-                            background: "#E10600",
-                            boxShadow: "0 0 10px #E10600",
-                          }}
-                        />
-                        <span style={{ fontWeight: 800, fontSize: "14px", color: "#991B1B" }}>
-                          Vocal… {formatTimer(voiceRecordingSeconds)}
-                        </span>
-                      </div>
-
-                      {/* Animated sound wave bars */}
-                      <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
-                        {[15, 25, 12, 28, 18, 26, 14, 22].map((h, i) => (
-                          <div
-                            key={i}
-                            style={{
-                              width: "3px",
-                              height: `${h}px`,
-                              background: "#E10600",
-                              borderRadius: "2px",
-                            }}
-                          />
-                        ))}
-                      </div>
-
-                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        <button
-                          type="button"
-                          onClick={cancelVoiceRecording}
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            color: "#64748B",
-                            fontSize: "13px",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            padding: "6px 8px",
-                          }}
-                        >
-                          ✕
-                        </button>
-                        <button
-                          type="button"
-                          onClick={finishVoiceRecording}
-                          style={{
-                            background: "#E10600",
-                            border: "none",
-                            color: "white",
-                            padding: "6px 14px",
-                            borderRadius: "20px",
-                            fontSize: "13px",
-                            fontWeight: 800,
-                            cursor: "pointer",
-                            boxShadow: "0 2px 8px rgba(225, 6, 0, 0.35)",
-                          }}
-                        >
-                          Envoyer ➤
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* 📎 Attachment / Photo Button */}
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        title="Envoyer une photo ou une vidéo"
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          width: "36px",
-                          height: "36px",
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          color: "#64748B",
-                          flexShrink: 0,
-                          transition: "color 0.15s ease",
-                        }}
-                      >
-                        <Paperclip size={20} />
-                      </button>
-
-                      {/* 📍 Location Sharing Button */}
-                      <button
-                        type="button"
-                        onClick={() => setLocationModalOpen(true)}
-                        title="Partager un lieu à Lomé"
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          width: "36px",
-                          height: "36px",
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          color: "#64748B",
-                          flexShrink: 0,
-                          transition: "color 0.15s ease",
-                        }}
-                      >
-                        <MapPin size={20} />
-                      </button>
-
-                      {/* Textarea */}
-                      <textarea
-                        ref={inputRef}
-                        value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={`Message pour ${activeConv.firstName}…`}
-                        rows={1}
-                        style={{
-                          flex: 1,
-                          border: "none",
-                          outline: "none",
-                          background: "transparent",
-                          resize: "none",
-                          fontSize: "15px",
-                          lineHeight: "20px",
-                          color: "#0F172A",
-                          maxHeight: "100px",
-                          overflowY: "auto",
-                          padding: "6px 4px",
-                        }}
-                      />
-
-                      {/* Send or Mic Button */}
-                      {draft.trim() ? (
-                        <button
-                          type="button"
-                          onClick={handleSend}
-                          style={{
-                            width: "38px",
-                            height: "38px",
-                            borderRadius: "50%",
-                            background: "#059669",
-                            color: "white",
-                            border: "none",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                            boxShadow: "0 2px 6px rgba(5, 150, 105, 0.25)",
-                            transition: "all 0.15s ease",
-                          }}
-                          title="Envoyer"
-                        >
-                          <Send size={17} />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={startVoiceRecording}
-                          style={{
-                            width: "38px",
-                            height: "38px",
-                            borderRadius: "50%",
-                            background: "#0B2559",
-                            color: "white",
-                            border: "none",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                            boxShadow: "0 2px 6px rgba(11, 37, 89, 0.2)",
-                            transition: "all 0.15s ease",
-                          }}
-                          title="Enregistrer un message vocal"
-                        >
-                          <Mic size={18} />
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-          </main>
-
-        ) : (
-          <main style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexDirection: "column", padding: "36px 24px", textAlign: "center", flex: 1, overflowY: "auto" }}>
-            <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "#EEF2FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px" }}>
-              💬
-            </div>
-            <h3 style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>
-              {conversations.length === 0 ? "Bienvenue dans votre messagerie" : "Sélectionnez une discussion"}
-            </h3>
-            <p style={{ fontSize: "14px", color: "#64748B", maxWidth: "460px", lineHeight: 1.6, marginBottom: "24px" }}>
-              Discutez en direct, partagez vos photos et envoyez votre position GPS en toute sécurité avec les membres du club.
-            </p>
-
-            {/* Online Members Quick Connect Grid */}
-            {onlineMembers.length > 0 && (
-              <div style={{ width: "100%", maxWidth: "600px", background: "white", padding: "20px", borderRadius: "20px", border: "1px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.04)", marginBottom: "24px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                  <span style={{ fontSize: "13px", fontWeight: 800, color: "#0F172A", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ width: "10px", height: "10px", background: "#10B981", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 8px #10B981" }} />
-                    Membres disponibles maintenant à Lomé
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>{onlineMembers.length} en ligne</span>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "12px" }}>
-                  {onlineMembers.slice(0, 6).map((m) => (
-                    <button
-                      key={m.userId}
-                      type="button"
-                      onClick={() => startChatWithMember(m)}
-                      style={{
-                        background: "#F8FAFC",
-                        border: "1px solid #E2E8F0",
-                        borderRadius: "14px",
-                        padding: "12px 8px",
-                        cursor: "pointer",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: "6px",
-                        transition: "all 0.15s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "#2563EB";
-                        e.currentTarget.style.background = "#EFF6FF";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "#E2E8F0";
-                        e.currentTarget.style.background = "#F8FAFC";
-                      }}
-                    >
-                      <div style={{ position: "relative" }}>
-                        {m.photoUrl && (m.photoUrl.startsWith("http") || m.photoUrl.startsWith("/")) ? (
-                          <Image
-                            src={m.photoUrl}
-                            alt={m.firstName}
-                            width={52}
-                            height={52}
-                            style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #2563EB" }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: "52px",
-                              height: "52px",
-                              borderRadius: "50%",
-                              background: "#EFF6FF",
-                              color: "#1D4ED8",
-                              fontWeight: 800,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              border: "2px solid #2563EB",
-                              fontSize: "18px",
-                            }}
-                          >
-                            {m.firstName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span
-                          style={{
-                            position: "absolute",
-                            bottom: "2px",
-                            right: "2px",
-                            width: "12px",
-                            height: "12px",
-                            background: "#10B981",
-                            border: "2px solid white",
-                            borderRadius: "50%",
-                          }}
-                        />
-                      </div>
-                      <span style={{ fontSize: "13px", fontWeight: 800, color: "#0F172A" }}>{m.firstName}</span>
-                      <span style={{ fontSize: "11px", color: "#64748B" }}>{m.city || "Lomé"}</span>
-                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#2563EB", marginTop: "4px" }}>
-                        Écrire ✉️
-                      </span>
+          {tab === "chats" ? (
+            <div className={styles.list}>
+              {onlineMembers.length > 0 && !search && (
+                <div className={styles.storyRow}>
+                  {onlineMembers.slice(0, 15).map((m) => (
+                    <button key={m.userId} type="button" className={styles.story} onClick={() => setSheetMember(m)}>
+                      <Avatar name={m.firstName} url={m.photoUrl} size={54} online ring />
+                      <span>{m.firstName}</span>
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-
-            <Link
-              href="/decouverte"
-              className="btn btn-primary"
-              style={{ padding: "12px 24px", fontWeight: 700, borderRadius: "12px", background: "var(--color-red)", color: "white", textDecoration: "none" }}
-            >
-              🔍 Explorer tous les profils du club
-            </Link>
-          </main>
-        )}
-      </div>
-      )}
-
-      {/* ── Location Picker Modal ─────────────────────────────── */}
-      {locationModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.75)",
-            backdropFilter: "blur(6px)",
-            zIndex: 1100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-          onClick={() => setLocationModalOpen(false)}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "24px",
-              padding: "28px 24px",
-              maxWidth: "460px",
-              width: "100%",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ textAlign: "center", marginBottom: "20px" }}>
-              <div style={{ fontSize: "36px", marginBottom: "6px" }}>📍</div>
-              <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", margin: "0 0 6px 0" }}>
-                Partager votre localisation
-              </h2>
-              <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
-                Envoyez vos coordonnées GPS en direct ou choisissez un point de repère à Lomé.
-              </p>
-            </div>
-
-            {/* Button: Real Live GPS */}
-            <button
-              type="button"
-              onClick={requestLiveGPS}
-              className="btn btn-primary"
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: "14px",
-                fontWeight: 800,
-                fontSize: "14px",
-                marginBottom: "16px",
-                justifyContent: "center",
-                display: "flex",
-                gap: "8px",
-              }}
-            >
-              📡 Partager ma position GPS exacte (depuis téléphone)
-            </button>
-
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#0F172A", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Ou choisir un lieu de rencontre à Lomé :
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "200px", overflowY: "auto", marginBottom: "20px" }}>
-              {LOME_SPOTS.map((spot, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => shareLocation(spot.name, spot.lat, spot.lng)}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: "10px",
-                    border: "1px solid #E2E8F0",
-                    background: "#F8FAFC",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: "#0F172A",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <span>{spot.name}</span>
-                  <span style={{ color: "#0B2559", fontWeight: 700 }}>Envoyer ➤</span>
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setLocationModalOpen(false)}
-              className="btn btn-ghost"
-              style={{ width: "100%", justifyContent: "center", color: "#64748B" }}
-            >
-              Annuler
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── WhatsApp Audio Call Modal ─────────────────────────── */}
-      {audioCallOpen && activeConv && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "linear-gradient(180deg, #111B21 0%, #0B141A 100%)",
-            zIndex: 1200,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "40px 20px",
-            color: "white",
-          }}
-        >
-          {/* Header */}
-          <div style={{ textAlign: "center" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#8696A0", marginBottom: "8px" }}>
-              <span>🔒</span>
-              <span>Chiffré de bout en bout · WhatsApp Audio</span>
-            </div>
-            <h2 style={{ fontSize: "24px", fontWeight: 800, color: "white", margin: "0 0 6px" }}>
-              {activeConv.firstName}
-            </h2>
-            <div style={{ fontSize: "14px", color: audioCallRinging ? "#25D366" : "#8696A0", fontWeight: 700 }}>
-              {audioCallRinging ? "Sonnerie en cours..." : formatTimer(audioCallDuration)}
-            </div>
-          </div>
-
-          {/* Center Avatar with Pulsing Rings */}
-          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {audioCallRinging && (
-              <div
-                style={{
-                  position: "absolute",
-                  width: "180px",
-                  height: "180px",
-                  borderRadius: "50%",
-                  border: "2px solid rgba(37,211,102,0.4)",
-                  animation: "ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite",
-                }}
-              />
-            )}
-            <div
-              style={{
-                width: "120px",
-                height: "120px",
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: "4px solid #25D366",
-                boxShadow: "0 10px 30px rgba(37,211,102,0.3)",
-                position: "relative",
-              }}
-            >
-              {activeConv.photoUrl ? (
-                <Image
-                  src={activeConv.photoUrl}
-                  alt={activeConv.firstName}
-                  width={120}
-                  height={120}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                <div style={{ width: "100%", height: "100%", background: "#0B2559", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px", fontWeight: 800 }}>
-                  {activeConv.firstName.charAt(0)}
-                </div>
               )}
-            </div>
-          </div>
 
-          {/* Animated sound wave simulation */}
-          {!audioCallRinging && (
-            <div style={{ display: "flex", alignItems: "center", gap: "4px", height: "30px" }}>
-              {[12, 24, 16, 28, 20, 14, 26, 18, 22, 16].map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: "4px",
-                    height: `${h}px`,
-                    background: "#25D366",
-                    borderRadius: "2px",
-                  }}
-                />
+              {filteredConversations.map((c) => {
+                const unread = unreadFor(c);
+                const typing = isTyping(c.id);
+                const mineLast = c.lastMessageSenderId && c.lastMessageSenderId === myId;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`${styles.convItem} ${c.id === activeConvId ? styles.convActive : ""}`}
+                    onClick={() => openConversation(c.id)}
+                  >
+                    <Avatar name={c.firstName} url={c.photoUrl || memberById[c.participantId]?.photoUrl} size={52} online={c.participantId === VICTOIRE_ID || rt.isOnline(c.participantId)} />
+                    <span className={styles.convBody}>
+                      <span className={styles.convTop}>
+                        <span className={styles.convName}>
+                          {c.firstName}
+                          {c.isVerified && <BadgeCheck size={14} className={styles.verified} />}
+                        </span>
+                        <span className={`${styles.convTime} ${unread ? styles.convTimeUnread : ""}`}>{formatListTime(c.lastMessageAt)}</span>
+                      </span>
+                      <span className={styles.convBottom}>
+                        <span className={`${styles.convPreview} ${typing ? styles.convTyping : ""}`}>
+                          {typing ? "écrit…" : `${mineLast ? "Vous : " : ""}${previewText(c.lastMessage)}`}
+                        </span>
+                        {unread > 0 && <span className={styles.unreadBadge}>{unread > 99 ? "99+" : unread}</span>}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+
+              {filteredConversations.length === 0 && <p className={styles.emptyList}>Aucune discussion trouvée.</p>}
+
+              <button type="button" className={styles.fab} onClick={() => setTab("online")} aria-label="Nouvelle discussion">
+                <MessageCirclePlus size={24} />
+              </button>
+            </div>
+          ) : (
+            <div className={styles.list}>
+              <p className={styles.onlineIntro}>
+                <span className={styles.liveDot} />
+                {onlineMembers.length > 0
+                  ? `${onlineMembers.length} membre${onlineMembers.length > 1 ? "s" : ""} connecté${onlineMembers.length > 1 ? "s" : ""} en ce moment`
+                  : "Aucun autre membre connecté pour le moment"}
+              </p>
+
+              {filteredOnline.map((m) => (
+                <MemberCard key={m.userId} member={m} online onOpen={() => setSheetMember(m)} onChat={() => startChatWith(m)} />
               ))}
+
+              {offlineSuggestions.length > 0 && (
+                <>
+                  <p className={styles.sectionLabel}>
+                    <Users size={14} /> Membres du club
+                  </p>
+                  {offlineSuggestions.map((m) => (
+                    <MemberCard key={m.userId} member={m} online={false} onOpen={() => setSheetMember(m)} onChat={() => startChatWith(m)} />
+                  ))}
+                </>
+              )}
             </div>
           )}
+        </aside>
 
-          {/* Action buttons (Mute, Speaker, Hang Up) */}
-          <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
-            {/* Mute Button */}
-            <button
-              type="button"
-              onClick={toggleAudioCallMute}
-              style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "50%",
-                background: isAudioCallMuted ? "#EF4444" : "rgba(255,255,255,0.15)",
-                border: "none",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-              title={isAudioCallMuted ? "Activer micro" : "Couper micro"}
-            >
-              {isAudioCallMuted ? <MicOff size={24} /> : <Mic size={24} />}
-            </button>
-
-            {/* Hang Up Button */}
-            <button
-              type="button"
-              onClick={endAudioCall}
-              style={{
-                width: "68px",
-                height: "68px",
-                borderRadius: "50%",
-                background: "#EA0038",
-                border: "none",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                boxShadow: "0 8px 24px rgba(234,0,56,0.4)",
-              }}
-              title="Raccrocher"
-            >
-              <PhoneOff size={30} />
-            </button>
-
-            {/* Speaker Button */}
-            <button
-              type="button"
-              onClick={() => setIsSpeakerOn(!isSpeakerOn)}
-              style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "50%",
-                background: isSpeakerOn ? "#25D366" : "rgba(255,255,255,0.15)",
-                border: "none",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-              title="Haut-parleur"
-            >
-              <Volume2 size={24} />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Live Video Call Modal ─────────────────────────────── */}
-      {videoCallOpen && activeConv && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(10, 15, 30, 0.95)",
-            backdropFilter: "blur(12px)",
-            zIndex: 1200,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "24px",
-            color: "white",
-          }}
-        >
-          {/* Call Top Header */}
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "600px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              background: "rgba(255, 255, 255, 0.1)",
-              padding: "12px 20px",
-              borderRadius: "16px",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  width: "12px",
-                  height: "12px",
-                  borderRadius: "50%",
-                  background: "#10B981",
-                  boxShadow: "0 0 10px #10B981",
-                }}
-              />
-              <div>
-                <div style={{ fontWeight: 800, fontSize: "15px" }}>
-                  Appel Vidéo en Direct avec {activeConv.firstName}
-                </div>
-                <div style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.8)" }}>
-                  ✓ Vérification humaine certifiée Meet Me Club
-                </div>
-              </div>
-            </div>
-
-            <div style={{ background: "rgba(0,0,0,0.5)", padding: "4px 12px", borderRadius: "9999px", fontSize: "14px", fontWeight: 700 }}>
-              ⏱️ {formatTimer(callDuration)}
-            </div>
-          </div>
-
-          {/* Video Frames Container */}
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              maxWidth: "640px",
-              height: "55vh",
-              minHeight: "360px",
-              background: "#1E293B",
-              borderRadius: "24px",
-              overflow: "hidden",
-              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6)",
-              border: "2px solid rgba(255, 255, 255, 0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {/* Partner's Main Live Screen */}
-            <div style={{ position: "absolute", inset: 0 }}>
-              <Image
-                src={activeConv.photoUrl}
-                alt={activeConv.firstName}
-                fill
-                style={{ objectFit: "cover", filter: "brightness(0.95)" }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "16px",
-                  left: "16px",
-                  background: "rgba(0, 0, 0, 0.65)",
-                  backdropFilter: "blur(6px)",
-                  padding: "6px 14px",
-                  borderRadius: "9999px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                }}
-              >
-                <span style={{ color: "#10B981" }}>●</span> {activeConv.firstName} (Lomé)
-              </div>
-            </div>
-
-            {/* Local User PIP (Self Video View) */}
-            <div
-              style={{
-                position: "absolute",
-                top: "16px",
-                right: "16px",
-                width: "120px",
-                height: "160px",
-                borderRadius: "16px",
-                overflow: "hidden",
-                background: "#0F172A",
-                border: "2px solid rgba(255, 255, 255, 0.8)",
-                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
-              }}
-            >
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: isCameraOff ? "none" : "block",
-                }}
-              />
-              {isCameraOff && (
-                <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px" }}>
-                  👤
-                </div>
-              )}
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "4px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  background: "rgba(0,0,0,0.6)",
-                  padding: "2px 6px",
-                  borderRadius: "4px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Vous
-              </div>
-            </div>
-          </div>
-
-          {/* Call Controls Bar */}
-          <div
-            style={{
-              display: "flex",
-              gap: "20px",
-              alignItems: "center",
-              background: "rgba(255, 255, 255, 0.12)",
-              padding: "16px 32px",
-              borderRadius: "9999px",
-              backdropFilter: "blur(12px)",
-            }}
-          >
-            <button
-              type="button"
-              onClick={toggleMute}
-              style={{
-                width: "52px",
-                height: "52px",
-                borderRadius: "50%",
-                background: isMuted ? "#EF4444" : "rgba(255,255,255,0.2)",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              title={isMuted ? "Activer le micro" : "Couper le micro"}
-            >
-              {isMuted ? "🔇" : "🎤"}
-            </button>
-
-            <button
-              type="button"
-              onClick={toggleCamera}
-              style={{
-                width: "52px",
-                height: "52px",
-                borderRadius: "50%",
-                background: isCameraOff ? "#EF4444" : "rgba(255,255,255,0.2)",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              title={isCameraOff ? "Activer la caméra" : "Couper la caméra"}
-            >
-              {isCameraOff ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M10.66 6H14a2 2 0 0 1 2 2v2.5l5.248-3.062A.5.5 0 0 1 22 7.938v12.124a.5.5 0 0 1-.752.434L16 17.5V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/></svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 8.27a.5.5 0 0 0-.5-.49.48.48 0 0 0-.252.07L16 11V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3l5.248 3.15a.5.5 0 0 0 .752-.434V8.27Z"/></svg>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={endVideoCall}
-              style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "50%",
-                background: "#E10600",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 20px rgba(225, 6, 0, 0.5)",
-              }}
-              title="Raccrocher"
-            >
-              📞
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Security & Verification Modal (CNI + Selfie Facial) ── */}
-      {securityModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(10, 20, 45, 0.82)",
-            backdropFilter: "blur(8px)",
-            zIndex: 1400,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-          onClick={() => setSecurityModalOpen(false)}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "24px",
-              padding: "32px",
-              maxWidth: "520px",
-              width: "100%",
-              boxShadow: "0 25px 60px rgba(0,0,0,0.3)",
-              border: "1px solid #E2E8F0",
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ textAlign: "center", marginBottom: "22px" }}>
-              <div
-                style={{
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "50%",
-                  background: "#FEF2F2",
-                  color: "#DC2626",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "30px",
-                  margin: "0 auto 12px",
-                  boxShadow: "0 4px 14px rgba(220, 38, 38, 0.2)",
-                }}
-              >
-                🛡️
-              </div>
-              <h2 style={{ fontSize: "21px", fontWeight: 900, color: "#0B2559", marginBottom: "8px" }}>
-                Vérification d&apos;identité obligatoire
-              </h2>
-              <p style={{ fontSize: "14px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
-                Pour garantir un espace 100% réel, sécurisé et protéger l&apos;image des membres à Lomé, vous devez certifier votre identité avant d&apos;entrer en contact avec des partenaires.
-              </p>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "12px",
-                  padding: "14px",
-                  borderRadius: "14px",
-                  background: "#F8FAFC",
-                  border: "1.5px solid #E2E8F0",
-                }}
-              >
-                <span style={{ fontSize: "22px" }}>🪪</span>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: "14px", color: "#0B2559" }}>
-                    Étape 1 : Pièce d&apos;identité officielle
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
-                    CNI, Passeport, Permis de conduire, Carte d&apos;électeur, Carte consulaire ou Carte de séjour avec photo.
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "12px",
-                  padding: "14px",
-                  borderRadius: "14px",
-                  background: "#F8FAFC",
-                  border: "1.5px solid #E2E8F0",
-                }}
-              >
-                <span style={{ fontSize: "22px" }}>📸</span>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: "14px", color: "#0B2559" }}>
-                    Étape 2 : Contrôle facial instantané (Selfie)
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
-                    Prenez un selfie net avec votre appareil photo montrant clairement votre visage pour confirmer votre profil.
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  background: "#ECFDF5",
-                  border: "1px solid #A7F3D0",
-                  fontSize: "12px",
-                  color: "#065F46",
-                  lineHeight: 1.4,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <span>🔒</span>
-                <span>Protection totale : vos documents et votre selfie restent strictement confidentiels et ne sont jamais visibles ni téléchargeables par les autres membres.</span>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <Link
-                href="/profil/securite"
-                className="btn btn-primary"
-                style={{
-                  width: "100%",
-                  justifyContent: "center",
-                  fontWeight: 800,
-                  padding: "14px",
-                  fontSize: "15px",
-                  background: "#E10600",
-                  color: "white",
-                  textDecoration: "none",
-                  borderRadius: "14px",
-                  boxShadow: "0 4px 14px rgba(225, 6, 0, 0.35)",
-                }}
-              >
-                Valider mes pièces & selfie maintenant 🛡️
-              </Link>
-              <button
-                type="button"
-                onClick={() => setSecurityModalOpen(false)}
-                className="btn btn-ghost"
-                style={{ color: "#64748B", fontSize: "13px", padding: "10px" }}
-              >
-                Plus tard
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal Pack VIP Requis pour Appel Vidéo ── */}
-      {vipModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(10, 20, 45, 0.75)",
-            backdropFilter: "blur(6px)",
-            zIndex: 1100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "24px",
-              padding: "32px",
-              maxWidth: "460px",
-              width: "100%",
-              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.25)",
-              textAlign: "center",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                width: "64px",
-                height: "64px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
-                border: "2px solid #F59E0B",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 16px",
-                fontSize: "28px",
-              }}
-            >
-              👑
-            </div>
-
-            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
-              Appels Audio & Vidéo WhatsApp réservés au VIP
-            </h3>
-
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "16px" }}>
-              Les appels audio et vidéo en direct style WhatsApp sont une exclusivité réservée aux membres du <strong>Club VIP (15 000 FCFA)</strong>.
-            </p>
-
-            <div
-              style={{
-                padding: "14px",
-                borderRadius: "14px",
-                background: "#F8FAFC",
-                border: "1.5px solid #E2E8F0",
-                textAlign: "left",
-                marginBottom: "20px",
-                fontSize: "13px",
-                color: "#334155",
-                lineHeight: 1.7,
-              }}
-            >
-              <div style={{ fontWeight: 700, color: "#0B2559", marginBottom: "6px" }}>
-                👑 Avantages exclusifs VIP (15 000 FCFA / mois) :
-              </div>
-              <div>📞 <strong>Appels audio & vidéo WhatsApp</strong> en haute fidélité</div>
-              <div>🌍 <strong>Accès total</strong> à tous les membres inscrits sur la plateforme</div>
-              <div>📰 <strong>Mur VIP exclusif</strong> pour publier photos, vidéos et articles</div>
-              <div>⚡ <strong>Profil classé au sommet</strong> des recherches et suggestions</div>
-              <div style={{ marginTop: "8px", color: "#B45309", fontWeight: 600 }}>
-                ✓ Votre pack actuel vous permet déjà les messages écrits, photos et notes vocales audio.
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <a
-                href="https://link.saspay.me/ksev91xlvik"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary"
-                style={{
-                  width: "100%",
-                  justifyContent: "center",
-                  fontWeight: 800,
-                  padding: "14px",
-                  fontSize: "15px",
-                  background: "linear-gradient(135deg, #D97706 0%, #B45309 100%)",
-                  color: "white",
-                  textDecoration: "none",
-                  borderRadius: "14px",
-                  boxShadow: "0 4px 14px rgba(217, 119, 6, 0.35)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <span>👑 Activer le Pack VIP (15 000 FCFA)</span>
-              </a>
-              <Link
-                href="/vip"
-                style={{
-                  color: "#D97706",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  textDecoration: "underline",
-                  textAlign: "center",
-                  padding: "4px",
-                }}
-              >
-                Explorer le Mur de publications VIP →
-              </Link>
-              <button
-                type="button"
-                onClick={() => setVipModalOpen(false)}
-                className="btn btn-ghost"
-                style={{ color: "#64748B", fontSize: "13px", padding: "8px" }}
-              >
-                Continuer avec messages, photos & audio
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Règles du Chat Modal ─────────────────────────────── */}
-      {rulesModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(10, 20, 45, 0.75)",
-            backdropFilter: "blur(6px)",
-            zIndex: 1300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-          onClick={() => setRulesModalOpen(false)}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "24px",
-              padding: "32px",
-              maxWidth: "520px",
-              width: "100%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow: "0 25px 60px rgba(0,0,0,0.25)",
-              border: "1px solid #E2E8F0",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-              <span style={{ fontSize: "28px" }}>📜</span>
-              <div>
-                <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
-                  Règles d&apos;or du Chat
-                </h2>
-                <p style={{ fontSize: "12px", color: "#64748B", margin: 0 }}>
-                  Meet Me Club Lomé · Rencontres réelles & sécurisées
-                </p>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "24px" }}>
-              {[
-                {
-                  icon: "🤝",
-                  title: "1. Respect & Courtoisie absolue",
-                  desc: "Zéro tolérance pour les insultes, harcèlement ou propos déplacés. Chaque membre mérite bienveillance et considération.",
-                },
-                {
-                  icon: "🔞",
-                  title: "2. Membres Majeurs & Profils Réels",
-                  desc: "La plateforme est strictement réservée aux 18+. La soumission de votre pièce d'identité et selfie garantit un club 100% authentique.",
-                },
-                {
-                  icon: "🛡️",
-                  title: "3. Sécurité des Sorties à Lomé",
-                  desc: "Organisez vos premiers rendez-vous uniquement dans des lieux publics, cafés ou chez nos établissements partenaires certifiés MMC.",
-                },
-                {
-                  icon: "🚫",
-                  title: "4. Zéro Demande d'Argent",
-                  desc: "N'envoyez et ne demandez jamais d'argent par T-Money, Flooz ou virement. Tout membre demandant de l'argent doit être signalé immédiatement.",
-                },
-                {
-                  icon: "🔒",
-                  title: "5. Confidentialité & Discrétion",
-                  desc: "Ne partagez jamais vos mots de passe ou informations sensibles. Vos échanges restent privés.",
-                },
-              ].map((r, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "12px",
-                    padding: "12px 14px",
-                    borderRadius: "12px",
-                    background: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                  }}
-                >
-                  <span style={{ fontSize: "20px" }}>{r.icon}</span>
-                  <div>
-                    <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#0B2559", margin: "0 0 2px" }}>
-                      {r.title}
-                    </h4>
-                    <p style={{ fontSize: "12px", color: "#475569", margin: 0, lineHeight: 1.4 }}>
-                      {r.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setRulesModalOpen(false)}
-              className="btn btn-primary"
-              style={{ width: "100%", justifyContent: "center", fontWeight: 800, padding: "12px" }}
-            >
-              J&apos;ai compris et j&apos;accepte les règles ✓
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Quota Plan Gratuit Modal ─────────────────────────── */}
-      {quotaModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(10, 20, 45, 0.75)",
-            backdropFilter: "blur(6px)",
-            zIndex: 1300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-          onClick={() => setQuotaModalOpen(false)}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "24px",
-              padding: "32px",
-              maxWidth: "520px",
-              width: "100%",
-              boxShadow: "0 25px 60px rgba(0,0,0,0.25)",
-              border: "1px solid #E2E8F0",
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ textAlign: "center", marginBottom: "20px" }}>
-              <div
-                style={{
-                  width: "56px",
-                  height: "56px",
-                  borderRadius: "50%",
-                  background: "#FEF3C7",
-                  color: "#D97706",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "26px",
-                  margin: "0 auto 12px",
-                }}
-              >
-                ⚡
-              </div>
-              <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "6px" }}>
-                Quota Plan Gratuit atteint (3 partenaires)
-              </h2>
-              <p style={{ fontSize: "13px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
-                Le Plan Gratuit vous permet d&apos;échanger avec 3 membres de votre catégorie. Pour contacter d&apos;autres membres sans limite, passez à un pass supérieur :
-              </p>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
-              <a
-                href="https://link.saspay.me/dtpycov9i-k"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "14px 16px",
-                  borderRadius: "14px",
-                  border: "2px solid #0B2559",
-                  background: "#F8FAFC",
-                  textDecoration: "none",
-                  color: "#0B2559",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 800 }}>Pass Essentiel — 3 000 FCFA/mois</div>
-                  <div style={{ fontSize: "11px", color: "#64748B" }}>Partenaires & discussions illimités</div>
-                </div>
-                <span style={{ color: "#E10600", fontWeight: 800 }}>Activer ➤</span>
-              </a>
-
-              <a
-                href="https://link.saspay.me/xiigac37eyq"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "14px 16px",
-                  borderRadius: "14px",
-                  border: "1.5px solid #CBD5E1",
-                  background: "white",
-                  textDecoration: "none",
-                  color: "#0B2559",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 800 }}>Pass Complice — 6 000 FCFA</div>
-                  <div style={{ fontSize: "11px", color: "#64748B" }}>Accès prioritaire + 1 sortie offerte</div>
-                </div>
-                <span style={{ color: "#E10600", fontWeight: 800 }}>Activer ➤</span>
-              </a>
-
-              <a
-                href="https://link.saspay.me/ksev91xlvik"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "14px 16px",
-                  borderRadius: "14px",
-                  border: "1.5px solid #CBD5E1",
-                  background: "white",
-                  textDecoration: "none",
-                  color: "#0B2559",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 800 }}>Pass VIP — 15 000 FCFA</div>
-                  <div style={{ fontSize: "11px", color: "#64748B" }}>Conciergerie privée & sorties VIP</div>
-                </div>
-                <span style={{ color: "#E10600", fontWeight: 800 }}>Activer ➤</span>
-              </a>
-            </div>
-
-            <div style={{ display: "flex", gap: "10px" }}>
-              <Link
-                href="/tarifs"
-                className="btn btn-outline-blue"
-                style={{ flex: 1, justifyContent: "center", fontWeight: 700, fontSize: "13px" }}
-              >
-                Voir tous les tarifs
-              </Link>
-              <button
-                type="button"
-                onClick={() => setQuotaModalOpen(false)}
-                className="btn btn-ghost"
-                style={{ color: "#64748B" }}
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Partner Profile & Criteria Modal ── */}
-      {partnerModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(10, 20, 45, 0.75)",
-            backdropFilter: "blur(4px)",
-            zIndex: 1200,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-            animation: "fadeIn 0.2s ease-out",
-          }}
-          onClick={() => {
-            setPartnerModalOpen(false);
-            setSelectedPartnerModal(null);
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "24px",
-              maxWidth: "460px",
-              width: "100%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow: "0 25px 60px rgba(0,0,0,0.3)",
-              border: "1px solid #E2E8F0",
-              position: "relative",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header / Cover */}
-            {(() => {
-              const activePartner = selectedPartnerModal || onlineMembers.find(
-                (m) => m.userId === activeConv?.participantId || m.id === activeConv?.participantId
-              );
-              const partnerName = activePartner?.firstName || activeConv?.firstName || "Membre";
-              const partnerPseudo = activePartner?.pseudo || activeConv?.pseudo || `@${partnerName.toLowerCase()}`;
-              const partnerPhoto = activePartner?.photoUrl || activeConv?.photoUrl;
-              const partnerCover = activePartner?.coverUrl;
-              const rawPhotos = (activePartner?.photos && activePartner.photos.length > 0)
-                ? activePartner.photos
-                : (partnerPhoto ? [{ url: partnerPhoto, isMain: true }] : [{ url: "/victoire_profile.jpg", isMain: true }]);
-              const partnerPhotos = rawPhotos.slice(0, 4);
-              const partnerUserId = activePartner?.userId || activePartner?.id || activeConv?.participantId || "";
-
-              return (
-                <>
-                  <div
-                    style={{
-                      height: "140px",
-                      background: partnerCover
-                        ? `url(${partnerCover}) center/cover no-repeat`
-                        : "linear-gradient(135deg, #0B2559 0%, #163B8A 60%, #1D4ED8 100%)",
-                      position: "relative",
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      padding: "12px",
-                      borderRadius: "24px 24px 0 0",
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 100%)",
-                        borderRadius: "24px 24px 0 0",
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPartnerModalOpen(false);
-                        setSelectedPartnerModal(null);
-                      }}
-                      style={{
-                        position: "relative",
-                        zIndex: 2,
-                        background: "rgba(0,0,0,0.55)",
-                        border: "none",
-                        color: "white",
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "50%",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "14px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  {/* Profile Avatar & Info */}
-                  <div style={{ padding: "0 20px 24px", marginTop: "-44px", position: "relative", zIndex: 3 }}>
-                    <div
-                      style={{
-                        width: "88px",
-                        height: "88px",
-                        borderRadius: "50%",
-                        border: "4px solid white",
-                        boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-                        overflow: "hidden",
-                        background: "#0B2559",
-                        position: "relative",
-                        marginBottom: "12px",
-                      }}
-                    >
-                      {partnerPhoto ? (
-                        <Image
-                          src={partnerPhoto}
-                          alt={partnerName}
-                          fill
-                          unoptimized
-                          style={{ objectFit: "cover" }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "white",
-                            fontSize: "30px",
-                            fontWeight: 800,
-                          }}
-                        >
-                          {partnerName.charAt(0) || "M"}
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <div>
-                        <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
-                          <span>{partnerName}</span>
-                          <span style={{ fontSize: "14px", color: "#059669" }}>✓</span>
-                        </h2>
-                        <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>
-                          {partnerPseudo}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#ECFDF5", color: "#059669", padding: "4px 10px", borderRadius: "100px", fontSize: "12px", fontWeight: 700 }}>
-                        <span style={{ width: "7px", height: "7px", background: "#10B981", borderRadius: "50%" }} />
-                        En ligne à Lomé
-                      </div>
-                    </div>
-
-                    {/* Badges & Critères */}
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", margin: "14px 0" }}>
-                      <span style={{ background: "#EFF6FF", color: "#1D4ED8", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
-                        📍 {activePartner?.city || "Lomé, Togo"}
-                      </span>
-                      {activePartner?.age && (
-                        <span style={{ background: "#FDF2F8", color: "#BE185D", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 700 }}>
-                          🎂 {activePartner.age} ans
-                        </span>
-                      )}
-                      {activePartner?.profession && (
-                        <span style={{ background: "#F1F5F9", color: "#334155", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
-                          💼 {activePartner.profession}
-                        </span>
-                      )}
-                      <span style={{ background: "#FEF3C7", color: "#B45309", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
-                        ⭐ {activePartner?.relationshipGoal === "MARRIAGE" ? "Mariage & Foyer" : activePartner?.relationshipGoal === "FRIENDSHIP" ? "Amitié & Échange" : "Relation sérieuse & Sorties"}
-                      </span>
-                      <span style={{ background: "#ECFDF5", color: "#047857", padding: "4px 10px", borderRadius: "8px", fontSize: "12px", fontWeight: 600 }}>
-                        🛡️ Identité vérifiée (18+)
-                      </span>
-                    </div>
-
-                    {/* Bio */}
-                    <div style={{ background: "#F8FAFC", borderRadius: "14px", padding: "14px", border: "1px solid #E2E8F0", marginBottom: "16px" }}>
-                      <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
-                        À propos de {partnerName}
-                      </div>
-                      <p style={{ fontSize: "13.5px", color: "#334155", lineHeight: 1.6, margin: 0 }}>
-                        {activePartner?.bio || (partnerUserId.includes("victoire")
-                          ? "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖"
-                          : "Membre actif sur Meet Me Club Lomé. Disponible pour échanger en direct, partager des moments conviviaux et organiser une belle rencontre dans les meilleurs établissements de Lomé.")}
-                      </p>
-                    </div>
-
-                    {/* Galerie Photos du membre (Jusqu'à 4 photos) */}
-                    <div style={{ marginBottom: "20px" }}>
-                      <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>
-                        Photos du profil ({partnerPhotos.length}/4) · Cliquez pour agrandir
-                      </div>
-                      <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
-                        {partnerPhotos.map((ph: any, idx: number) => (
-                          <div
-                            key={idx}
-                            onClick={() => setEnlargedImage(ph.url)}
-                            style={{
-                              width: "80px",
-                              height: "80px",
-                              borderRadius: "12px",
-                              overflow: "hidden",
-                              border: ph.isMain ? "2px solid #2563EB" : "2px solid #E2E8F0",
-                              cursor: "pointer",
-                              position: "relative",
-                              flexShrink: 0,
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                            }}
-                          >
-                            <Image src={ph.url} alt={`Photo ${idx + 1}`} fill unoptimized style={{ objectFit: "cover" }} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
-
-              {/* Actions */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPartnerModalOpen(false);
-                    if (selectedPartnerModal) {
-                      startChatWithMember(selectedPartnerModal);
-                      setSelectedPartnerModal(null);
-                    } else {
-                      inputRef.current?.focus();
-                    }
-                  }}
-                  style={{
-                    padding: "12px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
-                    color: "white",
-                    fontWeight: 700,
-                    fontSize: "14px",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <MessageSquare size={16} />
-                  <span>Discuter avec {selectedPartnerModal?.firstName || activeConv?.firstName || "ce membre"}</span>
+        {/* ── Colonne droite : conversation ── */}
+        <main className={`${styles.chat} ${mobileView === "list" ? styles.hideMobile : ""}`}>
+          {activeConv && partnerMember ? (
+            <>
+              <header className={styles.chatHeader}>
+                <button type="button" className={`${styles.iconBtnLight} ${styles.backBtn}`} onClick={() => setMobileView("list")} aria-label="Retour aux discussions">
+                  <ArrowLeft size={22} />
                 </button>
-
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <Link
-                    href={`/rendez-vous/nouveau?avec=${selectedPartnerModal?.userId || selectedPartnerModal?.id || activeConv?.participantId || ""}`}
-                    onClick={() => {
-                      setPartnerModalOpen(false);
-                      setSelectedPartnerModal(null);
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: "11px",
-                      borderRadius: "12px",
-                      background: "#EFF6FF",
-                      color: "#1D4ED8",
-                      fontWeight: 700,
-                      fontSize: "13px",
-                      border: "1px solid #BFDBFE",
-                      textDecoration: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <Calendar size={15} />
-                    <span>Proposer Sortie</span>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPartnerModalOpen(false);
-                      setSelectedPartnerModal(null);
-                      startVideoCall();
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: "11px",
-                      borderRadius: "12px",
-                      background: "#F8FAFC",
-                      color: "#0F172A",
-                      fontWeight: 700,
-                      fontSize: "13px",
-                      border: "1px solid #CBD5E1",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <Video size={15} />
-                    <span>Appel Vidéo</span>
+                <button type="button" className={styles.chatPeer} onClick={() => setSheetMember(partnerMember)}>
+                  <Avatar name={activeConv.firstName} url={activeConv.photoUrl || partnerMember.photoUrl} size={42} online={partnerOnline} />
+                  <span className={styles.chatPeerText}>
+                    <span className={styles.chatPeerName}>
+                      {activeConv.firstName}
+                      <BadgeCheck size={15} className={styles.verifiedLight} />
+                    </span>
+                    <span className={`${styles.chatPeerStatus} ${partnerTyping ? styles.statusTypingLight : ""}`}>{partnerStatus}</span>
+                  </span>
+                </button>
+                <div className={styles.chatActions}>
+                  <button type="button" className={styles.iconBtnLight} onClick={() => callPartner("video")} aria-label="Appel vidéo" title={isVip ? "Appel vidéo" : "Appel vidéo (Pass VIP)"}>
+                    <Video size={22} />
                   </button>
+                  <button type="button" className={styles.iconBtnLight} onClick={() => callPartner("audio")} aria-label="Appel vocal" title={isVip ? "Appel vocal" : "Appel vocal (Pass VIP)"}>
+                    <Phone size={20} />
+                  </button>
+                  <div className={styles.menuWrap}>
+                    <button type="button" className={styles.iconBtnLight} onClick={() => setMenuOpen((v) => !v)} aria-label="Plus d'options">
+                      <MoreVertical size={21} />
+                    </button>
+                    {menuOpen && (
+                      <div className={styles.menu} onMouseLeave={() => setMenuOpen(false)}>
+                        <button type="button" onClick={() => { setSheetMember(partnerMember); setMenuOpen(false); }}>
+                          <UserRound size={17} /> Voir le profil
+                        </button>
+                        <Link href={`/rendez-vous/nouveau?avec=${activeConv.participantId}`} onClick={() => setMenuOpen(false)}>
+                          <CalendarHeart size={17} /> Proposer une sortie
+                        </Link>
+                        <button type="button" onClick={() => { setRulesOpen(true); setMenuOpen(false); }}>
+                          <ShieldCheck size={17} /> Règles du chat
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-      )}
+              </header>
 
-      {/* ── Enlarged Image Modal ─────────────────────────────── */}
-      {enlargedImage && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0, 0, 0, 0.9)",
-            zIndex: 1300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-          onClick={() => setEnlargedImage(null)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={enlargedImage}
-            alt="Photo grand format"
-            style={{
-              maxWidth: "90vw",
-              maxHeight: "90vh",
-              borderRadius: "16px",
-              objectFit: "contain",
-              boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
-            }}
-          />
-        </div>
+              <div className={styles.thread} ref={scrollRef} onClick={() => setMenuOpen(false)}>
+                <div className={styles.e2e}>
+                  <Lock size={12} /> Vos échanges sont privés et protégés. Ne partagez jamais d&apos;argent.
+                </div>
+
+                {activeMessages.length === 0 && (
+                  <div className={styles.emptyChat}>
+                    <Avatar name={activeConv.firstName} url={activeConv.photoUrl || partnerMember.photoUrl} size={84} ring />
+                    <h3>Dites bonjour à {activeConv.firstName} 👋</h3>
+                    <p>Envoyez un premier message, une photo ou une note vocale pour faire connaissance.</p>
+                  </div>
+                )}
+
+                {activeMessages.map((m) => {
+                  const day = dayLabel(m.createdAt);
+                  const showDay = day !== lastDay;
+                  lastDay = day;
+                  const mine = m.senderId === myId || m.senderId === "me" || (m.senderId !== activeConv.participantId && m.senderId !== VICTOIRE_ID);
+                  return (
+                    <div key={m.id}>
+                      {showDay && <div className={styles.dayChip}>{day}</div>}
+                      <MessageBubble
+                        msg={m}
+                        mine={mine}
+                        partnerOnline={partnerOnline}
+                        onOpenImage={setLightbox}
+                        onRetry={m.status === "FAILED" ? () => deliver(m.id) : undefined}
+                      />
+                    </div>
+                  );
+                })}
+
+                {partnerTyping && (
+                  <div className={styles.row}>
+                    <div className={`${styles.bubble} ${styles.bubbleTheirs} ${styles.typingBubble}`}>
+                      <span /> <span /> <span />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Composer
+                blocked={false}
+                onBlocked={() => setQuotaOpen(true)}
+                onSendText={(text) => sendMessage(text)}
+                onSendFile={sendFile}
+                onSendVoice={sendVoice}
+                onOpenLocation={() => setLocationOpen(true)}
+                onTyping={() => activeConv.participantId !== VICTOIRE_ID && rt.sendTyping(activeConv.participantId, activeConv.id)}
+              />
+            </>
+          ) : (
+            <div className={styles.welcomePane}>
+              <span className={styles.welcomeLogo}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo-icon.png" alt="Meet Me Club" />
+              </span>
+              <h2>Meet Me Club · Messagerie</h2>
+              <p>Choisissez une discussion ou un membre en ligne pour commencer à échanger.</p>
+              <span className={styles.e2eInline}>
+                <Lock size={13} /> Échanges privés et sécurisés
+              </span>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {notice && <div className={styles.toastNotice}>{notice}</div>}
+
+      {sheetMember && (
+        <PartnerSheet
+          member={sheetMember}
+          online={sheetMember.userId === VICTOIRE_ID || rt.isOnline(sheetMember.userId)}
+          onClose={() => setSheetMember(null)}
+          onOpenImage={setLightbox}
+          onMessage={sheetMember.userId !== myId ? () => startChatWith(sheetMember) : undefined}
+          onCall={
+            sheetMember.userId !== myId && sheetMember.userId !== VICTOIRE_ID
+              ? (kind) => {
+                  const conv = conversations.find((c) => c.participantId === sheetMember.userId);
+                  setSheetMember(null);
+                  if (!isVip) return setVipOpen(true);
+                  rt.startCall({ userId: sheetMember.userId, firstName: sheetMember.firstName, photoUrl: sheetMember.photoUrl || null }, kind, conv?.id);
+                }
+              : undefined
+          }
+        />
       )}
+      {lightbox && <Lightbox url={lightbox} onClose={() => setLightbox(null)} />}
+      {vipOpen && <VipModal onClose={() => setVipOpen(false)} />}
+      {quotaOpen && <QuotaModal onClose={() => setQuotaOpen(false)} />}
+      {locationOpen && <LocationModal onClose={() => setLocationOpen(false)} onShare={shareLocation} />}
+      {rulesOpen && <RulesModal onClose={() => setRulesOpen(false)} />}
+    </div>
+  );
+}
+
+function MemberCard({ member, online, onOpen, onChat }: { member: Member; online: boolean; onOpen: () => void; onChat: () => void }) {
+  return (
+    <div className={styles.memberCard}>
+      <button type="button" className={styles.memberMain} onClick={onOpen}>
+        <Avatar name={member.firstName} url={member.photoUrl} size={56} online={online} />
+        <span className={styles.memberInfo}>
+          <span className={styles.memberName}>
+            {member.firstName}
+            {member.age ? `, ${member.age}` : ""}
+            <PlanBadge plan={member.plan} />
+          </span>
+          <span className={styles.memberMeta}>
+            <span className={online ? styles.statusOnline : styles.statusOffline}>{online ? "En ligne" : "Hors ligne"}</span>
+            {member.city ? ` · ${member.city}` : ""}
+            {member.profession ? ` · ${member.profession}` : ""}
+          </span>
+          {member.bio && <span className={styles.memberBio}>{member.bio}</span>}
+        </span>
+      </button>
+      <button type="button" className={styles.chatBtn} onClick={onChat} aria-label={`Discuter avec ${member.firstName}`}>
+        <MessageCircle size={20} />
+        <span>Discuter</span>
+      </button>
     </div>
   );
 }
 
 export default function MessagesPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: "#0F172A", fontWeight: 700 }}>Chargement de la messagerie...</div>}>
-      <MessagesContent />
+    <Suspense fallback={<div className={styles.page} />}>
+      <MessagesApp />
     </Suspense>
   );
 }

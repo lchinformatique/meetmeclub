@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import LanguageSelector from "./LanguageSelector";
 import { getLanguage, t, SupportedLanguage } from "@/lib/i18n";
+import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
 interface UserSession {
   id: string;
@@ -69,7 +70,8 @@ export default function Header() {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
 
-  const [unreadCount, setUnreadCount] = useState<number>(0);
+  // Messages non lus en temps réel (RealtimeProvider)
+  const { unreadTotal: unreadCount } = useRealtime();
 
   // Listen to profile updates from ProfileInteractiveCard or Edit page
   useEffect(() => {
@@ -90,29 +92,6 @@ export default function Header() {
     };
     window.addEventListener("mmclub_profile_updated", handleProfileUpdate);
     return () => window.removeEventListener("mmclub_profile_updated", handleProfileUpdate);
-  }, []);
-
-  // Poll unread messages for desktop & drawer header
-  useEffect(() => {
-    let isMounted = true;
-    async function loadUnread() {
-      try {
-        const res = await fetch("/api/conversations");
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.conversations)) {
-            const total = data.conversations.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0);
-            if (isMounted) setUnreadCount(total);
-          }
-        }
-      } catch {}
-    }
-    loadUnread();
-    const interval = setInterval(loadUnread, 6000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
   }, []);
 
   // Fetch session on route change

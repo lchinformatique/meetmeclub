@@ -88,7 +88,9 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         religion: supaProfile.religion || undefined,
         languages: supaProfile.languages || ["Français"],
         coverUrl: supaProfile.coverUrl || undefined,
-        plan: "FREE",
+        plan: supaProfile.plan || "FREE",
+        subscriptionStartedAt: supaProfile.subscriptionStartedAt || undefined,
+        subscriptionExpiresAt: supaProfile.subscriptionExpiresAt || undefined,
         partnersContacted: [],
         photos: supaPhotos,
         interests: ["Discussions", "Sorties Lomé", "Cafés"],
@@ -188,6 +190,14 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
       languages: freshProfile.languages || profile.languages,
       photos: filteredPhotos.length > 0 ? filteredPhotos : (profile.photos?.filter((p: any) => !p.url.includes("dicebear.com/7.x/initials")) || []),
       phone: session.phone || freshProfile.phone || profile.phone,
+      // L'abonnement enregistré dans Supabase fait foi
+      ...(supaProfile?.plan
+        ? {
+            plan: supaProfile.plan,
+            subscriptionStartedAt: supaProfile.subscriptionStartedAt || undefined,
+            subscriptionExpiresAt: supaProfile.subscriptionExpiresAt || undefined,
+          }
+        : {}),
     });
   }
 
