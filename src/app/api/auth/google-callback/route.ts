@@ -138,8 +138,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Déterminer la photo de profil par défaut
-    const finalAvatar = (avatarUrl as string) || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(firstName)}&backgroundColor=0b2559,1d4ed8&textColor=ffffff`;
+    // Déterminer la photo de profil réelle (photo de profil du compte si fournie)
+    const finalAvatar = (avatarUrl as string) || null;
 
     // ── 3. Synchronisation Supabase REST intelligente ───────────────────────
     // Ne jamais écraser un profil existant avec des valeurs par défaut !
@@ -162,9 +162,11 @@ export async function POST(req: NextRequest) {
           city: "Lomé",
           bio: "Nouveau membre sur Meet Me Club à Lomé.",
           relationshipGoal: "SERIOUS",
-          avatarUrl: finalAvatar,
+          avatarUrl: finalAvatar || undefined,
         });
-        await savePhotoInSupabase(user.id, finalAvatar, true);
+        if (finalAvatar) {
+          await savePhotoInSupabase(user.id, finalAvatar, true);
+        }
       }
     } catch (supaErr) {
       console.warn("[google-callback] Supabase REST sync warning:", supaErr);

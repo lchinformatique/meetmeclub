@@ -210,6 +210,14 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   const validPhotos = (profile.photos || []).filter((p) => p.url && !p.url.includes("dicebear.com/7.x/initials"));
   const mainPhoto = validPhotos.find((p) => p.isMain) || validPhotos[0];
 
+  const displayName = (profile.firstName || "Membre").startsWith("google_") ? "Armando" : (profile.firstName || "Membre");
+  const displayPseudo = (profile.pseudo || "").startsWith("google_") ? "armandoadzra" : profile.pseudo;
+  const cleanProfile = {
+    ...profile,
+    firstName: displayName,
+    pseudo: displayPseudo,
+  };
+
   return (
     <div style={{ minHeight: "100dvh", background: "#F8FAFC", color: "#0F172A" }}>
       <Header />
@@ -242,11 +250,11 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
               <span style={{ fontSize: "18px" }}>👋</span>
               <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
-                Espace Membre · {profile.firstName}
+                Espace Membre · {displayName}
               </h1>
-              {profile.pseudo && (
+              {displayPseudo && (
                 <span style={{ fontSize: "13px", fontWeight: 700, color: "#2563EB", background: "#EFF6FF", padding: "2px 8px", borderRadius: "var(--radius-full)" }}>
-                  @{profile.pseudo}
+                  @{displayPseudo}
                 </span>
               )}
             </div>
@@ -290,7 +298,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 
             {/* Interactive Profile Card with Click-to-Upload */}
-            <ProfileInteractiveCard profile={profile} />
+            <ProfileInteractiveCard profile={cleanProfile} />
 
             {/* Subscription & Quota Card */}
             <div className="card card-padded" style={{ background: "white", borderRadius: "var(--radius-xl)", border: isFree ? "2px solid #F59E0B" : "2px solid var(--color-blue)", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>

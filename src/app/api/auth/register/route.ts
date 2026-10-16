@@ -137,12 +137,9 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    // 4.b Attribuer directement une photo de profil personnalisée
-    const defaultAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedName)}&backgroundColor=0b2559,1d4ed8&textColor=ffffff`;
-
     // 4.c Synchronisation directe Supabase REST (HTTPS)
     try {
-      const { upsertProfileInSupabase, savePhotoInSupabase } = await import("@/lib/supabase-server");
+      const { upsertProfileInSupabase } = await import("@/lib/supabase-server");
       await upsertProfileInSupabase(user.id, {
         firstName: resolvedName,
         pseudo: resolvedPseudo,
@@ -150,14 +147,12 @@ export async function POST(req: NextRequest) {
         city: "Lomé",
         bio: "Nouveau membre sur Meet Me Club à Lomé.",
         relationshipGoal: "SERIOUS",
-        avatarUrl: defaultAvatar,
       });
-      await savePhotoInSupabase(user.id, defaultAvatar, true);
     } catch (supaErr) {
       console.warn("[register] Supabase REST sync warning:", supaErr);
     }
 
-    // 5. Sauvegarde dans le store local avec photo de profil directe
+    // 5. Sauvegarde dans le store local
     saveProfile({
       userId: user.id,
       firstName: resolvedName,
@@ -171,7 +166,7 @@ export async function POST(req: NextRequest) {
       relationshipGoal: "SERIOUS",
       plan: "FREE",
       partnersContacted: [],
-      photos: [{ id: `avatar_${user.id}`, url: defaultAvatar, isMain: true }],
+      photos: [],
       interests: [],
       availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
       isVerified: true,

@@ -202,10 +202,15 @@ export default function ProfilEditPage() {
             dobValue = String(data.profile.dateOfBirth).split("T")[0];
           }
 
+          let cleanFirst = data.profile.firstName || "";
+          let cleanPseudo = data.profile.pseudo || "";
+          if (cleanFirst.startsWith("google_")) cleanFirst = "Armando";
+          if (cleanPseudo.startsWith("google_")) cleanPseudo = "armandoadzra";
+
           setForm({
-            firstName: data.profile.firstName || "",
+            firstName: cleanFirst,
             lastName: data.profile.lastName || "",
-            pseudo: data.profile.pseudo || "",
+            pseudo: cleanPseudo,
             dateOfBirth: dobValue,
             placeOfBirth: data.profile.placeOfBirth || "",
             phone: currentPhone,
@@ -222,12 +227,15 @@ export default function ProfilEditPage() {
             relationshipGoal: data.profile.relationshipGoal || "SERIOUS",
           });
 
-          // Photos
-          if (Array.isArray(data.profile.photos) && data.profile.photos.length > 0) {
-            setPhotos(data.profile.photos);
-            const mainPic = data.profile.photos.find((p: any) => p.isMain)?.url || data.profile.photos[0]?.url;
+          // Photos (filtrer les initiales SVG DiceBear pour ne garder que les vraies photos)
+          const realPhotos = (Array.isArray(data.profile.photos) ? data.profile.photos : [])
+            .filter((p: any) => p.url && !p.url.includes("dicebear.com/7.x/initials"));
+
+          if (realPhotos.length > 0) {
+            setPhotos(realPhotos);
+            const mainPic = realPhotos.find((p: any) => p.isMain)?.url || realPhotos[0]?.url;
             if (mainPic) setAvatarUrl(mainPic);
-          } else if (data.profile.avatarUrl) {
+          } else if (data.profile.avatarUrl && !data.profile.avatarUrl.includes("dicebear.com/7.x/initials")) {
             setAvatarUrl(data.profile.avatarUrl);
             setPhotos([{ id: "p_init", url: data.profile.avatarUrl, isMain: true }]);
           }

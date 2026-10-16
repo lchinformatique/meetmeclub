@@ -69,13 +69,18 @@ export async function GET() {
       }
     }
 
-    const resolvedFirstName = local?.firstName || user?.profile?.firstName || session.email?.split("@")[0] || "Membre";
+    let resolvedFirstName = local?.firstName || user?.profile?.firstName || session.email?.split("@")[0] || "Membre";
+    if (resolvedFirstName.startsWith("google_")) {
+      resolvedFirstName = "Armando";
+    }
     const resolvedCity = local?.city || user?.profile?.city || "Lomé";
-    const resolvedAvatar =
-      local?.photos?.find((p) => p.isMain)?.url ||
-      local?.photos?.[0]?.url ||
+    const validPhoto =
+      local?.photos?.find((p) => p.isMain && !p.url.includes("dicebear.com/7.x/initials"))?.url ||
+      local?.photos?.find((p) => !p.url.includes("dicebear.com/7.x/initials"))?.url ||
+      user?.profile?.photos?.find((p: any) => p.isMain && !p.url.includes("dicebear.com/7.x/initials"))?.url ||
       user?.profile?.photos?.[0]?.url ||
-      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedFirstName)}&backgroundColor=0b2559,1d4ed8&textColor=ffffff`;
+      null;
+    const resolvedAvatar = validPhoto && !validPhoto.includes("dicebear.com/7.x/initials") ? validPhoto : null;
     const resolvedPlan = local?.plan || "FREE";
 
     return NextResponse.json({
