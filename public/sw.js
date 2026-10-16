@@ -20,20 +20,23 @@ self.addEventListener("push", (event) => {
     renotify: true,
     silent: false, // son et vibration du téléphone
     requireInteraction: isCall,
-    vibrate: isCall ? [400, 200, 400, 200, 400, 200, 400] : [120, 60, 120],
+    vibrate: isCall ? [400, 200, 400, 200, 400, 200, 400] : [180, 80, 180],
+    timestamp: Date.now(),
     data: { url: data.url || "/messages" },
     actions: isCall
       ? [{ action: "open", title: "Répondre" }]
       : [{ action: "open", title: "Ouvrir" }],
   };
 
+  // Toujours afficher : l'iPhone coupe les notifications d'un site qui en reçoit sans les montrer
   event.waitUntil(
     (async () => {
-      // Pas de notification système si la conversation est déjà ouverte et visible
-      const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      const visible = clientsList.some((c) => c.visibilityState === "visible" && c.url.includes("/messages"));
-      if (visible && !isCall && data.kind === "message") return;
       await self.registration.showNotification(data.title || "Meet Me Club", options);
+      // Pastille sur l'icône de l'application (Android / iPhone installé)
+      try {
+        const shown = await self.registration.getNotifications();
+        if (self.navigator && "setAppBadge" in self.navigator) await self.navigator.setAppBadge(shown.length);
+      } catch {}
     })()
   );
 });

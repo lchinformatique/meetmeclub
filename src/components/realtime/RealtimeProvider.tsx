@@ -357,14 +357,26 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
   useEffect(() => {
     if (!me || !pushSupported) return;
     setPushPermission(Notification.permission);
+    // Invitation ignorée → proposée à nouveau 3 jours plus tard
     let dismissed = false;
     try {
-      dismissed = localStorage.getItem("mmc_push_banner_dismissed") === "1";
+      const at = Number(localStorage.getItem("mmc_push_banner_dismissed_at") || 0);
+      dismissed = Date.now() - at < 3 * 24 * 3600 * 1000;
     } catch {}
     setPushBannerDismissed(dismissed);
     // Appareil déjà autorisé : on (ré)associe l'abonnement au membre connecté
     if (Notification.permission === "granted") subscribeDeviceToPush().catch(() => {});
   }, [me, pushSupported]);
+
+  // « Je suis en ligne » : prévient mes interlocuteurs (au plus toutes les 6 h, géré par le serveur)
+  useEffect(() => {
+    if (!me) return;
+    try {
+      if (sessionStorage.getItem("mmc_online_pinged") === me.userId) return;
+      sessionStorage.setItem("mmc_online_pinged", me.userId);
+    } catch {}
+    fetch("/api/presence/online", { method: "POST" }).catch(() => {});
+  }, [me]);
 
   const enablePush = useCallback(async () => {
     if (!pushSupported) return false;
@@ -382,7 +394,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
   const dismissPushBanner = () => {
     setPushBannerDismissed(true);
     try {
-      localStorage.setItem("mmc_push_banner_dismissed", "1");
+      localStorage.setItem("mmc_push_banner_dismissed_at", Date.now().toString());
     } catch {}
   };
 
