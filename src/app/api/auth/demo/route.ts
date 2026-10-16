@@ -23,7 +23,10 @@ export async function POST() {
       profession: "Informaticien",
       bio: "Passionné d'échanges, de rencontres authentiques et de bons moments dans les meilleurs cadres de Lomé. Ouvert pour discuter et faire de belles connaissances !",
       relationshipGoal: "SERIOUS",
-      plan: "FREE",
+      plan: "VIP",
+      subscriptionStartedAt: "2024-01-01T00:00:00.000Z",
+      subscriptionExpiresAt: "2030-12-31T23:59:59.000Z",
+      likesCount: 99,
       partnersContacted: [],
       photos: [
         { id: "demo_p1", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80", isMain: true }
@@ -37,7 +40,7 @@ export async function POST() {
 
   await setSessionCookie({
     userId,
-    role: "MEMBER",
+    role: "ADMIN",
     status: "ACTIVE",
     phone: "+22890123456",
     email: "testeur@meetmeclub.tg",
