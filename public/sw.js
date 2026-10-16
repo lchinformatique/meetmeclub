@@ -45,8 +45,11 @@ self.addEventListener("notificationclick", (event) => {
       const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       for (const client of clientsList) {
         if (client.url.startsWith(self.location.origin)) {
-          await client.focus();
-          if ("navigate" in client) return client.navigate(target);
+          try {
+            await client.focus();
+          } catch {}
+          // L'application ouverte se charge d'afficher la conversation (sans rechargement)
+          client.postMessage({ type: "mmc:navigate", url: target });
           return;
         }
       }

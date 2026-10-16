@@ -35,11 +35,19 @@ function ActivationContent() {
       });
 
       const data = await res.json();
+      if (res.status === 401 && data.needLogin) {
+        router.push(`/connexion?callbackUrl=${encodeURIComponent(`/paiement/activation?plan=${selectedPlan}`)}`);
+        return;
+      }
       if (!res.ok) {
         throw new Error(data.error || "Erreur d'activation");
       }
 
       setSuccess(true);
+      // Retour direct sur le profil, où le nouveau plan est affiché
+      setTimeout(() => {
+        window.location.href = `/profil?activated=${selectedPlan}`;
+      }, 2500);
     } catch (err: any) {
       setErrorMsg(err.message || "Impossible d'activer le compte pour le moment.");
     } finally {

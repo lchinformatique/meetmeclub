@@ -178,6 +178,12 @@ export default function ProfilEditPage() {
     relationshipGoal: "SERIOUS",
   });
 
+  // Arrivée juste après l'inscription (?welcome=1)
+  const [isWelcome, setIsWelcome] = useState(false);
+  useEffect(() => {
+    setIsWelcome(new URLSearchParams(window.location.search).get("welcome") === "1");
+  }, []);
+
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -451,13 +457,11 @@ export default function ProfilEditPage() {
         );
       }
 
+      // Nouveau membre : profil complété → directement vers les membres en ligne pour discuter
+      const nextPage = isWelcome ? "/messages?tab=online&welcome=1" : "/profil";
       setTimeout(() => {
-        if (typeof window !== "undefined") {
-          window.location.href = "/profil";
-        } else {
-          router.push("/profil");
-        }
-      }, 500);
+        window.location.href = nextPage;
+      }, 600);
     } catch {
       setMessage({ type: "error", text: "Erreur de connexion. Veuillez réessayer." });
     } finally {
@@ -564,6 +568,26 @@ export default function ProfilEditPage() {
       </header>
 
       <main className="container" style={{ maxWidth: "780px", paddingBlock: "32px" }}>
+        {isWelcome && (
+          <div
+            style={{
+              marginBottom: "18px",
+              padding: "16px 18px",
+              borderRadius: "16px",
+              background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+              color: "white",
+              boxShadow: "0 10px 30px rgba(11,37,89,0.25)",
+            }}
+          >
+            <div style={{ fontWeight: 800, fontSize: "17px", marginBottom: "4px" }}>
+              Bienvenue {form.firstName || ""} ! 🎉 Votre compte est créé.
+            </div>
+            <div style={{ fontSize: "14px", lineHeight: 1.5, color: "rgba(255,255,255,0.88)" }}>
+              Dernière étape : ajoutez votre photo, votre bio et vos informations, puis touchez « Enregistrer ». Vous
+              verrez ensuite les membres en ligne pour commencer à discuter.
+            </div>
+          </div>
+        )}
         <div
           style={{
             background: "white",

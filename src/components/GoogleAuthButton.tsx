@@ -13,12 +13,18 @@ interface GoogleAuthButtonProps {
   redirectTo?: string;
   /** Callback d'erreur optionnel pour afficher le message dans le formulaire parent */
   onError?: (msg: string) => void;
+  /** Appelé avant la redirection vers Google ; retourner false annule (ex. formulaire incomplet) */
+  onBeforeStart?: () => boolean;
+  /** Bouton désactivé (ex. formulaire non valide) */
+  disabled?: boolean;
 }
 
 export default function GoogleAuthButton({
   label = "Continuer avec Google",
   redirectTo,
   onError,
+  onBeforeStart,
+  disabled = false,
 }: GoogleAuthButtonProps) {
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +35,8 @@ export default function GoogleAuthButton({
       : "https://www.meetmeclub.net/auth/callback");
 
   async function handleGoogleSignIn() {
-    if (loading) return;
+    if (loading || disabled) return;
+    if (onBeforeStart && onBeforeStart() === false) return;
     setLoading(true);
 
     try {
@@ -38,8 +45,8 @@ export default function GoogleAuthButton({
         options: {
           redirectTo: callbackUrl,
           queryParams: {
-            access_type: "offline",
-            prompt: "consent",
+            // Le membre choisit son vrai compte Gmail (et saisit son mot de passe Google)
+            prompt: "select_account",
           },
         },
       });
@@ -64,7 +71,7 @@ export default function GoogleAuthButton({
     <button
       type="button"
       onClick={handleGoogleSignIn}
-      disabled={loading}
+      disabled={loading || disabled}
       aria-label="Continuer avec Google"
       style={{
         width: "100%",

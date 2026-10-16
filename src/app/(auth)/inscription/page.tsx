@@ -1,206 +1,142 @@
 "use client";
 // src/app/(auth)/inscription/page.tsx
-// Page d'inscription officielle Meet Me Club
-// 1ère position : Formulaire de création de compte & Google Auth
-// En suite : Proposition des 4 Plans de paiement d'adhésion (Gratuit, Essentiel, Complice, VIP) avec disponibilité de paiement
+// Inscription Meet Me Club :
+// 1. Prénom, nom, pseudo, date de naissance (18 ans minimum) + acceptation des conditions
+// 2. Validation avec son vrai compte Google (Gmail + mot de passe Google)
+// 3. Accès direct à son profil pour compléter sa bio et ses photos
+// (Option sans Google : e-mail + mot de passe)
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import {
-  User,
-  Lock,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  ArrowRight,
-  Loader2,
-  AlertCircle,
-  LogIn,
-  ChevronLeft,
-  Sparkles,
-  CheckCircle2,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, ChevronLeft, Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck, Sparkles, User, AtSign } from "lucide-react";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
+import styles from "./inscription.module.css";
 
-const MEMBERSHIP_PLANS = [
-  {
-    id: "FREE",
-    name: "Plan Gratuit",
-    badge: "🎁 Inclus à l'inscription",
-    badgeBg: "rgba(16, 185, 129, 0.12)",
-    badgeColor: "#059669",
-    price: "0",
-    period: "Essai 7 jours offert",
-    desc: "Votre premier accès direct au club avec les fonctionnalités essentielles incluses.",
-    features: [
-      "7 jours d'essai sans engagement",
-      "Échanger avec jusqu'à 3 partenaires",
-      "Messages écrits, photos & vocaux",
-      "Profil visible sur le réseau Lomé",
-      "Réservation de rendez-vous disponible",
-    ],
-    highlight: false,
-    borderColor: "#CBD5E1",
-    actionLabel: "Inclus à la création ✓",
-    actionHref: "#register-form",
-    isFree: true,
-  },
-  {
-    id: "ESSENTIAL",
-    name: "Pass Essentiel",
-    badge: "⭐ Le Plus Choisi",
-    badgeBg: "rgba(11, 37, 89, 0.1)",
-    badgeColor: "#0B2559",
-    price: "3 000",
-    period: "FCFA / mois",
-    desc: "Discussions illimitées sans restriction, liberté totale de contact et d'amitié.",
-    features: [
-      "Tous les avantages du Plan Gratuit",
-      "Partenaires & discussions 100% ILLIMITÉS",
-      "Messages, photos et vocaux en continu",
-      "Voir qui a liké et visité votre profil",
-      "Badge officiel membre certifié ✓",
-    ],
-    highlight: true,
-    borderColor: "var(--color-blue)",
-    actionLabel: "Choisir ce plan (3 000 F)",
-    actionHref: "https://link.saspay.me/dtpycov9i-k",
-    isFree: false,
-  },
-  {
-    id: "COMPLICE",
-    name: "Pass Complice",
-    badge: "🥂 Sorties & Boissons",
-    badgeBg: "rgba(5, 150, 105, 0.12)",
-    badgeColor: "#059669",
-    price: "6 000",
-    period: "FCFA / mois",
-    desc: "Échanges illimités avec avantages sorties, tables réservées et consommations offertes.",
-    features: [
-      "Tout le Pass Essentiel en illimité",
-      "Réservations de tables prioritaires",
-      "1 consommation offerte / pers. au RDV",
-      "Validation rapide par QR code",
-      "Rappels automatiques de rendez-vous",
-    ],
-    highlight: false,
-    borderColor: "#CBD5E1",
-    actionLabel: "Choisir ce plan (6 000 F)",
-    actionHref: "https://link.saspay.me/dtpycov9i-k",
-    isFree: false,
-  },
-  {
-    id: "VIP",
-    name: "Pass VIP Club",
-    badge: "👑 Prestige & Visio Live",
-    badgeBg: "rgba(217, 119, 6, 0.15)",
-    badgeColor: "#B45309",
-    price: "15 000",
-    period: "FCFA / mois",
-    desc: "Prestige maximal, appels vidéo live débloqués, salons privés et conciergerie dédiée.",
-    features: [
-      "Tout le Pass Complice en illimité",
-      "Appels vidéo live directs réservés VIP",
-      "Accès aux salons privés & rooftops",
-      "Dîner gastronomique mensuel inclus",
-      "Conciergerie privée 24/7 à Lomé",
-    ],
-    highlight: false,
-    borderColor: "#D97706",
-    actionLabel: "Choisir ce plan (15 000 F)",
-    actionHref: "https://link.saspay.me/dtpycov9i-k",
-    isFree: false,
-  },
-];
+function ageFrom(value: string): number | null {
+  if (!value) return null;
+  const dob = new Date(value);
+  if (isNaN(dob.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const m = now.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+  return age;
+}
+
+const PSEUDO_RE = /^[a-zA-Z0-9_.-]{3,24}$/;
 
 export default function InscriptionPage() {
   const router = useRouter();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [pseudo, setPseudo] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [accepted, setAccepted] = useState(false);
+  const [error, setError] = useState("");
+  const [showFields, setShowFields] = useState(false);
 
-  // Form states
-  const [identifier, setIdentifier] = useState("");
+  // Option sans Google
+  const [withoutGoogle, setWithoutGoogle] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [deviceLockedEmail, setDeviceLockedEmail] = useState<string | null>(null);
-
-  // Status
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [focusField, setFocusField] = useState("");
 
+  // Restaurer un formulaire commencé (retour depuis Google)
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const locked =
-        localStorage.getItem("meetmeclub_primary_device_email") ||
-        localStorage.getItem("meetmeclub_saved_identifier");
-      if (locked) {
-        setDeviceLockedEmail(locked);
-        if (!identifier) {
-          setIdentifier(locked);
-        }
-      }
-    }
-  }, [identifier]);
+    try {
+      const raw = localStorage.getItem("mmc_pending_signup");
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      setFirstName(d.firstName || "");
+      setLastName(d.lastName || "");
+      setPseudo(d.pseudo || "");
+      setDateOfBirth(d.dateOfBirth || "");
+    } catch {}
+  }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const age = ageFrom(dateOfBirth);
+  const maxDate = useMemo(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 18);
+    return d.toISOString().split("T")[0];
+  }, []);
+
+  const problems = {
+    firstName: firstName.trim().length < 2 ? "Indiquez votre prénom." : "",
+    lastName: lastName.trim().length < 2 ? "Indiquez votre nom." : "",
+    pseudo: !PSEUDO_RE.test(pseudo.trim()) ? "3 à 24 caractères : lettres, chiffres, _ . -" : "",
+    dateOfBirth: !dateOfBirth ? "Indiquez votre date de naissance." : age !== null && age < 18 ? "Réservé aux 18 ans et plus." : "",
+    accepted: !accepted ? "Vous devez certifier avoir 18 ans et accepter les conditions." : "",
+  };
+  const isValid = Object.values(problems).every((p) => !p);
+
+  const validate = () => {
+    setShowFields(true);
+    if (age !== null && age < 18) {
+      setError("Désolé, Meet Me Club est réservé exclusivement aux personnes de 18 ans et plus. 🔞");
+      return false;
+    }
+    if (!isValid) {
+      setError("Complétez les champs indiqués en rouge pour continuer.");
+      return false;
+    }
     setError("");
+    return true;
+  };
 
-    const cleanInput = identifier.trim();
-    if (!cleanInput) {
-      setError("Veuillez renseigner votre pseudo ou votre adresse e-mail.");
-      return;
-    }
+  const savePending = () => {
+    try {
+      localStorage.setItem(
+        "mmc_pending_signup",
+        JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          pseudo: pseudo.trim(),
+          dateOfBirth,
+          acceptedTerms: true,
+          savedAt: Date.now(),
+        })
+      );
+      localStorage.removeItem("mmc_after_login");
+    } catch {}
+  };
 
-    if (!password || password.length < 6) {
-      setError("Votre mot de passe doit comporter au moins 6 caractères.");
-      return;
-    }
+  async function registerWithEmail(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validate()) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Adresse e-mail invalide.");
+    if (password.length < 6) return setError("Le mot de passe doit comporter au moins 6 caractères.");
 
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          login: cleanInput,
+          email: email.trim().toLowerCase(),
           password,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          pseudo: pseudo.trim(),
+          dateOfBirth,
         }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return setError(data.error || "Inscription impossible. Réessayez.");
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Une erreur est survenue lors de l'accès. Veuillez réessayer.");
-        return;
-      }
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("meetmeclub_saved_identifier", cleanInput);
-        localStorage.setItem("meetmeclub_primary_device_email", cleanInput);
+      try {
+        localStorage.removeItem("mmc_pending_signup");
+        localStorage.setItem("meetmeclub_saved_identifier", data.pseudo || pseudo.trim());
+        localStorage.setItem("meetmeclub_primary_device_email", email.trim().toLowerCase());
         localStorage.setItem("meetmeclub_last_auth_time", Date.now().toString());
-
-        // Demander à Google Password Manager / Trousseau d'enregistrer le mot de passe
-        if ((window as any).PasswordCredential && navigator.credentials?.store) {
-          try {
-            const cred = new (window as any).PasswordCredential({
-              id: cleanInput,
-              password,
-              name: cleanInput,
-            });
-            await navigator.credentials.store(cred);
-          } catch {}
+        const PC = (window as any).PasswordCredential;
+        if (PC && navigator.credentials?.store) {
+          await navigator.credentials.store(new PC({ id: pseudo.trim(), password, name: `${firstName} ${lastName}` })).catch(() => {});
         }
-      }
-
-      const target = data.redirect || "/profil?welcome=1";
-      if (typeof window !== "undefined") {
-        window.location.href = target;
-      } else {
-        router.push(target);
-      }
+      } catch {}
+      window.location.href = data.redirect || "/profil/edit?welcome=1";
     } catch {
       setError("Erreur réseau. Vérifiez votre connexion et réessayez.");
     } finally {
@@ -208,504 +144,182 @@ export default function InscriptionPage() {
     }
   }
 
-  const fieldBase: React.CSSProperties = {
-    width: "100%",
-    padding: "12px 16px 12px 44px",
-    borderRadius: "12px",
-    border: "1.5px solid #D8E1EF",
-    background: "white",
-    fontSize: "15px",
-    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
-    fontWeight: 500,
-    color: "#1E2E4A",
-    outline: "none",
-    transition: "border-color 0.18s ease, box-shadow 0.18s ease",
-    WebkitAppearance: "none",
-    appearance: "none",
-    boxSizing: "border-box",
-  };
-
-  const fieldFocused: React.CSSProperties = {
-    borderColor: "#0B2559",
-    boxShadow: "0 0 0 3px rgba(11,37,89,0.09)",
-  };
+  const fieldError = (key: keyof typeof problems) => (showFields && problems[key] ? problems[key] : "");
 
   return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        background: "linear-gradient(160deg, #F5F7FF 0%, #EEF4FF 40%, #F9F3FF 100%)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px 16px 64px",
-      }}
-    >
-      {/* ── Bouton Retour ── */}
-      <div style={{ width: "100%", maxWidth: "860px", marginBottom: "14px", display: "flex", justifyContent: "flex-start" }}>
+    <div className={styles.page}>
+      <div className={styles.topBar}>
         <button
           type="button"
-          onClick={() => {
-            if (typeof window !== "undefined" && window.history.length > 1) {
-              router.back();
-            } else {
-              router.push("/");
-            }
-          }}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 14px",
-            borderRadius: "12px",
-            background: "white",
-            border: "1.5px solid #D8E1EF",
-            color: "#0B2559",
-            fontWeight: 700,
-            fontSize: "13px",
-            cursor: "pointer",
-            boxShadow: "0 2px 8px rgba(11,37,89,0.06)",
-            transition: "all 0.18s ease",
-          }}
-          aria-label="Retour à la page précédente"
+          className={styles.backBtn}
+          onClick={() => (window.history.length > 1 ? router.back() : router.push("/"))}
+          aria-label="Retour"
         >
-          <ChevronLeft size={18} strokeWidth={2.5} />
-          <span>Retour</span>
+          <ChevronLeft size={20} /> Retour
         </button>
+        <Link href="/connexion" className={styles.topLink}>
+          Se connecter
+        </Link>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          1ÈRE POSITION : CRÉATION DE COMPTE & AUTHENTIFICATION GOOGLE
-      ══════════════════════════════════════════════════════════ */}
-      <div
-        id="register-form"
-        style={{
-          width: "100%",
-          maxWidth: "560px",
-          background: "white",
-          borderRadius: "24px",
-          boxShadow: "0 4px 6px rgba(11,37,89,0.04), 0 20px 60px rgba(11,37,89,0.10)",
-          border: "1px solid #E8EDF5",
-          overflow: "hidden",
-          marginBottom: "44px",
-        }}
-      >
-        {/* Accent Bar */}
-        <div
-          style={{
-            height: "4px",
-            background: "linear-gradient(90deg, #0B2559 0%, #E10600 50%, #0B2559 100%)",
-          }}
-        />
-
-        <div style={{ padding: "32px 26px" }}>
-          {/* ── Brand Header ── */}
-          <div style={{ textAlign: "center", marginBottom: "20px" }}>
-            <Link
-              href="/"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "10px",
-                textDecoration: "none",
-                marginBottom: "12px",
-              }}
-            >
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "50%",
-                  border: "2px solid rgba(11,37,89,0.10)",
-                  overflow: "hidden",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "4px",
-                  background: "white",
-                  boxShadow: "0 2px 12px rgba(11,37,89,0.12)",
-                }}
-              >
-                <Image
-                  src="/logo.png"
-                  alt="Meet Me Club"
-                  width={40}
-                  height={40}
-                  style={{ objectFit: "contain" }}
-                  priority
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.2, textAlign: "left" }}>
-                <span
-                  style={{
-                    fontWeight: 800,
-                    fontSize: "20px",
-                    color: "#0B2559",
-                    letterSpacing: "-0.3px",
-                  }}
-                >
-                  meet <span style={{ color: "#E10600" }}>me</span> club
-                </span>
-                <span
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    color: "#8B99B5",
-                    letterSpacing: "0.9px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Club Privé International · Sorties Togo
-                </span>
-              </div>
-            </Link>
-
-            <h1
-              style={{
-                fontSize: "24px",
-                fontWeight: 800,
-                color: "#0B2559",
-                margin: "0 0 6px",
-                letterSpacing: "-0.4px",
-              }}
-            >
-              Créer mon compte Meet Me Club
-            </h1>
-            <p style={{ fontSize: "14px", color: "#475569", margin: "0 auto 14px", maxWidth: "440px", lineHeight: 1.5 }}>
-              Rejoignez le club privé de rencontres & sorties réelles à Lomé. Votre premier accès inclut le <strong>Plan Gratuit (7 jours offerts)</strong> pour tester la messagerie.
-            </p>
-
-            {/* Badge Plan Gratuit */}
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "6px 14px",
-                  borderRadius: "100px",
-                  background: "#FEF3C7",
-                  border: "1px solid #FDE68A",
-                  color: "#92400E",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                }}
-              >
-                <Sparkles size={14} style={{ color: "#D97706" }} />
-                Plan Gratuit activé automatiquement à l&apos;inscription
-              </span>
+      <main className={styles.card}>
+        <div className={styles.accent} />
+        <div className={styles.body}>
+          <div className={styles.brand}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-icon.png" alt="Meet Me Club" />
+            <div>
+              <h1>Créer mon compte</h1>
+              <p>Rencontres et sorties réelles à Lomé · réservé aux 18 ans et plus</p>
             </div>
           </div>
 
-          {/* ── Error Banner ── */}
+          <ol className={styles.steps}>
+            <li className={styles.stepActive}>1. Vos informations</li>
+            <li>2. Validation Google</li>
+            <li>3. Votre profil</li>
+          </ol>
+
           {error && (
-            <div
-              role="alert"
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "10px",
-                padding: "12px 14px",
-                borderRadius: "12px",
-                background: "#FFF5F5",
-                border: "1.5px solid #FECACA",
-                marginBottom: "20px",
-              }}
-            >
-              <AlertCircle size={18} style={{ color: "#E10600", flexShrink: 0, marginTop: "1px" }} />
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "#B91C1C",
-                  fontWeight: 600,
-                  margin: 0,
-                  lineHeight: 1.5,
-                }}
-              >
-                {error}
-              </p>
+            <div className={styles.error} role="alert">
+              <AlertCircle size={18} /> {error}
             </div>
           )}
 
-          {/* ── FORMULAIRE DE CRÉATION DE COMPTE (1ÈRE POSITION) ── */}
-          <form onSubmit={handleSubmit} noValidate method="POST" action="/api/auth/register" name="registerForm">
-            {/* Pseudo ou Email */}
-            <div style={{ marginBottom: "16px" }}>
-              <label
-                htmlFor="identifier"
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#4B5C7A",
-                  marginBottom: "6px",
-                  letterSpacing: "0.4px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Pseudo ou Adresse e-mail *
-              </label>
-              <div style={{ position: "relative" }}>
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "14px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none",
-                    color: focusField === "identifier" ? "#0B2559" : "#A0AABF",
-                    transition: "color 0.18s ease",
-                  }}
-                >
+          <form onSubmit={registerWithEmail} noValidate>
+            <div className={styles.row}>
+              <label className={styles.field}>
+                <span>Prénom *</span>
+                <div className={`${styles.inputWrap} ${fieldError("firstName") ? styles.invalid : ""}`}>
                   <User size={17} />
+                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" placeholder="Ex : Ama" />
                 </div>
-                <input
-                  id="identifier"
-                  name="username"
-                  type="text"
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  onFocus={() => setFocusField("identifier")}
-                  onBlur={() => setFocusField("")}
-                  placeholder="Ex : Koffi_Pro ou email@exemple.com"
-                  autoComplete="username"
-                  style={{
-                    ...fieldBase,
-                    ...(focusField === "identifier" ? fieldFocused : {}),
-                  }}
-                />
-              </div>
+                {fieldError("firstName") && <small>{fieldError("firstName")}</small>}
+              </label>
+              <label className={styles.field}>
+                <span>Nom *</span>
+                <div className={`${styles.inputWrap} ${fieldError("lastName") ? styles.invalid : ""}`}>
+                  <User size={17} />
+                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" placeholder="Ex : Mensah" />
+                </div>
+                {fieldError("lastName") && <small>{fieldError("lastName")}</small>}
+              </label>
             </div>
 
-            {/* Mot de passe */}
-            <div style={{ marginBottom: "22px" }}>
-              <label
-                htmlFor="password"
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  color: "#4B5C7A",
-                  marginBottom: "6px",
-                  letterSpacing: "0.4px",
-                  textTransform: "uppercase",
-                }}
-              >
-                Mot de passe (min. 6 caractères) *
-              </label>
-              <div style={{ position: "relative" }}>
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "14px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none",
-                    color: focusField === "pwd" ? "#0B2559" : "#A0AABF",
-                    transition: "color 0.18s ease",
-                  }}
-                >
-                  <Lock size={17} />
-                </div>
+            <label className={styles.field}>
+              <span>Pseudo (votre identifiant de connexion) *</span>
+              <div className={`${styles.inputWrap} ${fieldError("pseudo") ? styles.invalid : ""}`}>
+                <AtSign size={17} />
                 <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setFocusField("pwd")}
-                  onBlur={() => setFocusField("")}
-                  placeholder="Entrez votre mot de passe sécurisé"
-                  autoComplete="new-password"
-                  style={{
-                    ...fieldBase,
-                    paddingRight: "48px",
-                    ...(focusField === "pwd" ? fieldFocused : {}),
+                  value={pseudo}
+                  onChange={(e) => setPseudo(e.target.value.replace(/\s+/g, "_"))}
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  placeholder="Ex : ama_lome"
+                />
+              </div>
+              {fieldError("pseudo") ? <small>{fieldError("pseudo")}</small> : <em>Il sera mémorisé sur ce téléphone pour vos prochaines connexions.</em>}
+            </label>
+
+            <label className={styles.field}>
+              <span>Date de naissance *</span>
+              <div className={`${styles.inputWrap} ${fieldError("dateOfBirth") || (age !== null && age < 18) ? styles.invalid : ""}`}>
+                <CalendarDays size={17} />
+                <input type="date" value={dateOfBirth} max={maxDate} min="1930-01-01" onChange={(e) => setDateOfBirth(e.target.value)} autoComplete="bday" />
+              </div>
+              {age !== null && age >= 18 && (
+                <em className={styles.ok}>
+                  <CheckCircle2 size={14} /> {age} ans — accès autorisé
+                </em>
+              )}
+              {age !== null && age < 18 && <small>Vous avez {age} ans : l&apos;inscription est réservée aux 18 ans et plus.</small>}
+              {age === null && fieldError("dateOfBirth") && <small>{fieldError("dateOfBirth")}</small>}
+            </label>
+
+            <label className={`${styles.check} ${fieldError("accepted") ? styles.checkInvalid : ""}`}>
+              <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+              <span>
+                Je certifie avoir <strong>18 ans ou plus</strong> et j&apos;accepte les{" "}
+                <Link href="/legal/cgu" target="_blank">conditions d&apos;utilisation</Link> et la{" "}
+                <Link href="/legal/charte" target="_blank">charte du club</Link>.
+              </span>
+            </label>
+
+            {!withoutGoogle && (
+              <div className={styles.googleBlock}>
+                <GoogleAuthButton
+                  label="Valider avec mon compte Google"
+                  onError={setError}
+                  onBeforeStart={() => {
+                    if (!validate()) return false;
+                    savePending();
+                    return true;
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                  style={{
-                    position: "absolute",
-                    right: "12px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#A0AABF",
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "4px",
-                    borderRadius: "6px",
-                  }}
-                >
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                <p className={styles.googleHint}>
+                  <ShieldCheck size={14} /> Choisissez votre vrai compte Gmail : votre identité est confirmée par Google.
+                </p>
+                <button type="button" className={styles.linkBtn} onClick={() => setWithoutGoogle(true)}>
+                  Je n&apos;ai pas de compte Google
                 </button>
               </div>
-            </div>
+            )}
 
-            {/* Bouton Création de Compte */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: "100%",
-                padding: "15px 24px",
-                borderRadius: "14px",
-                border: "none",
-                background: loading
-                  ? "#9BA8BF"
-                  : "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
-                color: "white",
-                fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
-                fontWeight: 700,
-                fontSize: "15px",
-                cursor: loading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px",
-                boxShadow: loading ? "none" : "0 6px 20px rgba(11,37,89,0.30)",
-                transition: "all 0.22s ease",
-              }}
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
-                  <span>Création de votre compte...</span>
-                </>
-              ) : (
-                <>
-                  <span>Créer mon compte (Accès Plan Gratuit)</span>
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
+            {withoutGoogle && (
+              <div className={styles.emailBlock}>
+                <label className={styles.field}>
+                  <span>Adresse e-mail *</span>
+                  <div className={styles.inputWrap}>
+                    <Mail size={17} />
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" inputMode="email" placeholder="vous@exemple.com" />
+                  </div>
+                </label>
+                <label className={styles.field}>
+                  <span>Mot de passe (6 caractères min.) *</span>
+                  <div className={styles.inputWrap}>
+                    <Lock size={17} />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="new-password"
+                      placeholder="Votre mot de passe"
+                    />
+                    <button type="button" className={styles.eye} onClick={() => setShowPassword((v) => !v)} aria-label="Afficher le mot de passe">
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </label>
+                <button type="submit" className={styles.submit} disabled={loading}>
+                  {loading ? <Loader2 size={18} className={styles.spin} /> : null}
+                  {loading ? "Création de votre compte…" : "Créer mon compte"}
+                  {!loading && <ArrowRight size={18} />}
+                </button>
+                <button type="button" className={styles.linkBtn} onClick={() => setWithoutGoogle(false)}>
+                  Utiliser plutôt mon compte Google
+                </button>
+              </div>
+            )}
           </form>
 
-          {/* ── Séparateur Google ── */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              margin: "20px 0 16px",
-            }}
-          >
-            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
-            <span
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#A0AABF",
-                whiteSpace: "nowrap",
-                letterSpacing: "0.3px",
-              }}
-            >
-              Ou créer avec Google
-            </span>
-            <div style={{ flex: 1, height: "1px", background: "#E8EDF5" }} />
-          </div>
-
-          {/* ── Bouton Google OAuth ── */}
-          <div>
-            <GoogleAuthButton
-              label="Créer mon compte avec Google"
-              onError={(msg) => setError(msg)}
-            />
-          </div>
-
-          {/* ── Lien Déjà inscrit ── */}
-          <div
-            style={{
-              marginTop: "20px",
-              padding: "14px",
-              background: "#F8FAFC",
-              border: "1.5px solid #E2E8F0",
-              borderRadius: "14px",
-              textAlign: "center",
-            }}
-          >
-            <span style={{ fontSize: "13px", color: "#475569", fontWeight: 600, marginRight: "8px" }}>
-              Vous avez déjà un compte ?
-            </span>
-            <Link
-              href="/connexion"
-              style={{
-                color: "#0B2559",
-                fontWeight: 800,
-                fontSize: "13px",
-                textDecoration: "underline",
-              }}
-            >
-              Se connecter
-            </Link>
+          <div className={styles.already}>
+            Déjà membre ? <Link href="/connexion">Se connecter</Link>
           </div>
         </div>
 
-        {/* Footer info card */}
-        <div
-          style={{
-            background: "#F7F9FD",
-            borderTop: "1px solid #EEF2FB",
-            padding: "12px 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "18px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7A99", fontSize: "12px", fontWeight: 600 }}>
-            <ShieldCheck size={14} style={{ color: "#059669" }} />
-            <span>Accès sécurisé réservé aux membres 18+</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#6B7A99", fontSize: "12px", fontWeight: 600 }}>
-            <Sparkles size={14} style={{ color: "#D97706" }} />
-            <span>Plan Gratuit inclus</span>
-          </div>
+        <div className={styles.footer}>
+          <span>
+            <ShieldCheck size={14} /> Réservé aux 18 ans et plus
+          </span>
+          <span>
+            <Sparkles size={14} /> Plan Gratuit 7 jours inclus
+          </span>
         </div>
-      </div>
+      </main>
 
-      {/* ── Formules d'accès & Abonnements (Design épuré et compact) ── */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "460px",
-          marginTop: "20px",
-          textAlign: "center",
-          padding: "16px 20px",
-          background: "white",
-          borderRadius: "18px",
-          border: "1px solid #E2E8F0",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
-        }}
-      >
-        <p style={{ fontSize: "13px", color: "#64748B", margin: "0 0 10px", lineHeight: 1.5 }}>
-          Accès immédiat avec le <strong>Plan Gratuit 7 jours</strong> inclus. Vous pouvez également consulter toutes nos formules d&apos;adhésion (Pass Essentiel, Complice et Club VIP Prestige).
-        </p>
-        <Link
-          href="/tarifs"
-          style={{
-            fontSize: "13px",
-            fontWeight: 800,
-            color: "#0B2559",
-            textDecoration: "underline",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "5px",
-          }}
-        >
-          <span>Consulter nos plans d&apos;accès officiels</span>
-          <span>→</span>
-        </Link>
-      </div>
+      <p className={styles.plans}>
+        Envie de plus ? <Link href="/tarifs">Découvrez les pass Essentiel, Complice et VIP</Link>
+      </p>
     </div>
   );
 }

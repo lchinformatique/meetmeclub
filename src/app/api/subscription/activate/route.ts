@@ -17,7 +17,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Plan payant invalide" }, { status: 400 });
     }
 
-    const userId = session?.userId || "demo_user_lome";
+    if (!session?.userId) {
+      return NextResponse.json(
+        { error: "Connectez-vous à votre compte pour activer votre pass.", needLogin: true },
+        { status: 401 }
+      );
+    }
+    const userId = session.userId;
     const existing = getProfileByUserId(userId);
 
     // 1. Save to local store

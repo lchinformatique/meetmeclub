@@ -40,8 +40,8 @@ function AuthCallbackHandler() {
 
           if (exchangedError) {
             console.error("[Auth Callback] Erreur exchangeCodeForSession:", exchangedError.message);
-          } else if (exchangedData?.session?.user) {
-            await syncUserWithBackend(exchangedData.session.user);
+          } else if (exchangedData?.session?.access_token) {
+            await syncUserWithBackend(exchangedData.session.access_token);
             return;
           }
         }
@@ -62,15 +62,15 @@ function AuthCallbackHandler() {
           const { data: retryData, error: retryError } =
             await supabase.auth.getSession();
 
-          if (retryError || !retryData?.session?.user) {
+          if (retryError || !retryData?.session?.access_token) {
             throw new Error("Session non établie après authentification Google.");
           }
 
-          await syncUserWithBackend(retryData.session.user);
+          await syncUserWithBackend(retryData.session.access_token);
           return;
         }
 
-        await syncUserWithBackend(session.user);
+        await syncUserWithBackend(session.access_token);
       } catch (err: unknown) {
         console.error("[Auth Callback] Erreur:", err);
         const message =
@@ -80,40 +80,51 @@ function AuthCallbackHandler() {
       }
     }
 
-    async function syncUserWithBackend(user: {
-      id: string;
-      email?: string | null;
-      user_metadata?: Record<string, unknown>;
-    }) {
+    async function syncUserWithBackend(accessToken: string) {
       try {
-        // Synchroniser avec notre base Prisma via API
+        // Informations saisies sur le formulaire d'inscription (avant le passage par Google)
+        let signup: Record<string, string> | null = null;
+        try {
+          const raw = localStorage.getItem("mmc_pending_signup");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            // Valable 1 heure
+            if (parsed?.savedAt && Date.now() - parsed.savedAt < 3600_000) signup = parsed;
+          }
+        } catch {}
+
+        // Le serveur vérifie lui-même l'identité Google à partir du jeton
         const res = await fetch("/api/auth/google-callback", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            supabaseId: user.id,
-            email: user.email,
-            name:
-              (user.user_metadata?.full_name as string) ||
-              (user.user_metadata?.name as string) ||
-              "",
-            avatarUrl:
-              (user.user_metadata?.avatar_url as string) ||
-              (user.user_metadata?.picture as string) ||
-              null,
-          }),
+          body: JSON.stringify({ accessToken, signup }),
         });
 
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(
-            data.error || `Erreur serveur (${res.status}) lors de la synchronisation du compte.`
-          );
+          if (data.underage) {
+            try {
+              localStorage.removeItem("mmc_pending_signup");
+            } catch {}
+            await supabase.auth.signOut().catch(() => {});
+          }
+          throw new Error(data.error || `Erreur serveur (${res.status}) lors de la synchronisation du compte.`);
         }
 
-        const data = await res.json();
-        // Redirection immédiate sur le profil / destination avec rechargement de session
-        const targetUrl = data.redirect || "/profil?welcome=1";
+        // Mémoriser l'identifiant sur ce téléphone pour les prochaines connexions
+        let afterLogin: string | null = null;
+        try {
+          localStorage.removeItem("mmc_pending_signup");
+          if (data.pseudo) localStorage.setItem("meetmeclub_saved_identifier", data.pseudo);
+          if (data.email) localStorage.setItem("meetmeclub_primary_device_email", data.email);
+          localStorage.setItem("meetmeclub_last_auth_time", Date.now().toString());
+          afterLogin = localStorage.getItem("mmc_after_login");
+          localStorage.removeItem("mmc_after_login");
+        } catch {}
+
+        // Nouveau membre → compléter son profil ; sinon page demandée ou messagerie
+        const targetUrl =
+          data.redirect?.startsWith("/profil/edit") || !afterLogin ? data.redirect || "/messages" : afterLogin;
         if (typeof window !== "undefined") {
           window.location.href = targetUrl;
         } else {
@@ -164,7 +175,7 @@ function AuthCallbackHandler() {
             {errorMsg}
           </p>
           <button
-            onClick={() => router.replace("/connexion")}
+            onClick={() => router.replace(errorMsg.includes("18 ans") ? "/" : "/inscription")}
             style={{
               width: "100%",
               padding: "14px",
@@ -177,7 +188,7 @@ function AuthCallbackHandler() {
               cursor: "pointer",
             }}
           >
-            Retour à la connexion
+            {errorMsg.includes("18 ans") ? "Retour à l'accueil" : "Réessayer"}
           </button>
         </div>
       </div>

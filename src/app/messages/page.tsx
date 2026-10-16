@@ -62,7 +62,7 @@ function MessagesApp() {
   const [mobileView, setMobileView] = useState<"list" | "chat">(convParam || contactParam ? "chat" : "list");
   const [messagesByConv, setMessagesByConv] = useState<Record<string, ChatMessage[]>>({});
   const [members, setMembers] = useState<Member[]>([]);
-  const [tab, setTab] = useState<"chats" | "online">("chats");
+  const [tab, setTab] = useState<"chats" | "online">(searchParams.get("tab") === "online" ? "online" : "chats");
   const [search, setSearch] = useState("");
   const [typingAt, setTypingAt] = useState<Record<string, number>>({});
   const [partnerTypingBot, setPartnerTypingBot] = useState(false);

@@ -20,7 +20,7 @@ function isAdult(dateOfBirth: Date): boolean {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, login, identifier, password, dateOfBirth, firstName, pseudo, gender } = body;
+    const { email, login, identifier, password, dateOfBirth, firstName, lastName, pseudo, gender } = body;
 
     const rawInput = (login || identifier || pseudo || email || "").toString().trim();
     if (!rawInput) {
@@ -36,13 +36,13 @@ export async function POST(req: NextRequest) {
       ? rawInput.toLowerCase()
       : `${cleanPseudo.toLowerCase().replace(/[^a-z0-9_]/gi, "")}@meetmeclub.net`;
 
-    // 2. Date de naissance (par défaut 2000-01-01 pour 18+ si non fournie)
-    let dob = new Date("2000-01-01");
-    if (dateOfBirth) {
-      const parsed = new Date(dateOfBirth);
-      if (!isNaN(parsed.getTime())) {
-        dob = parsed;
-      }
+    // 2. Date de naissance obligatoire (vérification des 18 ans)
+    const dob = dateOfBirth ? new Date(dateOfBirth) : null;
+    if (!dob || isNaN(dob.getTime())) {
+      return NextResponse.json(
+        { error: "Veuillez indiquer votre date de naissance (réservé aux 18 ans et plus)." },
+        { status: 400 }
+      );
     }
 
     if (!isAdult(dob)) {
@@ -144,16 +144,24 @@ export async function POST(req: NextRequest) {
       const expiresIso = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       await upsertProfileInSupabase(user.id, {
         firstName: resolvedName,
+        lastName: lastName?.trim() || null,
         pseudo: resolvedPseudo,
         email: cleanEmail,
         gender: resolvedGender as any,
         city: "Lomé",
-        bio: "Nouveau membre sur Meet Me Club à Lomé.",
+        bio: "",
         relationshipGoal: "SERIOUS",
+        dateOfBirth: dob.toISOString(),
         plan: "FREE",
         subscriptionStartedAt: nowIso,
         subscriptionExpiresAt: expiresIso,
       });
+      // Le mot de passe doit être enregistré dans Supabase, sinon la reconnexion échoue
+      const { getSupabaseAdmin } = await import("@/lib/supabase-server");
+      await getSupabaseAdmin()
+        .from("users")
+        .update({ passwordHash, dateOfBirth: dob.toISOString(), isAdult: true })
+        .ilike("email", cleanEmail);
     } catch (supaErr) {
       console.warn("[register] Supabase REST sync warning:", supaErr);
     }
@@ -162,13 +170,13 @@ export async function POST(req: NextRequest) {
     saveProfile({
       userId: user.id,
       firstName: resolvedName,
+      lastName: lastName?.trim() || undefined,
       pseudo: resolvedPseudo,
       email: cleanEmail,
       gender: resolvedGender as any,
       city: "Lomé",
-      age: new Date().getFullYear() - dob.getFullYear(),
       dateOfBirth: dob.toISOString(),
-      bio: "Nouveau membre sur Meet Me Club à Lomé.",
+      bio: "",
       relationshipGoal: "SERIOUS",
       plan: "FREE",
       partnersContacted: [],
@@ -190,7 +198,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Compte créé avec succès ! Bienvenue sur Meet Me Club.",
-      redirect: "/profil?welcome=1",
+      pseudo: resolvedPseudo,
+      // Directement sur son profil pour compléter bio et photos
+      redirect: "/profil/edit?welcome=1",
     });
   } catch (error) {
     console.error("[POST /api/auth/register]", error);

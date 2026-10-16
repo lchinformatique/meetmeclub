@@ -828,7 +828,7 @@ export default function RejoindrePage() {
                   highlight: false,
                   borderColor: "#CBD5E1",
                   actionLabel: "Choisir ce plan (6 000 F)",
-                  actionHref: "https://link.saspay.me/dtpycov9i-k",
+                  actionHref: "https://link.saspay.me/xiigac37eyq",
                   isFree: false,
                 },
                 {
@@ -850,7 +850,7 @@ export default function RejoindrePage() {
                   highlight: false,
                   borderColor: "#D97706",
                   actionLabel: "Choisir ce plan (15 000 F)",
-                  actionHref: "https://link.saspay.me/dtpycov9i-k",
+                  actionHref: "https://link.saspay.me/ksev91xlvik",
                   isFree: false,
                 },
               ].map((plan) => (

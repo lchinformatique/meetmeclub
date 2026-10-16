@@ -1,223 +1,199 @@
 // src/app/api/auth/google-callback/route.ts
-// Synchronise un utilisateur Google OAuth (Supabase) avec notre base Prisma
-// Crée ou récupère le profil, pose le cookie JWT de session, et retourne la redirection
+// Connexion / inscription avec un vrai compte Google.
+// L'identité est VÉRIFIÉE côté serveur à partir du jeton Supabase (jamais l'e-mail envoyé par le navigateur).
+// À l'inscription : prénom, nom, pseudo et date de naissance (18 ans minimum) sont enregistrés.
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
 import { saveProfile } from "@/lib/db-store";
 
+interface SignupData {
+  firstName?: string;
+  lastName?: string;
+  pseudo?: string;
+  dateOfBirth?: string;
+}
+
+function ageFrom(dob: Date) {
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const m = now.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+  return age;
+}
+
+function cleanPseudo(raw: string) {
+  return raw
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/^@/, "")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_.-]/g, "")
+    .slice(0, 24)
+    .toLowerCase();
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { supabaseId, email, name, avatarUrl } = body;
+    const body = await req.json().catch(() => ({}));
+    const accessToken: string | undefined = body.accessToken;
+    const signup: SignupData | null = body.signup && typeof body.signup === "object" ? body.signup : null;
 
-    if (!supabaseId || !email) {
-      return NextResponse.json(
-        { error: "Données Google manquantes (supabaseId ou email)." },
-        { status: 400 }
-      );
+    if (!accessToken) {
+      return NextResponse.json({ error: "Session Google manquante. Veuillez réessayer." }, { status: 400 });
     }
 
-    const cleanEmail = (email as string).toLowerCase().trim();
+    // ── 1. Vérification de l'identité Google auprès de Supabase ─────────────
+    const { getSupabaseAdmin, getProfileFromSupabase, upsertProfileInSupabase, savePhotoInSupabase } =
+      await import("@/lib/supabase-server");
+    const admin = getSupabaseAdmin();
+    const { data: verified, error: verifyErr } = await admin.auth.getUser(accessToken);
+    if (verifyErr || !verified?.user?.email) {
+      return NextResponse.json({ error: "Compte Google non vérifié. Veuillez réessayer." }, { status: 401 });
+    }
+    const gUser = verified.user;
+    const supabaseId = gUser.id;
+    const cleanEmail = gUser.email!.toLowerCase().trim();
+    const meta = (gUser.user_metadata || {}) as Record<string, any>;
+    const googleName: string = meta.full_name || meta.name || "";
+    const googleAvatar: string | null = meta.avatar_url || meta.picture || null;
 
-    // ── 1. Chercher un utilisateur existant par email ou googleId ──────────
-    let user: any = null;
-
-    try {
-      user = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { email: { equals: cleanEmail, mode: "insensitive" } },
-            { googleId: supabaseId },
-          ],
-        },
-        select: {
-          id: true,
-          email: true,
-          role: true,
-          status: true,
-          googleId: true,
-          profile: { select: { firstName: true } },
-        },
-      });
-    } catch (dbErr) {
-      console.warn("[google-callback] DB lookup error:", dbErr);
+    // ── 2. Contrôle des informations d'inscription (18 ans minimum) ─────────
+    let dob: Date | null = null;
+    if (signup?.dateOfBirth) {
+      const parsed = new Date(signup.dateOfBirth);
+      if (isNaN(parsed.getTime())) {
+        return NextResponse.json({ error: "Date de naissance invalide." }, { status: 400 });
+      }
+      if (ageFrom(parsed) < 18) {
+        return NextResponse.json(
+          { error: "Meet Me Club est réservé aux personnes de 18 ans et plus. 🔞", underage: true },
+          { status: 403 }
+        );
+      }
+      dob = parsed;
     }
 
     const firstName =
-      (name as string)?.split(" ")[0]?.trim() ||
-      cleanEmail.split("@")[0] ||
-      "Membre";
+      signup?.firstName?.trim() || googleName.split(" ")[0]?.trim() || cleanEmail.split("@")[0] || "Membre";
+    const lastName = signup?.lastName?.trim() || googleName.split(" ").slice(1).join(" ").trim() || undefined;
+    let pseudo = cleanPseudo(signup?.pseudo || googleName || cleanEmail.split("@")[0]) || cleanPseudo(cleanEmail.split("@")[0]);
 
-    const emailPrefix = cleanEmail.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
-    const cleanPseudo = (name as string)?.trim().replace(/\s+/g, "_").toLowerCase() || emailPrefix;
+    // ── 3. Compte existant ? (même Gmail ou même identifiant Google) ────────
+    let user: { id: string; email: string | null; role: any; status: any } | null = null;
+    try {
+      const found = await prisma.user.findFirst({
+        where: { OR: [{ email: { equals: cleanEmail, mode: "insensitive" } }, { googleId: supabaseId }] },
+        select: { id: true, email: true, role: true, status: true, googleId: true },
+      });
+      if (found) {
+        user = found;
+        if (!found.googleId) {
+          await prisma.user
+            .update({ where: { id: found.id }, data: { googleId: supabaseId, emailVerifiedAt: new Date() } })
+            .catch(() => {});
+        }
+      }
+    } catch {}
+    if (!user) {
+      const { data: supaUser } = await admin
+        .from("users")
+        .select("id, email, role, status")
+        .ilike("email", cleanEmail)
+        .maybeSingle();
+      if (supaUser) user = supaUser as any;
+    }
 
-    // ── 2. Créer l'utilisateur s'il n'existe pas ───────────────────────────
+    let existingProfile: any = user ? await getProfileFromSupabase(user.id, cleanEmail) : null;
+    const isNew = !existingProfile;
+
+    // Pseudo unique : on ajoute un numéro si déjà pris par un autre membre
+    if (isNew) {
+      for (let i = 0; i < 5; i++) {
+        const { data: taken } = await admin.from("profiles").select("userId").ilike("pseudo", pseudo).maybeSingle();
+        if (!taken || taken.userId === user?.id) break;
+        pseudo = `${pseudo.slice(0, 20)}${Math.floor(100 + Math.random() * 900)}`;
+      }
+    }
+
+    // ── 4. Création du compte ───────────────────────────────────────────────
     if (!user) {
       try {
-        const newUser = await prisma.user.create({
+        const created = await prisma.user.create({
           data: {
             email: cleanEmail,
             googleId: supabaseId,
             emailVerifiedAt: new Date(),
-            dateOfBirth: new Date("2000-01-01"),
+            dateOfBirth: dob || new Date("2000-01-01"),
             isAdult: true,
             status: "ACTIVE",
             role: "MEMBER",
           },
         });
-
-        // Créer le profil initial
-        try {
-          await prisma.profile.create({
-            data: {
-              userId: newUser.id,
-              firstName,
-              pseudo: cleanPseudo,
-              gender: "OTHER",
-              city: "Lomé",
-              bio: "Nouveau membre sur Meet Me Club à Lomé.",
-              relationshipGoal: "SERIOUS",
-              profileCompleteness: 50,
-              isVisible: true,
-            },
-          });
-        } catch (profErr) {
-          console.warn("[google-callback] Profile creation warning:", profErr);
-        }
-
-        user = {
-          id: newUser.id,
-          email: newUser.email,
-          role: newUser.role,
-          status: newUser.status,
-          googleId: newUser.googleId,
-          profile: { firstName, pseudo: cleanPseudo },
-        };
-      } catch (createErr) {
-        console.warn("[google-callback] User creation error, checking existing:", createErr);
-        // If create failed (e.g. user already existed), try finding again
-        try {
-          user = await prisma.user.findFirst({
-            where: { email: { equals: cleanEmail, mode: "insensitive" } },
-            select: {
-              id: true,
-              email: true,
-              role: true,
-              status: true,
-              googleId: true,
-              profile: { select: { firstName: true, pseudo: true } },
-            },
-          });
-        } catch {}
-
-        if (!user) {
-          // Fallback utilisateur virtuel
-          user = {
-            id: `google_${supabaseId.replace(/[^a-zA-Z0-9_-]/g, "")}`,
-            email: cleanEmail,
-            role: "MEMBER",
-            status: "ACTIVE",
-            googleId: supabaseId,
-            profile: { firstName, pseudo: cleanPseudo },
-          };
-        }
-      }
-    } else {
-      // ── 3. Mettre à jour le googleId si l'utilisateur existe déjà ─────────
-      if (!user.googleId) {
-        try {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { googleId: supabaseId, emailVerifiedAt: new Date() },
-          });
-        } catch (updateErr) {
-          console.warn("[google-callback] Update googleId error:", updateErr);
-        }
+        user = { id: created.id, email: created.email!, role: created.role, status: created.status };
+      } catch {
+        user = { id: `google_${supabaseId.replace(/[^a-zA-Z0-9_-]/g, "")}`, email: cleanEmail, role: "MEMBER", status: "ACTIVE" };
       }
     }
 
-    // Déterminer la photo de profil réelle (photo de profil du compte si fournie)
-    const finalAvatar = (avatarUrl as string) || null;
-
-    // ── 3. Synchronisation Supabase REST intelligente ───────────────────────
-    // Ne jamais écraser un profil existant avec des valeurs par défaut !
-    let currentProfile: any = null;
-    try {
-      const { getProfileFromSupabase, upsertProfileInSupabase, savePhotoInSupabase } = await import("@/lib/supabase-server");
-      
-      // Chercher d'abord avec user.id puis avec supabaseId
-      currentProfile = await getProfileFromSupabase(user.id);
-      if (!currentProfile && supabaseId !== user.id) {
-        currentProfile = await getProfileFromSupabase(supabaseId);
-      }
-
-      if (!currentProfile) {
-        // Premier enregistrement uniquement : création du profil initial
-        await upsertProfileInSupabase(user.id, {
-          firstName,
-          pseudo: cleanPseudo,
-          gender: "OTHER",
-          city: "Lomé",
-          bio: "Nouveau membre sur Meet Me Club à Lomé.",
-          relationshipGoal: "SERIOUS",
-          avatarUrl: finalAvatar || undefined,
-        });
-        if (finalAvatar) {
-          await savePhotoInSupabase(user.id, finalAvatar, true);
-        }
-      }
-    } catch (supaErr) {
-      console.warn("[google-callback] Supabase REST sync warning:", supaErr);
+    if (user.status === "BANNED" || user.status === "SUSPENDED") {
+      return NextResponse.json({ error: "Votre compte a été suspendu. Contactez le support." }, { status: 403 });
     }
 
-    // Sauvegarde / synchronisation store local sans écraser les données réelles
+    // ── 5. Profil : création, ou complément des infos d'inscription ─────────
+    if (isNew) {
+      const now = new Date();
+      existingProfile = await upsertProfileInSupabase(user.id, {
+        firstName,
+        lastName: lastName || null,
+        pseudo,
+        email: cleanEmail,
+        gender: "OTHER",
+        city: "Lomé",
+        bio: "",
+        relationshipGoal: "SERIOUS",
+        dateOfBirth: dob ? dob.toISOString() : null,
+        age: dob ? ageFrom(dob) : null,
+        plan: "FREE",
+        subscriptionStartedAt: now.toISOString(),
+        subscriptionExpiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString(),
+      });
+      if (googleAvatar) await savePhotoInSupabase(user.id, googleAvatar, true).catch(() => null);
+      existingProfile = (await getProfileFromSupabase(user.id, cleanEmail)) || existingProfile;
+    } else if (dob && !existingProfile?.dateOfBirth) {
+      await upsertProfileInSupabase(user.id, { email: cleanEmail, dateOfBirth: dob.toISOString(), age: ageFrom(dob) });
+    }
+
+    // Store local de ce serveur (cache), sans jamais écraser les vraies données
     try {
       saveProfile({
         userId: user.id,
-        firstName: currentProfile?.firstName || firstName,
-        lastName: currentProfile?.lastName || undefined,
-        pseudo: currentProfile?.pseudo || cleanPseudo,
+        firstName: existingProfile?.firstName || firstName,
+        lastName: existingProfile?.lastName || lastName,
+        pseudo: existingProfile?.pseudo || pseudo,
         email: cleanEmail,
-        gender: currentProfile?.gender || "OTHER",
-        city: currentProfile?.city || "Lomé",
-        neighborhood: currentProfile?.neighborhood || undefined,
-        profession: currentProfile?.profession || undefined,
-        relationshipStatus: currentProfile?.relationshipStatus || "Célibataire",
-        hasChildren: currentProfile?.hasChildren ?? false,
-        religion: currentProfile?.religion || undefined,
-        height: currentProfile?.height || null,
-        languages: currentProfile?.languages || ["fr", "en"],
-        age: currentProfile?.age || 25,
-        dateOfBirth: currentProfile?.dateOfBirth || "2000-01-01",
-        placeOfBirth: currentProfile?.placeOfBirth || undefined,
-        bio: currentProfile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
-        relationshipGoal: currentProfile?.relationshipGoal || "SERIOUS",
-        plan: currentProfile?.plan || "FREE",
-        partnersContacted: currentProfile?.partnersContacted || [],
-        photos: (currentProfile?.photos && currentProfile.photos.length > 0)
-          ? currentProfile.photos
-          : [{ id: `p_${user.id}`, url: finalAvatar, isMain: true }],
-        coverUrl: currentProfile?.coverUrl || undefined,
-        interests: currentProfile?.interests || ["Discussions", "Sorties"],
-        availabilities: currentProfile?.availabilities || [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
+        gender: existingProfile?.gender || "OTHER",
+        city: existingProfile?.city || "Lomé",
+        bio: existingProfile?.bio ?? "",
+        relationshipGoal: existingProfile?.relationshipGoal || "SERIOUS",
+        dateOfBirth: existingProfile?.dateOfBirth || (dob ? dob.toISOString() : undefined),
+        age: existingProfile?.age || (dob ? ageFrom(dob) : undefined),
+        plan: existingProfile?.plan || "FREE",
+        subscriptionStartedAt: existingProfile?.subscriptionStartedAt,
+        subscriptionExpiresAt: existingProfile?.subscriptionExpiresAt,
+        photos: existingProfile?.photos?.length
+          ? existingProfile.photos
+          : googleAvatar
+            ? [{ id: `p_${user.id}`, url: googleAvatar, isMain: true }]
+            : [],
+        coverUrl: existingProfile?.coverUrl,
         isVerified: true,
         isVisible: true,
       });
-    } catch (saveErr) {
-      console.warn("[google-callback] saveProfile non-fatal warning:", saveErr);
-    }
+    } catch {}
 
-    // Vérification compte suspendu/banni
-    if (user.status === "BANNED" || user.status === "SUSPENDED") {
-      return NextResponse.json(
-        { error: "Votre compte a été suspendu. Contactez le support." },
-        { status: 403 }
-      );
-    }
-
-    // ── 4. Créer la session JWT ────────────────────────────────────────────
+    // ── 6. Session ──────────────────────────────────────────────────────────
     await setSessionCookie({
       userId: user.id,
       role: user.role || "MEMBER",
@@ -225,11 +201,14 @@ export async function POST(req: NextRequest) {
       email: cleanEmail,
     });
 
-    // ── 5. Déterminer la redirection ────────────────────────────────────────
+    // Nouveau membre (ou date de naissance manquante) → compléter son profil et sa bio
+    const needsCompletion = isNew || !(existingProfile?.dateOfBirth || dob);
     return NextResponse.json({
       success: true,
-      redirect: "/profil?welcome=1",
-      isNew: !user.profile,
+      isNew,
+      pseudo: existingProfile?.pseudo || pseudo,
+      email: cleanEmail,
+      redirect: needsCompletion ? "/profil/edit?welcome=1" : "/messages",
     });
   } catch (error) {
     console.error("[POST /api/auth/google-callback]", error);

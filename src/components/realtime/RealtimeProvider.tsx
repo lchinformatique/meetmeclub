@@ -11,6 +11,7 @@ import styles from "./realtime.module.css";
 import { joinPresence, openInbox, removeChannel, sendToUser, type PresenceInfo } from "@/lib/realtime-client";
 import { useCallManager, type CallKind, type CallPeer } from "./CallManager";
 import { playMessageChime } from "./tones";
+import { SASPAY_LINKS } from "@/lib/subscription-constants";
 
 export interface RealtimeMe {
   userId: string;
@@ -202,9 +203,11 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
     [unreadByConversation]
   );
   useEffect(() => {
-    const nav = navigator as any;
-    if (unreadTotal > 0) nav.setAppBadge?.(unreadTotal).catch?.(() => {});
-    else nav.clearAppBadge?.().catch?.(() => {});
+    try {
+      const nav = navigator as any;
+      const p = unreadTotal > 0 ? nav.setAppBadge?.(unreadTotal) : nav.clearAppBadge?.();
+      p?.catch?.(() => {});
+    } catch {}
   }, [unreadTotal]);
 
   // ── 3. Présence + boîte de réception temps réel ──────────────
@@ -218,6 +221,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
     let presence: RealtimeChannel | null = null;
     let inbox: RealtimeChannel | null = null;
 
+    try {
     presence = joinPresence(
       { userId: me.userId, firstName: me.firstName, photoUrl: me.photoUrl, city: me.city, plan: me.plan },
       (state) => {
@@ -228,6 +232,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
     );
 
     inbox = openInbox(me.userId, (event, payload) => {
+      try {
       if (event.startsWith("call-")) {
         handleSignalRef.current(event, payload);
       } else if (event === "message") {
@@ -256,7 +261,14 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
         }
       }
       listeners.current.forEach((l) => l(event, payload));
+      } catch (err) {
+        console.warn("[realtime] event", event, err);
+      }
     });
+    } catch (err) {
+      // Le temps réel ne doit jamais empêcher l'affichage du site
+      console.warn("[realtime] connexion impossible", err);
+    }
 
     return () => {
       removeChannel(presence);
@@ -282,6 +294,38 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
     },
     [me]
   );
+
+  // Paiement d'un pass : la page de paiement s'ouvre à côté et l'application affiche
+  // directement l'activation du plan choisi (retour fluide après paiement)
+  useEffect(() => {
+    const planByLink: Record<string, string> = {};
+    for (const [plan, url] of Object.entries(SASPAY_LINKS)) planByLink[url] = plan;
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.("a[href^='https://link.saspay.me/']") as HTMLAnchorElement | null;
+      if (!a) return;
+      const plan = planByLink[a.href.replace(/\/$/, "")] || planByLink[a.href];
+      if (!plan) return;
+      e.preventDefault();
+      window.open(a.href, "_blank", "noopener");
+      router.push(`/paiement/activation?plan=${plan}`);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [router]);
+
+  // Toucher une notification alors que l'application est déjà ouverte → aller à la conversation
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const onSwMessage = (e: MessageEvent) => {
+      if (e.data?.type !== "mmc:navigate" || typeof e.data.url !== "string") return;
+      try {
+        const url = new URL(e.data.url, window.location.origin);
+        if (url.origin === window.location.origin) router.push(url.pathname + url.search);
+      } catch {}
+    };
+    navigator.serviceWorker.addEventListener("message", onSwMessage);
+    return () => navigator.serviceWorker.removeEventListener("message", onSwMessage);
+  }, [router]);
 
   // ── 4. Notifications téléphone (Web Push) ────────────────────
   useEffect(() => {

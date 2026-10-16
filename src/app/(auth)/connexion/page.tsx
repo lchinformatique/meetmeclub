@@ -25,7 +25,10 @@ import GoogleAuthButton from "@/components/GoogleAuthButton";
 function ConnexionForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") || "/messages";
+  // Page de retour demandée (uniquement une page du site, jamais un lien externe)
+  const requestedUrl = params.get("callbackUrl");
+  const hasCallback = Boolean(requestedUrl && requestedUrl.startsWith("/") && !requestedUrl.startsWith("//"));
+  const callbackUrl = hasCallback ? (requestedUrl as string) : "/messages";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -124,7 +127,7 @@ function ConnexionForm() {
         }
       }
 
-      const target = data.redirect || callbackUrl;
+      const target = hasCallback ? callbackUrl : data.redirect || callbackUrl;
       if (typeof window !== "undefined") {
         window.location.href = target;
       } else {
@@ -463,6 +466,13 @@ function ConnexionForm() {
             <GoogleAuthButton
               label="Continuer avec Google"
               onError={(msg) => setError(msg)}
+              onBeforeStart={() => {
+                try {
+                  if (hasCallback) localStorage.setItem("mmc_after_login", callbackUrl);
+                  else localStorage.removeItem("mmc_after_login");
+                } catch {}
+                return true;
+              }}
             />
           </div>
 
