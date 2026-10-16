@@ -29,7 +29,7 @@ import styles from "./messages.module.css";
 import Avatar from "./_components/Avatar";
 import MessageBubble from "./_components/MessageBubble";
 import Composer from "./_components/Composer";
-import { LocationModal, Lightbox, PartnerSheet, PlanBadge, QuotaModal, RulesModal, VipModal } from "./_components/Modals";
+import { ExpiredModal, LocationModal, Lightbox, PartnerSheet, PlanBadge, QuotaModal, RulesModal, VipModal } from "./_components/Modals";
 import {
   VICTOIRE_CONVERSATION,
   VICTOIRE_ID,
@@ -70,6 +70,7 @@ function MessagesApp() {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [vipOpen, setVipOpen] = useState(false);
   const [quotaOpen, setQuotaOpen] = useState(false);
+  const [expiredOpen, setExpiredOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -84,6 +85,8 @@ function MessagesApp() {
   const plan: string = (myProfile?.effectivePlan || myProfile?.plan || rt.me?.plan || "FREE").toUpperCase();
   const isVip = plan === "VIP";
   const isFree = plan === "FREE";
+  // Période d'accès terminée (essai 7 jours ou pass expiré)
+  const accessExpired = Boolean(myProfile?.subscriptionStatus?.isExpired);
 
   const activeConv = useMemo(
     () => conversations.find((c) => c.id === activeConvId) || null,
@@ -348,6 +351,11 @@ function MessagesApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId: convId, body, mediaUrl }),
       });
+      if (res.status === 402) {
+        setStatus("FAILED");
+        setExpiredOpen(true);
+        return;
+      }
       if (!res.ok) throw new Error(String(res.status));
       const data = await res.json();
       delete pendingPayloads.current[tmpId];
@@ -752,9 +760,15 @@ function MessagesApp() {
                 )}
               </div>
 
+              {accessExpired && activeConv.participantId !== VICTOIRE_ID && (
+                <button type="button" className={styles.expiredBar} onClick={() => setExpiredOpen(true)}>
+                  {myProfile?.subscriptionStatus?.isTrial ? "Votre essai gratuit est terminé" : "Votre pass a expiré"} ·{" "}
+                  <strong>Continuer avec le Pass Essentiel (3 000 F)</strong>
+                </button>
+              )}
               <Composer
-                blocked={false}
-                onBlocked={() => setQuotaOpen(true)}
+                blocked={accessExpired && activeConv.participantId !== VICTOIRE_ID}
+                onBlocked={() => setExpiredOpen(true)}
                 onSendText={(text) => sendMessage(text)}
                 onSendFile={sendFile}
                 onSendVoice={sendVoice}
@@ -802,6 +816,9 @@ function MessagesApp() {
       {lightbox && <Lightbox url={lightbox} onClose={() => setLightbox(null)} />}
       {vipOpen && <VipModal onClose={() => setVipOpen(false)} />}
       {quotaOpen && <QuotaModal onClose={() => setQuotaOpen(false)} />}
+      {expiredOpen && (
+        <ExpiredModal onClose={() => setExpiredOpen(false)} wasTrial={Boolean(myProfile?.subscriptionStatus?.isTrial)} />
+      )}
       {locationOpen && <LocationModal onClose={() => setLocationOpen(false)} onShare={shareLocation} />}
       {rulesOpen && <RulesModal onClose={() => setRulesOpen(false)} />}
     </div>

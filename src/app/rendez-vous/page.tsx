@@ -30,7 +30,7 @@ const DEMO_RDV: Rdv[] = [
     id: "rdv-1",
     withFirstName: "Afi",
     withPhoto:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
+      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=120&h=120&q=80",
     pack: "Dîner",
     packColor: "var(--color-red)",
     partnerName: "Coco Beach Lomé",
@@ -44,7 +44,7 @@ const DEMO_RDV: Rdv[] = [
     id: "rdv-2",
     withFirstName: "Akua",
     withPhoto:
-      "https://images.unsplash.com/photo-1546961342-ea5f60b193b5?auto=format&fit=crop&w=120&q=80",
+      "https://images.unsplash.com/photo-1611432579699-484f7990b127?auto=format&fit=crop&w=120&h=120&q=80",
     pack: "Complice",
     packColor: "var(--color-blue)",
     partnerName: "Byblos Lomé",
@@ -58,7 +58,7 @@ const DEMO_RDV: Rdv[] = [
     id: "rdv-3",
     withFirstName: "Esi",
     withPhoto:
-      "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=120&q=80",
+      "https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?auto=format&fit=crop&w=120&h=120&q=80",
     pack: "Découverte",
     packColor: "var(--color-gray-500)",
     partnerName: "Café de la Paix",

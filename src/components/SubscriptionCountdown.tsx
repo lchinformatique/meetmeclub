@@ -264,8 +264,8 @@ export default function SubscriptionCountdown({ initialStatus, profile }: Subscr
                 boxShadow: "0 4px 12px rgba(5,150,105,0.25)",
               }}
             >
-              <span>Pass Essentiel</span>
-              <span style={{ fontSize: "11px", opacity: 0.9 }}>3 000 FCFA / mois</span>
+              <span>Continuer à discuter · Pass Essentiel</span>
+              <span style={{ fontSize: "11px", opacity: 0.9 }}>3 000 FCFA · 30 jours illimités</span>
             </a>
 
             <a

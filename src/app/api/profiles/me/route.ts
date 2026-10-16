@@ -18,6 +18,17 @@ export async function GET() {
     const { getProfileFromSupabase } = await import('@/lib/supabase-server');
     const supa = await getProfileFromSupabase(session.userId, session.email || undefined);
     if (supa) {
+      // Première fois : on fige les dates du plan dans Supabase pour un décompte définitif
+      if (!supa.subscriptionExpiresAt && supa.createdAt) {
+        const start = supa.subscriptionStartedAt || supa.createdAt;
+        const days = (supa.plan || 'FREE') === 'FREE' ? 7 : 30;
+        const { upsertProfileInSupabase } = await import('@/lib/supabase-server');
+        await upsertProfileInSupabase(session.userId, {
+          email: session.email || undefined,
+          subscriptionStartedAt: new Date(start).toISOString(),
+          subscriptionExpiresAt: new Date(new Date(start).getTime() + days * 24 * 3600 * 1000).toISOString(),
+        }).catch(() => null);
+      }
       const mergedPhotos = (supa.photos && supa.photos.length > 0)
         ? supa.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
         : (profile?.photos || []);
@@ -46,8 +57,14 @@ export async function GET() {
         relationshipGoal: (supa.relationshipGoal as any) || profile?.relationshipGoal || 'SERIOUS',
         coverUrl: supa.coverUrl || profile?.coverUrl || undefined,
         plan: supa.plan || profile?.plan || 'FREE',
-        subscriptionStartedAt: supa.subscriptionStartedAt || profile?.subscriptionStartedAt || undefined,
-        subscriptionExpiresAt: supa.subscriptionExpiresAt || profile?.subscriptionExpiresAt || undefined,
+        // Vrai décompte : dates enregistrées dans Supabase ; à défaut, l'essai gratuit
+        // démarre à la création réelle du compte (jamais à un redémarrage du serveur)
+        subscriptionStartedAt: supa.subscriptionStartedAt || supa.createdAt || profile?.subscriptionStartedAt || undefined,
+        subscriptionExpiresAt:
+          supa.subscriptionExpiresAt ||
+          ((supa.plan || 'FREE') === 'FREE' && supa.createdAt
+            ? new Date(new Date(supa.createdAt).getTime() + 7 * 24 * 3600 * 1000).toISOString()
+            : profile?.subscriptionExpiresAt || undefined),
         partnersContacted: profile?.partnersContacted || [],
         photos: mergedPhotos,
         interests: profile?.interests || [],

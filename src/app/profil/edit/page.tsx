@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { compressImage } from "@/app/messages/_lib/chat-utils";
+import { COUNTRIES, countryFromPhone } from "@/lib/countries";
 import {
   Camera,
   Loader2,
@@ -74,35 +75,7 @@ const NEIGHBORHOODS_LOME = [
   "Autre",
 ];
 
-const COUNTRY_CODES = [
-  { code: "+228", country: "Togo", flag: "🇹🇬" },
-  { code: "+33", country: "France", flag: "🇫🇷" },
-  { code: "+229", country: "Bénin", flag: "🇧🇯" },
-  { code: "+225", country: "Côte d'Ivoire", flag: "🇨🇮" },
-  { code: "+233", country: "Ghana", flag: "🇬🇭" },
-  { code: "+221", country: "Sénégal", flag: "🇸🇳" },
-  { code: "+226", country: "Burkina Faso", flag: "🇧🇫" },
-  { code: "+234", country: "Nigeria", flag: "🇳🇬" },
-  { code: "+237", country: "Cameroun", flag: "🇨🇲" },
-  { code: "+241", country: "Gabon", flag: "🇬🇦" },
-  { code: "+242", country: "Congo", flag: "🇨🇬" },
-  { code: "+243", country: "RDC", flag: "🇨🇩" },
-  { code: "+223", country: "Mali", flag: "🇲🇱" },
-  { code: "+224", country: "Guinée", flag: "🇬🇳" },
-  { code: "+227", country: "Niger", flag: "🇳🇪" },
-  { code: "+32", country: "Belgique", flag: "🇧🇪" },
-  { code: "+41", country: "Suisse", flag: "🇨🇭" },
-  { code: "+1", country: "Canada / USA", flag: "🇨🇦" },
-  { code: "+49", country: "Allemagne", flag: "🇩🇪" },
-  { code: "+44", country: "Royaume-Uni", flag: "🇬🇧" },
-  { code: "+34", country: "Espagne", flag: "🇪🇸" },
-  { code: "+39", country: "Italie", flag: "🇮🇹" },
-  { code: "+351", country: "Portugal", flag: "🇵🇹" },
-  { code: "+212", country: "Maroc", flag: "🇲🇦" },
-  { code: "+216", country: "Tunisie", flag: "🇹🇳" },
-  { code: "+971", country: "Émirats Arabes Unis", flag: "🇦🇪" },
-  { code: "+86", country: "Chine", flag: "🇨🇳" },
-];
+// Tous les pays du monde (indicatif + drapeau) : voir src/lib/countries.ts
 
 const AVAILABLE_LANGUAGES = [
   { code: "fr", label: "Français", flag: "🇫🇷" },
@@ -152,6 +125,7 @@ export default function ProfilEditPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
 
   const [selectedCountryCode, setSelectedCountryCode] = useState("+228");
+  const [selectedIso, setSelectedIso] = useState("TG");
   const [rawPhone, setRawPhone] = useState("");
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -166,7 +140,7 @@ export default function ProfilEditPage() {
     placeOfBirth: "",
     phone: "",
     gender: "OTHER",
-    city: "Lomé",
+    city: "",
     neighborhood: "",
     profession: "",
     relationshipStatus: "Célibataire",
@@ -195,10 +169,11 @@ export default function ProfilEditPage() {
         const data = await res.json();
         if (data.profile) {
           const currentPhone = data.profile.phone || "";
-          const matchedCountry = COUNTRY_CODES.find((c) => currentPhone.startsWith(c.code));
+          const matchedCountry = countryFromPhone(currentPhone);
           if (matchedCountry) {
-            setSelectedCountryCode(matchedCountry.code);
-            setRawPhone(currentPhone.substring(matchedCountry.code.length).trim());
+            setSelectedCountryCode(matchedCountry.dial);
+            setSelectedIso(matchedCountry.iso);
+            setRawPhone(currentPhone.trim().slice(matchedCountry.dial.length).trim());
           } else {
             setRawPhone(currentPhone);
           }
@@ -222,9 +197,10 @@ export default function ProfilEditPage() {
             placeOfBirth: data.profile.placeOfBirth || "",
             phone: currentPhone,
             gender: data.profile.gender || "OTHER",
-            city: data.profile.city || "Lomé",
-            neighborhood: data.profile.neighborhood || "",
-            profession: data.profile.profession || "",
+            // Valeurs par défaut posées automatiquement autrefois → champ vide à remplir soi-même
+            city: data.profile.city || "",
+            neighborhood: ["Centre-ville", "Lomé"].includes(data.profile.neighborhood) ? "" : data.profile.neighborhood || "",
+            profession: ["Professionnel(le)", "Membre actif", "Membre"].includes(data.profile.profession) ? "" : data.profile.profession || "",
             relationshipStatus: data.profile.relationshipStatus || "Célibataire",
             hasChildren: data.profile.hasChildren ?? false,
             religion: data.profile.religion || "",
@@ -408,7 +384,7 @@ export default function ProfilEditPage() {
           lastName: form.lastName.trim(),
           pseudo: form.pseudo.trim() ? form.pseudo.trim() : null,
           dateOfBirth: form.dateOfBirth,
-          placeOfBirth: form.placeOfBirth.trim() || form.city || "Lomé",
+          placeOfBirth: form.placeOfBirth.trim(),
           phone: finalPhone,
           gender: form.gender,
           city: form.city,
@@ -442,7 +418,7 @@ export default function ProfilEditPage() {
         if (mainPic) setAvatarUrl(mainPic);
       }
 
-      setMessage({ type: "success", text: "Votre profil a été mis à jour avec succès !" });
+      setMessage({ type: "success", text: "Profil enregistré ✓ Retour à votre profil…" });
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("mmclub_profile_updated", {
@@ -461,7 +437,7 @@ export default function ProfilEditPage() {
       const nextPage = isWelcome ? "/messages?tab=online&welcome=1" : "/profil";
       setTimeout(() => {
         window.location.href = nextPage;
-      }, 600);
+      }, 1400);
     } catch {
       setMessage({ type: "error", text: "Erreur de connexion. Veuillez réessayer." });
     } finally {
@@ -949,7 +925,7 @@ export default function ProfilEditPage() {
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
             {/* Section 3 : Identité & Nom / Prénom / Pseudo */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="edit-grid-2">
               <div className="input-group">
                 <label className="input-label" htmlFor="firstName" style={{ color: "#0F172A", fontWeight: 700 }}>
                   Prénom <span style={{ color: "#E11D48" }}>*</span>
@@ -1027,54 +1003,36 @@ export default function ProfilEditPage() {
                 )}
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div className="edit-grid-2">
                 <div>
-                  <label htmlFor="dateOfBirth" style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                  <label htmlFor="dateOfBirth" className="edit-label">
                     Date de naissance *
                   </label>
                   <input
                     id="dateOfBirth"
                     type="date"
                     required
+                    min="1930-01-01"
                     max={MAX_ALLOWED_DOB}
                     value={form.dateOfBirth}
                     onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      border: isUnderage ? "2px solid #EF4444" : "1.5px solid #CBD5E1",
-                      background: "white",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      color: "#0F172A",
-                      outline: "none",
-                    }}
+                    className={`edit-field ${isUnderage ? "edit-field-error" : ""}`}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="placeOfBirth" style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px" }}>
+                  <label htmlFor="placeOfBirth" className="edit-label">
                     Lieu de naissance *
                   </label>
                   <input
                     id="placeOfBirth"
                     type="text"
                     required
-                    placeholder="Ex: Lomé, Togo / Cotonou / Paris..."
+                    autoComplete="off"
+                    placeholder="Ville et pays de naissance"
                     value={form.placeOfBirth}
                     onChange={(e) => setForm({ ...form, placeOfBirth: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      border: "1.5px solid #CBD5E1",
-                      background: "white",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      color: "#0F172A",
-                      outline: "none",
-                    }}
+                    className="edit-field"
                   />
                 </div>
               </div>
@@ -1110,82 +1068,65 @@ export default function ProfilEditPage() {
                 Numéro de téléphone WhatsApp / Appel
               </label>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: "#F8FAFC",
-                  border: "2px solid #0B2559",
-                  borderRadius: "12px",
-                  overflow: "hidden",
+              {/* Pays (tous les pays du monde) */}
+              <label htmlFor="phone-country" className="edit-label">
+                Pays
+              </label>
+              <select
+                id="phone-country"
+                className="edit-field"
+                value={selectedIso}
+                onChange={(e) => {
+                  const country = COUNTRIES.find((c) => c.iso === e.target.value);
+                  if (!country) return;
+                  setSelectedIso(country.iso);
+                  setSelectedCountryCode(country.dial);
+                  setForm((prev) => ({
+                    ...prev,
+                    phone: rawPhone.trim() ? `${country.dial} ${rawPhone.trim()}` : "",
+                  }));
                 }}
+                style={{ marginBottom: "12px", cursor: "pointer" }}
               >
-                {/* Select Pays */}
-                <select
-                  value={selectedCountryCode}
-                  onChange={(e) => {
-                    const code = e.target.value;
-                    setSelectedCountryCode(code);
-                    setForm((prev) => ({
-                      ...prev,
-                      phone: rawPhone.trim() ? `${code} ${rawPhone.trim()}` : "",
-                    }));
-                  }}
-                  style={{
-                    minWidth: "160px",
-                    padding: "12px 14px",
-                    background: "#EEF2F6",
-                    border: "none",
-                    borderRight: "2px solid #CBD5E1",
-                    fontSize: "14px",
-                    fontWeight: 800,
-                    color: "#0B2559",
-                    outline: "none",
-                    cursor: "pointer",
-                  }}
-                  title="Choisir votre pays"
-                >
-                  {COUNTRY_CODES.map((c) => (
-                    <option key={`${c.country}-${c.code}`} value={c.code}>
-                      {c.flag} {c.code} ({c.country})
-                    </option>
-                  ))}
-                </select>
+                {COUNTRIES.map((c) => (
+                  <option key={c.iso} value={c.iso}>
+                    {c.flag}  {c.name} ({c.dial})
+                  </option>
+                ))}
+              </select>
 
-                {/* Champ texte numéro : très lisible, grand, gras */}
+              {/* Numéro : indicatif + grand champ */}
+              <label htmlFor="phone-input-field" className="edit-label">
+                Numéro
+              </label>
+              <div className="edit-phone">
+                <span className="edit-phone-dial">
+                  {COUNTRIES.find((c) => c.iso === selectedIso)?.flag} {selectedCountryCode}
+                </span>
                 <input
                   id="phone-input-field"
                   type="tel"
-                  placeholder="90 XX XX XX"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="Votre numéro"
                   value={rawPhone}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    const val = e.target.value.replace(/[^\d\s]/g, "");
                     setRawPhone(val);
                     setForm((prev) => ({
                       ...prev,
                       phone: val.trim() ? `${selectedCountryCode} ${val.trim()}` : "",
                     }));
                   }}
-                  style={{
-                    flex: 1,
-                    padding: "12px 16px",
-                    border: "none",
-                    background: "white",
-                    fontSize: "16px",
-                    fontWeight: 800,
-                    letterSpacing: "0.5px",
-                    color: "#0F172A",
-                    outline: "none",
-                  }}
                 />
               </div>
-              <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#64748B" }}>
-                💡 Les chiffres saisis sont parfaitement visibles et conservés pour vos échanges avec les membres.
+              <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#64748B" }}>
+                Utilisez le numéro mobile money avec lequel vous payez : vos pass s&apos;activeront automatiquement.
               </p>
             </div>
 
             {/* Genre & Objectif */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="edit-grid-2">
               <div className="input-group">
                 <label className="input-label" htmlFor="gender" style={{ color: "#0F172A", fontWeight: 700 }}>
                   Genre
@@ -1226,24 +1167,27 @@ export default function ProfilEditPage() {
             </div>
 
             {/* Ville & Quartier */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="edit-grid-2">
               <div className="input-group">
                 <label className="input-label" htmlFor="city" style={{ color: "#0F172A", fontWeight: 700 }}>
                   Ville de résidence
                 </label>
-                <select
+                <input
                   id="city"
                   className="input"
+                  type="text"
+                  list="cities-list"
+                  autoComplete="address-level2"
+                  placeholder="Votre ville"
                   value={form.city}
                   onChange={(e) => setForm({ ...form, city: e.target.value })}
                   style={{ fontWeight: 600 }}
-                >
+                />
+                <datalist id="cities-list">
                   {CITIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
+                    <option key={c} value={c} />
                   ))}
-                </select>
+                </datalist>
               </div>
 
               <div className="input-group">
@@ -1254,7 +1198,7 @@ export default function ProfilEditPage() {
                   id="neighborhood"
                   className="input"
                   list="neighborhoods-list"
-                  placeholder="Ex: Agoè, Bè, Tokoin..."
+                  placeholder="Votre quartier"
                   value={form.neighborhood}
                   onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
                   style={{ fontWeight: 600 }}
@@ -1268,7 +1212,7 @@ export default function ProfilEditPage() {
             </div>
 
             {/* Profession & Situation */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div className="edit-grid-2">
               <div className="input-group">
                 <label className="input-label" htmlFor="profession" style={{ color: "#0F172A", fontWeight: 700 }}>
                   Profession
@@ -1277,7 +1221,7 @@ export default function ProfilEditPage() {
                   id="profession"
                   className="input"
                   type="text"
-                  placeholder="Ex: Architecte, Commerçant(e)..."
+                  placeholder="Votre profession"
                   value={form.profession}
                   onChange={(e) => setForm({ ...form, profession: e.target.value })}
                   style={{ fontWeight: 600 }}
@@ -1464,30 +1408,59 @@ export default function ProfilEditPage() {
               />
             </div>
 
-            {/* Actions Soumission */}
-            <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
-              <button
-                type="submit"
-                className={`btn btn-primary ${saving ? "btn-loading" : ""}`}
-                disabled={saving || isUnderage}
-                style={{
-                  flex: 1,
-                  padding: "14px",
-                  fontSize: "15px",
-                  fontWeight: 800,
-                  background: isUnderage ? "#94A3B8" : "var(--color-blue)",
-                  cursor: isUnderage ? "not-allowed" : "pointer",
-                }}
-              >
-                {saving ? "Enregistrement en cours..." : "Enregistrer les modifications ✓"}
-              </button>
-              <Link href="/profil" className="btn btn-outline-blue" style={{ flex: "0 0 auto", padding: "14px 20px" }}>
+            {/* Actions : Annuler / Enregistrer — alignés et de même hauteur */}
+            <div className="edit-actions">
+              <Link href="/profil" className="edit-btn edit-btn-cancel">
                 Annuler
               </Link>
+              <button type="submit" className="edit-btn edit-btn-save" disabled={saving || isUnderage}>
+                {saving ? (
+                  <>
+                    <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> Enregistrement…
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={18} /> Enregistrer les modifications
+                  </>
+                )}
+              </button>
             </div>
           </form>
         </div>
       </main>
+
+      {/* Confirmation bien visible, puis retour automatique sur le profil */}
+      {message && (
+        <div className={`edit-toast ${message.type === "success" ? "edit-toast-ok" : "edit-toast-err"}`} role="status">
+          {message.type === "success" ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+          <span>{message.text}</span>
+        </div>
+      )}
+
+      <style>{`
+        .edit-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+        .edit-label { display: block; font-size: 12px; font-weight: 800; color: #334155; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .edit-field { width: 100%; height: 50px; padding: 0 14px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #fff; font-size: 16px; font-weight: 600; color: #0F172A; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
+        .edit-field:focus { border-color: #0B2559; box-shadow: 0 0 0 3px rgba(11,37,89,0.1); }
+        .edit-field-error { border: 2px solid #EF4444; }
+        select.edit-field { background-image: linear-gradient(45deg, transparent 50%, #64748B 50%), linear-gradient(135deg, #64748B 50%, transparent 50%); background-position: calc(100% - 20px) 22px, calc(100% - 15px) 22px; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 36px; }
+        .edit-phone { display: flex; align-items: stretch; height: 54px; border: 2px solid #0B2559; border-radius: 14px; overflow: hidden; background: #fff; }
+        .edit-phone:focus-within { box-shadow: 0 0 0 3px rgba(11,37,89,0.12); }
+        .edit-phone-dial { display: flex; align-items: center; gap: 6px; padding: 0 14px; background: #EEF2F6; border-right: 1.5px solid #CBD5E1; font-weight: 800; font-size: 16px; color: #0B2559; white-space: nowrap; flex-shrink: 0; }
+        .edit-phone input { flex: 1; min-width: 0; border: none; outline: none; padding: 0 14px; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; color: #0F172A; background: #fff; }
+        .edit-actions { display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0; }
+        .edit-btn { height: 52px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 800; text-decoration: none; cursor: pointer; box-sizing: border-box; }
+        .edit-btn-cancel { flex: 0 0 34%; border: 1.5px solid #CBD5E1; background: #fff; color: #0B2559; }
+        .edit-btn-save { flex: 1; border: none; background: linear-gradient(135deg, #0B2559 0%, #163B8A 100%); color: #fff; box-shadow: 0 8px 20px rgba(11,37,89,0.28); }
+        .edit-btn-save:disabled { background: #94A3B8; box-shadow: none; cursor: not-allowed; }
+        .edit-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 5000; display: flex; align-items: center; gap: 10px; max-width: min(92vw, 440px); padding: 14px 18px; border-radius: 16px; font-size: 15px; font-weight: 700; box-shadow: 0 16px 40px rgba(7,21,48,0.3); }
+        .edit-toast-ok { background: #067647; color: #fff; }
+        .edit-toast-err { background: #B42318; color: #fff; }
+        @media (max-width: 480px) {
+          .edit-actions { position: sticky; bottom: 0; background: #fff; margin-inline: -4px; padding: 12px 4px calc(12px + env(safe-area-inset-bottom)); z-index: 5; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

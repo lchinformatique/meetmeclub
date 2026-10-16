@@ -300,6 +300,36 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
           profile={profile}
         />
 
+        {/* Membres VIP : vérification d'identité requise pour le badge VIP vérifié */}
+        {profile.plan === "VIP" && !(profile.idDocumentVerified && profile.selfieVerified) && (
+          <Link
+            href="/profil/securite"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              marginBottom: "24px",
+              padding: "16px 18px",
+              borderRadius: "16px",
+              background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
+              border: "1.5px solid #FCD34D",
+              textDecoration: "none",
+              color: "#78350F",
+            }}
+          >
+            <span style={{ width: 44, height: 44, borderRadius: 12, background: "#F59E0B", color: "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <ShieldCheck size={22} />
+            </span>
+            <span style={{ flex: 1 }}>
+              <strong style={{ display: "block", fontSize: "15px" }}>Validez votre identité VIP</strong>
+              <span style={{ fontSize: "13px" }}>
+                Pièce d&apos;identité + selfie : obligatoire pour le badge « VIP vérifié » et la confiance des membres.
+              </span>
+            </span>
+            <ChevronRight size={20} />
+          </Link>
+        )}
+
         <div className="profil-layout-grid">
 
           {/* ── Left Sidebar ── */}

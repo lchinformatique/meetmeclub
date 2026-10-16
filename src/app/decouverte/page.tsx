@@ -208,11 +208,22 @@ export default function DecouvertePage() {
         if (!matchesName && !matchesNeighborhood && !matchesProfession) return false;
       }
       return true;
-    });
-  }, [profiles, genderFilter, goalFilter, cityFilter, searchQuery]);
+    })
+    // En tête : membres en ligne, puis membres avec un pass payant (VIP > Complice > Essentiel)
+    .map((p, index) => ({ p, index }))
+    .sort((a, b) => {
+      const score = (x: ProfileItem) => {
+        const plan = (x.plan || "FREE").toUpperCase();
+        const planScore = plan === "VIP" ? 3 : plan === "COMPLICE" ? 2 : plan === "ESSENTIAL" ? 1 : 0;
+        return (rt.isOnline(x.userId || x.id) ? 10 : 0) + planScore;
+      };
+      return score(b.p) - score(a.p) || a.index - b.index;
+    })
+    .map(({ p }) => p);
+  }, [profiles, genderFilter, goalFilter, cityFilter, searchQuery, rt]);
 
   // Quota computations
-  const currentPlan = myProfile?.plan || "FREE";
+  const currentPlan = myProfile?.effectivePlan || myProfile?.plan || "FREE";
   const contactedCount = myProfile?.partnersContacted?.length || 0;
   const isFreePlan = currentPlan === "FREE";
   const remainingFreePartners = Math.max(0, 3 - contactedCount);
@@ -483,8 +494,9 @@ export default function DecouvertePage() {
       {/* ── Contenu membres connectés ───────────────────────────── */}
       {isAuthenticated !== false && (
       <main className="container" style={{ paddingBlock: "28px" }}>
-        {/* Subscription Quota Status Banner */}
+        {/* Subscription Quota Status Banner (centré sur mobile) */}
         <div
+          className="plan-status-banner"
           style={{
             background: isFreePlan
               ? "linear-gradient(135deg, #0B2E6B 0%, #1E3A8A 100%)"
@@ -501,7 +513,16 @@ export default function DecouvertePage() {
             boxShadow: "0 6px 20px rgba(11, 46, 107, 0.15)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <style>{`
+            @media (max-width: 640px) {
+              .plan-status-banner { flex-direction: column; text-align: center; padding: 20px 16px !important; }
+              .plan-status-banner .plan-status-main { flex-direction: column; }
+              .plan-status-banner .plan-status-title { justify-content: center; flex-wrap: wrap; }
+              .plan-status-banner .plan-status-actions { width: 100%; justify-content: center; }
+              .plan-status-banner .plan-status-actions > * { width: 100%; justify-content: center; }
+            }
+          `}</style>
+          <div className="plan-status-main" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <div
               style={{
                 width: "44px",
@@ -518,7 +539,7 @@ export default function DecouvertePage() {
               {isFreePlan ? <Sparkles size={22} className="text-amber-300" /> : <Crown size={22} className="text-amber-300" />}
             </div>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div className="plan-status-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <span style={{ fontSize: "12px", textTransform: "uppercase", fontWeight: 800, letterSpacing: "1px", background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: "9999px" }}>
                   {isFreePlan ? "Plan Gratuit" : `Abonnement ${currentPlan}`}
                 </span>
@@ -536,7 +557,7 @@ export default function DecouvertePage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <div className="plan-status-actions" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             {isFreePlan ? (
               <button
                 type="button"
@@ -559,19 +580,23 @@ export default function DecouvertePage() {
                 <span>Débloquer l&apos;Illimité (3 000 F CFA)</span>
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => handleTestUpgrade("FREE")}
-                className="btn btn-ghost"
+              <Link
+                href="/profil"
                 style={{
                   color: "white",
-                  borderColor: "rgba(255,255,255,0.3)",
-                  fontSize: "12px",
-                  padding: "6px 12px",
+                  border: "1.5px solid rgba(255,255,255,0.35)",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  padding: "9px 16px",
+                  borderRadius: "10px",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
-                Tester retour au Plan Gratuit
-              </button>
+                <Crown size={15} /> Voir mon pass
+              </Link>
             )}
           </div>
         </div>
@@ -868,59 +893,68 @@ export default function DecouvertePage() {
                     )}
 
                     {/* Action Buttons */}
-                    <div style={{ marginTop: "auto", paddingTop: "10px", display: "flex", gap: "8px", alignItems: "center" }}>
-                      {/* Like button */}
+                    <div style={{ marginTop: "auto", paddingTop: "12px", display: "flex", gap: "10px", alignItems: "center" }}>
+                      {/* J'aime */}
                       <button
                         type="button"
                         onClick={() => handleLike(profile)}
-                        title={likedIds.has(profile.id) ? "Aimé !" : "Aimer"}
+                        aria-label={likedIds.has(profile.id) ? "Vous aimez ce profil" : "Aimer ce profil"}
                         style={{
-                          width: "42px",
-                          height: "42px",
-                          borderRadius: "12px",
-                          border: likedIds.has(profile.id) ? "2px solid #E10600" : "1px solid #CBD5E1",
-                          background: likedIds.has(profile.id) ? "#FEF2F2" : "white",
-                          fontSize: "18px",
+                          width: "46px",
+                          height: "46px",
+                          borderRadius: "50%",
+                          border: "none",
+                          background: likedIds.has(profile.id) ? "#FFE4E6" : "#F1F5F9",
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
+                          transition: "transform 0.15s ease",
                         }}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={likedIds.has(profile.id) ? "#E10600" : "none"} stroke={likedIds.has(profile.id) ? "#E10600" : "#94A3B8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={likedIds.has(profile.id) ? "#E10600" : "none"} stroke={likedIds.has(profile.id) ? "#E10600" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                       </button>
 
-                      {/* Échanger / Discuter button */}
+                      {/* Discuter */}
                       <button
                         type="button"
                         onClick={() => handleInitiateExchange(profile, "CHAT")}
-                        className="btn btn-outline-blue btn-sm"
                         style={{
                           flex: 1,
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          padding: "10px",
-                          borderRadius: "10px",
+                          height: "46px",
+                          border: "none",
+                          borderRadius: "9999px",
+                          background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+                          color: "white",
+                          fontWeight: 800,
+                          fontSize: "14px",
+                          letterSpacing: "0.2px",
+                          cursor: "pointer",
+                          boxShadow: "0 6px 16px rgba(11,37,89,0.25)",
                         }}
                       >
-                        💬 Discuter
+                        Discuter
                       </button>
 
-                      {/* Rendez-vous button */}
+                      {/* Proposer une sortie */}
                       <button
                         type="button"
                         onClick={() => handleInitiateExchange(profile, "RDV")}
-                        className="btn btn-primary btn-sm"
                         style={{
                           flex: 1,
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          padding: "10px",
-                          borderRadius: "10px",
+                          height: "46px",
+                          borderRadius: "9999px",
+                          border: "1.5px solid #E10600",
+                          background: "white",
+                          color: "#E10600",
+                          fontWeight: 800,
+                          fontSize: "14px",
+                          letterSpacing: "0.2px",
+                          cursor: "pointer",
                         }}
                       >
-                        📅 Sortie
+                        Sortie
                       </button>
                     </div>
                   </div>

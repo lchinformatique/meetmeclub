@@ -159,6 +159,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: userMessage, reply: victoireReply }, { status: 201 });
   }
 
+  // Période terminée (essai gratuit de 7 jours ou pass expiré) → proposer le Pass Essentiel
+  try {
+    const { findPermanentVipAccount } = await import("@/lib/subscription-constants");
+    const isExpired = (p: any) => p?.subscriptionExpiresAt && new Date(p.subscriptionExpiresAt).getTime() < Date.now();
+    if (!findPermanentVipAccount({ userId: session.userId, email: session.email }) && isExpired(senderProfile)) {
+      // Le cache local peut être périmé : confirmation auprès de Supabase avant de bloquer
+      const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+      const fresh = await getProfileFromSupabase(session.userId, session.email || undefined);
+      if (!fresh || isExpired(fresh)) {
+        return NextResponse.json(
+          {
+            error: "Votre période d'accès est terminée. Activez le Pass Essentiel (3 000 F) pour continuer à discuter.",
+            code: "PLAN_EXPIRED",
+          },
+          { status: 402 }
+        );
+      }
+    }
+  } catch {}
+
   try {
     const conversation = await resolveConversation(session.userId, conversationId);
     if (!conversation) {

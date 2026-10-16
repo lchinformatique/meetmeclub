@@ -72,20 +72,25 @@ export default function CustomerSupportWidget() {
   const [messages, setMessages] = useState<BotMessage[]>(INITIAL_BOT_MESSAGES);
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [hoveredButton, setHoveredButton] = useState<"whatsapp" | "robot" | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // Masquer complètement les 2 supports pendant le chat / la messagerie privée pour libérer l'écran
-  const isChatPage = pathname?.startsWith("/messages");
-  if (isChatPage) {
-    return null;
-  }
 
   useEffect(() => {
     if (isOpen) {
       chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isOpen]);
+
+  // Masqué pendant la messagerie, la connexion et l'inscription pour libérer l'écran
+  // (après les hooks : un retour anticipé avant eux faisait planter l'application)
+  const hidden =
+    pathname?.startsWith("/messages") ||
+    pathname?.startsWith("/connexion") ||
+    pathname?.startsWith("/inscription") ||
+    pathname?.startsWith("/auth");
+  if (hidden) {
+    return null;
+  }
 
   const handleAsk = (userQuestion: string) => {
     if (!userQuestion.trim()) return;
@@ -141,138 +146,114 @@ export default function CustomerSupportWidget() {
       }}
       aria-label="Service client et support Meet Me Club"
     >
-      {/* ── Deux boutons flottants verticaux (WhatsApp + Robot) ── */}
+      {/* ── Bouton unique d'assistance (menu : conseiller WhatsApp / assistant 24h/24) ── */}
       {!isOpen && (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-end" }}>
-          {/* 1. Bouton Discuter / Support Meet Me Club aux couleurs officielles */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Discuter avec l'équipe Meet Me Club"
-              title="Discuter avec le Club (Direct)"
-              onMouseEnter={() => setHoveredButton("whatsapp")}
-              onMouseLeave={() => setHoveredButton(null)}
+          {menuOpen && (
+            <div
+              role="menu"
               style={{
-                width: "52px",
-                height: "52px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 8px 24px rgba(37, 211, 102, 0.45), 0 2px 6px rgba(0, 0, 0, 0.15)",
-                textDecoration: "none",
-                position: "relative",
-                border: "2px solid #FFFFFF",
-                transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease",
-                flexShrink: 0,
+                width: "250px",
+                background: "white",
+                borderRadius: "18px",
+                padding: "8px",
+                boxShadow: "0 18px 44px rgba(7, 21, 48, 0.25)",
+                border: "1px solid #E2E8F0",
+                animation: "fadeInUp 0.18s ease",
               }}
             >
-              {/* Icône de Discussion Professionnelle WhatsApp / Live Chat */}
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+              <div style={{ padding: "8px 10px 6px", fontSize: "12px", fontWeight: 800, color: "#64748B", letterSpacing: "0.4px", textTransform: "uppercase" }}>
+                Besoin d&apos;aide ?
+              </div>
+              <a
+                role="menuitem"
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMenuOpen(false)}
+                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "12px", textDecoration: "none", color: "#0F172A" }}
               >
-                <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
-                <path d="M8 12h.01" strokeWidth="3" />
-                <path d="M12 12h.01" strokeWidth="3" />
-                <path d="M16 12h.01" strokeWidth="3" />
-              </svg>
+                <span style={{ width: 38, height: 38, borderRadius: 12, background: "#E8F8EF", color: "#128C7E", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12.04 2a9.9 9.9 0 0 0-8.5 15l-1.4 5 5.2-1.4A9.9 9.9 0 1 0 12.04 2Zm5.8 14.1c-.25.7-1.45 1.33-2 1.38-.52.05-1.17.08-3.8-.97-3.2-1.27-5.24-4.53-5.4-4.74-.15-.21-1.29-1.72-1.29-3.28 0-1.56.82-2.33 1.11-2.65.29-.32.64-.4.85-.4h.62c.2 0 .46-.07.72.55.26.64.89 2.2.97 2.36.08.16.13.35.03.56-.1.21-.16.34-.31.53-.16.18-.33.41-.47.55-.16.16-.32.33-.14.65.18.32.81 1.33 1.74 2.16 1.2 1.07 2.2 1.4 2.52 1.56.32.16.5.13.69-.08.19-.21.79-.92 1-1.24.21-.32.42-.26.71-.16.29.11 1.83.86 2.14 1.02.32.16.53.24.6.37.08.13.08.75-.17 1.45Z" />
+                  </svg>
+                </span>
+                <span style={{ display: "flex", flexDirection: "column" }}>
+                  <strong style={{ fontSize: "14px" }}>Conseiller WhatsApp</strong>
+                  <span style={{ fontSize: "12px", color: "#64748B" }}>Réponse humaine rapide</span>
+                </span>
+              </a>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setIsOpen(true);
+                }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "12px", border: "none", background: "none", cursor: "pointer", textAlign: "left", color: "#0F172A" }}
+              >
+                <span style={{ width: 38, height: 38, borderRadius: 12, background: "#EEF3FF", color: "#0B2559", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 8V4H8" />
+                    <rect width="16" height="12" x="4" y="8" rx="2" />
+                    <path d="M2 14h2M20 14h2M15 13v2M9 13v2" />
+                  </svg>
+                </span>
+                <span style={{ display: "flex", flexDirection: "column" }}>
+                  <strong style={{ fontSize: "14px" }}>Assistant 24h/24</strong>
+                  <span style={{ fontSize: "12px", color: "#64748B" }}>Réponses instantanées</span>
+                </span>
+              </button>
+            </div>
+          )}
 
-              {/* Indicateur vert En Ligne */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Fermer l'assistance" : "Assistance Meet Me Club"}
+            aria-expanded={menuOpen}
+            style={{
+              width: "54px",
+              height: "54px",
+              borderRadius: "50%",
+              border: "none",
+              background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 10px 26px rgba(11, 37, 89, 0.4)",
+              cursor: "pointer",
+              position: "relative",
+              padding: 0,
+            }}
+          >
+            {menuOpen ? (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z" />
+                <path d="M21 16v2a4 4 0 0 1-4 4h-5" />
+              </svg>
+            )}
+            {!menuOpen && (
               <span
+                aria-hidden="true"
                 style={{
                   position: "absolute",
-                  top: "2px",
-                  right: "2px",
+                  top: "3px",
+                  right: "3px",
                   width: "12px",
                   height: "12px",
                   borderRadius: "50%",
-                  background: "#10B981",
-                  border: "2px solid #FFFFFF",
-                  boxShadow: "0 0 6px rgba(16, 185, 129, 0.9)",
-                }}
-                aria-hidden="true"
-              />
-            </a>
-          </div>
-
-          {/* 2. Bouton Assistant Robot Virtuel Interactif */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button
-              type="button"
-              onClick={() => setIsOpen(true)}
-              aria-label="Ouvrir l'Assistant Robot Virtuel 24h/24"
-              title="Assistant Robot Virtuel Meet Me Club (24h/24)"
-              onMouseEnter={() => setHoveredButton("robot")}
-              onMouseLeave={() => setHoveredButton(null)}
-              style={{
-                width: "50px",
-                height: "50px",
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 8px 24px rgba(217, 119, 6, 0.45)",
-                border: "2px solid #FEF3C7",
-                cursor: "pointer",
-                position: "relative",
-                transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-                flexShrink: 0,
-                padding: 0,
-              }}
-            >
-              {/* Icône Robot Moderne */}
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="3" y="11" width="18" height="10" rx="2" />
-                <circle cx="12" cy="5" r="2" />
-                <path d="M12 7v4" />
-                <line x1="8" y1="16" x2="8.01" y2="16" strokeWidth="3" />
-                <line x1="16" y1="16" x2="16.01" y2="16" strokeWidth="3" />
-              </svg>
-
-              {/* Pastille 24/7 */}
-              <span
-                style={{
-                  position: "absolute",
-                  bottom: "-3px",
-                  right: "-2px",
                   background: "#E10600",
-                  color: "white",
-                  fontSize: "9px",
-                  fontWeight: 800,
-                  padding: "1px 4px",
-                  borderRadius: "9999px",
-                  border: "1.5px solid white",
-                  lineHeight: 1.1,
+                  border: "2px solid white",
                 }}
-              >
-                24h
-              </span>
-            </button>
-          </div>
+              />
+            )}
+          </button>
         </div>
       )}
 

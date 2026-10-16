@@ -183,6 +183,27 @@ export function VipModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+export function ExpiredModal({ onClose, wasTrial }: { onClose: () => void; wasTrial: boolean }) {
+  return (
+    <Sheet onClose={onClose} label="Période terminée">
+      <div className={styles.modalIcon} style={{ background: "linear-gradient(135deg,#0B2559,#163B8A)" }}>
+        <Zap size={26} />
+      </div>
+      <h3 className={styles.modalTitle}>{wasTrial ? "Votre essai gratuit de 7 jours est terminé" : "Votre pass est arrivé à échéance"}</h3>
+      <p className={styles.modalText}>
+        Continuez à discuter avec tous les membres grâce au <strong>Pass Essentiel</strong> : discussions illimitées
+        pendant 30 jours.
+      </p>
+      <a href={SASPAY_LINKS.ESSENTIAL} target="_blank" rel="noopener noreferrer" className={styles.primaryBtn}>
+        Continuer avec le Pass Essentiel · 3 000 F
+      </a>
+      <Link href="/tarifs" className={styles.ghostBtn}>
+        Voir tous les pass
+      </Link>
+    </Sheet>
+  );
+}
+
 export function QuotaModal({ onClose }: { onClose: () => void }) {
   const plans = [
     { name: "Pass Essentiel", price: "3 000 FCFA / mois", desc: "Discussions illimitées", url: SASPAY_LINKS.ESSENTIAL },
