@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
     if (!["FREE", "ESSENTIAL", "COMPLICE", "VIP"].includes(plan)) {
       return NextResponse.json({ error: "Plan invalide" }, { status: 400 });
     }
+    // Un pass payant ne s'active qu'après un paiement SasPay vérifié (/api/subscription/activate)
+    if (plan !== "FREE" && session.role !== "ADMIN" && session.role !== "SUPER_ADMIN") {
+      return NextResponse.json(
+        { error: "Ce pass s'active après paiement.", paymentRequired: true, activationUrl: `/paiement/activation?plan=${plan}` },
+        { status: 402 }
+      );
+    }
 
     const updated = saveProfile({
       userId: session.userId,

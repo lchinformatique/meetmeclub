@@ -17,38 +17,53 @@ function ActivationContent() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [pendingMsg, setPendingMsg] = useState("");
 
+  // Vérifie le paiement auprès du serveur ; s'il n'est pas encore confirmé par SasPay,
+  // réessaie automatiquement toutes les 8 secondes pendant 3 minutes.
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
+    setPendingMsg("");
 
+    const deadline = Date.now() + 3 * 60 * 1000;
     try {
-      const res = await fetch("/api/subscription/activate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: selectedPlan,
-          phone,
-          transactionRef,
-        }),
-      });
+      while (true) {
+        const res = await fetch("/api/subscription/activate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: selectedPlan, phone, transactionRef }),
+        });
+        const data = await res.json().catch(() => ({}));
 
-      const data = await res.json();
-      if (res.status === 401 && data.needLogin) {
-        router.push(`/connexion?callbackUrl=${encodeURIComponent(`/paiement/activation?plan=${selectedPlan}`)}`);
+        if (res.status === 401 && data.needLogin) {
+          router.push(`/connexion?callbackUrl=${encodeURIComponent(`/paiement/activation?plan=${selectedPlan}`)}`);
+          return;
+        }
+        if (res.status === 202 && data.pending) {
+          if (Date.now() > deadline) {
+            throw new Error(
+              "Paiement introuvable pour le moment. Vérifiez la référence ou le numéro saisi, puis réessayez. Si le problème persiste, contactez le support avec votre reçu SasPay."
+            );
+          }
+          setPendingMsg(data.message);
+          await new Promise((r) => setTimeout(r, 8000));
+          continue;
+        }
+        if (!res.ok) throw new Error(data.error || "Erreur d'activation");
+
+        setPendingMsg("");
+        if (data.plan) setSelectedPlan(data.plan);
+        setSuccess(true);
+        // Retour direct sur le profil, où le nouveau plan est affiché
+        setTimeout(() => {
+          window.location.href = `/profil?activated=${data.plan || selectedPlan}`;
+        }, 2500);
         return;
       }
-      if (!res.ok) {
-        throw new Error(data.error || "Erreur d'activation");
-      }
-
-      setSuccess(true);
-      // Retour direct sur le profil, où le nouveau plan est affiché
-      setTimeout(() => {
-        window.location.href = `/profil?activated=${selectedPlan}`;
-      }, 2500);
     } catch (err: any) {
+      setPendingMsg("");
       setErrorMsg(err.message || "Impossible d'activer le compte pour le moment.");
     } finally {
       setLoading(false);
@@ -79,7 +94,9 @@ function ActivationContent() {
             Activation de votre Abonnement
           </h1>
           <p style={{ color: "#64748B", fontSize: "15px" }}>
-            Vous venez de régler via <strong>Mixx by yas, Moov Money ou Carte Bancaire (CB / Visa / Mastercard)</strong> ? Renseignez votre identifiant pour activer vos accès instantanément.
+            Vous venez de régler via <strong>Mixx by yas, Moov Money ou carte bancaire</strong> ? Si vous avez payé avec le
+            numéro enregistré sur votre profil, votre pass est activé <strong>automatiquement</strong>. Sinon, indiquez
+            ci-dessous le numéro utilisé ou la référence de votre reçu SasPay.
           </p>
         </div>
 
@@ -109,10 +126,15 @@ function ActivationContent() {
                   ⚠️ {errorMsg}
                 </div>
               )}
+              {pendingMsg && (
+                <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1E3A8A", padding: "12px", borderRadius: "10px", fontSize: "14px" }}>
+                  ⏳ {pendingMsg}
+                </div>
+              )}
 
               <div>
                 <label style={{ display: "block", fontSize: "14px", fontWeight: 700, color: "#1E293B", marginBottom: "8px" }}>
-                  Formule souscrite sur Saspay :
+                  Formule payée sur SasPay (le pass activé correspond au montant réellement payé) :
                 </label>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
                   {[
@@ -143,12 +165,12 @@ function ActivationContent() {
 
               <div>
                 <label style={{ display: "block", fontSize: "14px", fontWeight: 700, color: "#1E293B", marginBottom: "6px" }}>
-                  Numéro de téléphone ou Email utilisé pour le paiement (Mobile Money ou Carte Bancaire) :
+                  Numéro mobile money utilisé pour payer :
                 </label>
                 <input
-                  type="text"
-                  required
-                  placeholder="Ex: +228 90 XX XX XX ou email@exemple.com"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="Ex : +228 90 XX XX XX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   style={{ width: "100%", padding: "12px 14px", borderRadius: "10px", border: "1px solid #CBD5E1", fontSize: "15px" }}
@@ -157,7 +179,7 @@ function ActivationContent() {
 
               <div>
                 <label style={{ display: "block", fontSize: "14px", fontWeight: 700, color: "#1E293B", marginBottom: "6px" }}>
-                  Référence de transaction ou SMS Saspay (facultatif) :
+                  Ou référence du reçu SasPay (carte bancaire) :
                 </label>
                 <input
                   type="text"
@@ -174,7 +196,7 @@ function ActivationContent() {
                 className="btn btn-primary btn-lg"
                 style={{ width: "100%", justifyContent: "center", padding: "14px", fontWeight: 800, fontSize: "16px", borderRadius: "12px" }}
               >
-                {loading ? "Vérification en cours..." : "⚡ Valider et Activer mon Abonnement"}
+                {loading ? "Vérification du paiement…" : "⚡ Vérifier mon paiement et activer"}
               </button>
 
               <div style={{ borderTop: "1px solid #E2E8F0", paddingTop: "20px", textAlign: "center" }}>

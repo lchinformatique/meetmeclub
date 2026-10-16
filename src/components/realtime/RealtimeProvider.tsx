@@ -235,6 +235,17 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       try {
       if (event.startsWith("call-")) {
         handleSignalRef.current(event, payload);
+      } else if (event === "plan-activated") {
+        // Paiement confirmé par SasPay : le nouveau pass s'affiche immédiatement
+        setMe((m) => (m ? { ...m, plan: payload?.plan || m.plan } : m));
+        const toast: Toast = {
+          id: `plan-${Date.now()}`,
+          conversationId: "",
+          title: "Paiement reçu 🎉",
+          body: "Votre pass est activé — touchez pour voir votre profil",
+        };
+        setToasts((prev) => [...prev, toast].slice(-3));
+        setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== toast.id)), 8000);
       } else if (event === "message") {
         const convId = payload?.conversationId as string;
         const viewing =
@@ -401,7 +412,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
               className={styles.toast}
               onClick={() => {
                 setToasts((prev) => prev.filter((x) => x.id !== t.id));
-                router.push(`/messages?conv=${encodeURIComponent(t.conversationId)}`);
+                router.push(t.conversationId ? `/messages?conv=${encodeURIComponent(t.conversationId)}` : "/profil");
               }}
             >
               {t.photoUrl ? (
