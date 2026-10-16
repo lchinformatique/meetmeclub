@@ -294,7 +294,7 @@ export default function ProfilEditPage() {
           const updated = [
             { id: `photo_${Date.now()}`, url: base64, isMain: true },
             ...prev.map((p) => ({ ...p, isMain: false })),
-          ].slice(0, 8);
+          ].slice(0, 4);
           return updated;
         });
         setMessage({ type: "success", text: "Photo de profil sélectionnée. N'oubliez pas d'enregistrer !" });
@@ -305,12 +305,12 @@ export default function ProfilEditPage() {
     }
   }
 
-  // Upload dans l'album (jusqu'a 8 photos)
+  // Upload dans l'album (jusqu'a 4 photos dans la bio)
   async function handleAlbumPhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (photos.length >= 8) {
-      setMessage({ type: "error", text: "Vous avez atteint la limite de 8 photos." });
+    if (photos.length >= 4) {
+      setMessage({ type: "error", text: "Vous avez atteint la limite de 4 photos dans votre bio." });
       return;
     }
     try {
@@ -319,11 +319,11 @@ export default function ProfilEditPage() {
         const base64 = reader.result as string;
         setPhotos((prev) => {
           const isFirst = prev.length === 0;
-          const next = [...prev, { id: `photo_${Date.now()}`, url: base64, isMain: isFirst }];
+          const next = [...prev, { id: `photo_${Date.now()}`, url: base64, isMain: isFirst }].slice(0, 4);
           if (isFirst) setAvatarUrl(base64);
           return next;
         });
-        setMessage({ type: "success", text: "Photo ajoutée à l'album (" + (photos.length + 1) + "/8)." });
+        setMessage({ type: "success", text: "Photo ajoutée à la bio (" + Math.min(photos.length + 1, 4) + "/4)." });
       };
       reader.readAsDataURL(file);
     } catch (err) {
@@ -398,10 +398,6 @@ export default function ProfilEditPage() {
       });
       return;
     }
-    if (!form.placeOfBirth.trim()) {
-      setMessage({ type: "error", text: "Le lieu de naissance est obligatoire." });
-      return;
-    }
 
     setSaving(true);
     try {
@@ -414,7 +410,7 @@ export default function ProfilEditPage() {
           lastName: form.lastName.trim(),
           pseudo: form.pseudo.trim() ? form.pseudo.trim() : null,
           dateOfBirth: form.dateOfBirth,
-          placeOfBirth: form.placeOfBirth.trim(),
+          placeOfBirth: form.placeOfBirth.trim() || form.city || "Lomé",
           phone: finalPhone,
           gender: form.gender,
           city: form.city,
@@ -429,7 +425,7 @@ export default function ProfilEditPage() {
           relationshipGoal: form.relationshipGoal,
           avatarUrl: avatarUrl || undefined,
           coverUrl: coverUrl || undefined,
-          photos: photos.slice(0, 8),
+          photos: photos.slice(0, 4),
         }),
       });
 
@@ -753,7 +749,7 @@ export default function ProfilEditPage() {
             </div>
           </div>
 
-          {/* Section 2 : Album Photos (Jusqu'à 8 photos) */}
+          {/* Section 2 : Album Photos de Bio (Jusqu'à 4 photos) */}
           <div
             style={{
               marginBottom: "32px",
@@ -763,16 +759,16 @@ export default function ProfilEditPage() {
               border: "1.5px solid #E2E8F0",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", flexWrap: "wrap", gap: "10px" }}>
               <div>
                 <span style={{ fontSize: "15px", fontWeight: 800, color: "#0B2559" }}>
-                  Album Photos de profil ({photos.length}/8)
+                  Photos de profil & Bio ({photos.length}/4)
                 </span>
                 <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748B" }}>
-                  Ajoutez jusqu'à 8 photos visibles par vos contacts lors des discussions.
+                  Ajoutez jusqu'à 4 photos pour enrichir votre bio et votre fiche membre.
                 </p>
               </div>
-              {photos.length < 8 && (
+              {photos.length < 4 && (
                 <button
                   type="button"
                   onClick={() => photoAlbumInputRef.current?.click()}
@@ -795,15 +791,15 @@ export default function ProfilEditPage() {
               )}
             </div>
 
-            {/* Grille de 8 slots */}
+            {/* Grille de 4 slots */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(135px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
                 gap: "12px",
               }}
             >
-              {[0, 1, 2, 3, 4, 5, 6, 7].map((slotIdx) => {
+              {[0, 1, 2, 3].map((slotIdx) => {
                 const photo = photos[slotIdx];
                 if (photo) {
                   return (

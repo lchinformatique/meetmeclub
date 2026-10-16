@@ -58,7 +58,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   let supaProfile: any = null;
   try {
     const { getProfileFromSupabase } = await import("@/lib/supabase-server");
-    supaProfile = await getProfileFromSupabase(session.userId);
+    supaProfile = await getProfileFromSupabase(session.userId, session.email || undefined);
   } catch (supaErr) {
     console.warn("Supabase profile lookup warning:", supaErr);
   }
@@ -699,12 +699,12 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
               </div>
             </div>
 
-            {/* Album Photos du profil (Jusqu'a 8 photos) */}
+            {/* Album Photos du profil (Jusqu'a 4 photos) */}
             <div className="card card-padded" style={{ background: "white", borderRadius: "var(--radius-xl)", border: "1px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <div>
                   <h2 style={{ fontSize: "20px", fontWeight: 800, color: "var(--color-blue)", margin: "0 0 4px" }}>
-                    Album Photos ({profile.photos?.length || 0}/8)
+                    Photos de Bio & Profil ({Math.min(profile.photos?.length || 0, 4)}/4)
                   </h2>
                   <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
                     Consultable et visualisable par les membres en ligne lors du chat.

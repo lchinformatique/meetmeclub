@@ -140,13 +140,19 @@ export async function POST(req: NextRequest) {
     // 4.c Synchronisation directe Supabase REST (HTTPS)
     try {
       const { upsertProfileInSupabase } = await import("@/lib/supabase-server");
+      const nowIso = new Date().toISOString();
+      const expiresIso = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       await upsertProfileInSupabase(user.id, {
         firstName: resolvedName,
         pseudo: resolvedPseudo,
+        email: cleanEmail,
         gender: resolvedGender as any,
         city: "Lomé",
         bio: "Nouveau membre sur Meet Me Club à Lomé.",
         relationshipGoal: "SERIOUS",
+        plan: "FREE",
+        subscriptionStartedAt: nowIso,
+        subscriptionExpiresAt: expiresIso,
       });
     } catch (supaErr) {
       console.warn("[register] Supabase REST sync warning:", supaErr);

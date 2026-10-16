@@ -90,6 +90,9 @@ function MessagesContent() {
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
   const [draft, setDraft] = useState("");
   const [myProfile, setMyProfile] = useState<any>(null);
+  const [sidebarTab, setSidebarTab] = useState<"conversations" | "online">("conversations");
+  const [selectedPartnerModal, setSelectedPartnerModal] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Modals
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -1249,7 +1252,7 @@ function MessagesContent() {
           <div style={{ padding: "16px 20px 12px", borderBottom: "1px solid #F1F5F9" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
               <h1 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
-                Discussions
+                {sidebarTab === "conversations" ? "Discussions" : "Membres en ligne"}
               </h1>
               {isFreePlan && (
                 <button
@@ -1271,223 +1274,503 @@ function MessagesContent() {
                 </button>
               )}
             </div>
+
+            {/* Onglets rapides Discussions vs Membres en ligne */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setSidebarTab("conversations")}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: sidebarTab === "conversations" ? "#0B2559" : "#F1F5F9",
+                  color: sidebarTab === "conversations" ? "white" : "#475569",
+                  fontWeight: 800,
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span>💬 Discussions</span>
+                <span
+                  style={{
+                    background: sidebarTab === "conversations" ? "rgba(255,255,255,0.25)" : "#E2E8F0",
+                    color: sidebarTab === "conversations" ? "white" : "#0F172A",
+                    fontSize: "11px",
+                    padding: "1px 6px",
+                    borderRadius: "100px",
+                    fontWeight: 800,
+                  }}
+                >
+                  {conversations.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSidebarTab("online")}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: sidebarTab === "online" ? "#059669" : "#F1F5F9",
+                  color: sidebarTab === "online" ? "white" : "#475569",
+                  fontWeight: 800,
+                  fontSize: "12px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 6px #10B981" }} />
+                <span>En ligne</span>
+                <span
+                  style={{
+                    background: sidebarTab === "online" ? "rgba(255,255,255,0.25)" : "#E2E8F0",
+                    color: sidebarTab === "online" ? "white" : "#0F172A",
+                    fontSize: "11px",
+                    padding: "1px 6px",
+                    borderRadius: "100px",
+                    fontWeight: 800,
+                  }}
+                >
+                  {onlineMembers.length}
+                </span>
+              </button>
+            </div>
+
             <input
               type="search"
-              placeholder="🔍 Filtrer les conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={sidebarTab === "conversations" ? "🔍 Filtrer les conversations..." : "🔍 Filtrer les membres connectés..."}
               className="input"
               style={{ fontSize: "13px", height: "38px", marginBottom: "8px" }}
             />
-            <Link
-              href="/decouverte"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                padding: "8px 12px",
-                background: "#EEF2FB",
-                color: "#0B2559",
-                borderRadius: "10px",
-                fontSize: "12px",
-                fontWeight: 700,
-                textDecoration: "none",
-                transition: "background 0.15s ease",
-              }}
-            >
-              <span>🧭</span>
-              <span>Voir tous les membres & échanger</span>
-              <span style={{ color: "#2563EB" }}>→</span>
-            </Link>
           </div>
 
-          {/* Online Members Horizontal Tray */}
-          {onlineMembers.length > 0 && (
-            <div style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", background: "#F8FAFC" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-                <span style={{ fontSize: "12px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0B2559", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ width: "8px", height: "8px", background: "#10B981", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #10B981" }} />
-                  En ligne maintenant ({onlineMembers.length})
-                </span>
-                <Link href="/decouverte" style={{ fontSize: "11px", color: "#2563EB", fontWeight: 700, textDecoration: "none" }}>
-                  Découvrir →
-                </Link>
-              </div>
-              <div style={{ display: "flex", gap: "12px", overflowX: "auto", paddingBottom: "4px", scrollbarWidth: "none" }}>
-                {onlineMembers.map((m) => (
-                  <button
-                    key={m.userId}
-                    type="button"
-                    onClick={() => startChatWithMember(m)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "4px",
-                      minWidth: "54px",
-                    }}
-                    title={`Discuter en direct avec ${m.firstName}`}
-                  >
-                    <div style={{ position: "relative" }}>
-                      {m.photoUrl && (m.photoUrl.startsWith("http") || m.photoUrl.startsWith("/")) ? (
-                        <Image
-                          src={m.photoUrl}
-                          alt={m.firstName}
-                          width={44}
-                          height={44}
-                          style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #2563EB" }}
-                        />
-                      ) : (
-                        <div
+          {/* ── Contenu Onglet 1 : Conversations ───────────────── */}
+          {sidebarTab === "conversations" && (
+            <>
+              {/* Online Members Horizontal Tray */}
+              {onlineMembers.length > 0 && (
+                <div style={{ padding: "10px 16px", borderBottom: "1px solid #F1F5F9", background: "#F8FAFC" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0B2559", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ width: "7px", height: "7px", background: "#10B981", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 6px #10B981" }} />
+                      En ligne ({onlineMembers.length})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSidebarTab("online")}
+                      style={{ background: "none", border: "none", fontSize: "11px", color: "#2563EB", fontWeight: 700, cursor: "pointer", padding: 0 }}
+                    >
+                      Voir tous →
+                    </button>
+                  </div>
+                  <div style={{ display: "flex", gap: "12px", overflowX: "auto", paddingBottom: "4px", scrollbarWidth: "none" }}>
+                    {onlineMembers.map((m) => (
+                      <button
+                        key={m.userId}
+                        type="button"
+                        onClick={() => startChatWithMember(m)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          cursor: "pointer",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "4px",
+                          minWidth: "54px",
+                        }}
+                        title={`Discuter en direct avec ${m.firstName}`}
+                      >
+                        <div style={{ position: "relative" }}>
+                          {m.photoUrl && (m.photoUrl.startsWith("http") || m.photoUrl.startsWith("/")) ? (
+                            <Image
+                              src={m.photoUrl}
+                              alt={m.firstName}
+                              width={44}
+                              height={44}
+                              unoptimized
+                              style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #2563EB" }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                borderRadius: "50%",
+                                background: "#EFF6FF",
+                                color: "#1D4ED8",
+                                fontWeight: 800,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "2px solid #2563EB",
+                                fontSize: "15px",
+                              }}
+                            >
+                              {m.firstName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span
+                            style={{
+                              position: "absolute",
+                              bottom: "0px",
+                              right: "0px",
+                              width: "12px",
+                              height: "12px",
+                              background: "#10B981",
+                              border: "2px solid white",
+                              borderRadius: "50%",
+                            }}
+                          />
+                        </div>
+                        <span
                           style={{
-                            width: "44px",
-                            height: "44px",
-                            borderRadius: "50%",
-                            background: "#EFF6FF",
-                            color: "#1D4ED8",
-                            fontWeight: 800,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            border: "2px solid #2563EB",
-                            fontSize: "15px",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            color: "#1E293B",
+                            maxWidth: "54px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          {m.firstName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <span
-                        style={{
-                          position: "absolute",
-                          bottom: "0px",
-                          right: "0px",
-                          width: "12px",
-                          height: "12px",
-                          background: "#10B981",
-                          border: "2px solid white",
-                          borderRadius: "50%",
+                          {m.firstName}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Conversation List */}
+              <div style={{ flex: 1, overflowY: "auto" }}>
+                {conversations
+                  .filter((conv) => {
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase();
+                    return (
+                      conv.firstName.toLowerCase().includes(q) ||
+                      conv.pseudo.toLowerCase().includes(q) ||
+                      conv.lastMessage.toLowerCase().includes(q)
+                    );
+                  })
+                  .map((conv, index) => {
+                    const isSelected = activeConvId === conv.id;
+                    const isQuotaExceeded = isFreePlan && index >= 3;
+                    const matchedOnline = onlineMembers.find((m) => m.userId === conv.participantId);
+                    const effectivePic = conv.photoUrl || matchedOnline?.photoUrl || (conv.id.includes("victoire") ? "/victoire_profile.jpg" : "");
+
+                    return (
+                      <button
+                        key={conv.id}
+                        onClick={() => {
+                          if (isQuotaExceeded) {
+                            setQuotaModalOpen(true);
+                            return;
+                          }
+                          setActiveConvId(conv.id);
+                          setMobileView("chat");
                         }}
-                      />
-                    </div>
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        color: "#1E293B",
-                        maxWidth: "54px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {m.firstName}
-                    </span>
-                  </button>
-                ))}
+                        style={{
+                          width: "100%",
+                          padding: "14px 18px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          border: "none",
+                          borderBottom: "1px solid #F1F5F9",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          background: isSelected ? "#F8FAFC" : "white",
+                          borderLeft: isSelected ? "4px solid #E10600" : "4px solid transparent",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <div style={{ position: "relative", flexShrink: 0 }}>
+                          {effectivePic && (effectivePic.startsWith("http") || effectivePic.startsWith("/")) ? (
+                            <Image
+                              src={effectivePic}
+                              alt={conv.firstName}
+                              width={48}
+                              height={48}
+                              unoptimized
+                              style={{
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                                border: "2px solid #CBD5E1",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "48px",
+                                height: "48px",
+                                borderRadius: "50%",
+                                background: "#EEF2FB",
+                                color: "#0B2559",
+                                fontWeight: 800,
+                                fontSize: "17px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "2px solid #CBD5E1",
+                              }}
+                            >
+                              {conv.firstName ? conv.firstName.charAt(0).toUpperCase() : "M"}
+                            </div>
+                          )}
+                          {(conv.isOnline || Boolean(matchedOnline)) && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                bottom: "1px",
+                                right: "1px",
+                                width: "12px",
+                                height: "12px",
+                                background: "#10B981",
+                                border: "2px solid white",
+                                borderRadius: "50%",
+                              }}
+                            />
+                          )}
+                        </div>
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                            <span style={{ fontWeight: 800, fontSize: "15px", color: "#0F172A" }}>
+                              {conv.firstName}
+                            </span>
+                            <span style={{ fontSize: "11px", color: "#64748B", flexShrink: 0, fontWeight: 500 }}>
+                              {formatTime(conv.lastMessageAt)}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: "13px", color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {conv.lastMessage}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </>
+          )}
+
+          {/* ── Contenu Onglet 2 : Rubrique Membres Connectés (Fiches détaillées & 4 photos) ── */}
+          {sidebarTab === "online" && (
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
+              <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "10px", paddingInline: "4px" }}>
+                {onlineMembers.length} membre{onlineMembers.length > 1 ? "s" : ""} connecté{onlineMembers.length > 1 ? "s" : ""} maintenant. Consultez leurs photos et échangez en direct !
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {onlineMembers
+                  .filter((m) => {
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase();
+                    return (
+                      m.firstName.toLowerCase().includes(q) ||
+                      (m.pseudo && m.pseudo.toLowerCase().includes(q)) ||
+                      (m.city && m.city.toLowerCase().includes(q)) ||
+                      (m.profession && m.profession.toLowerCase().includes(q)) ||
+                      (m.bio && m.bio.toLowerCase().includes(q))
+                    );
+                  })
+                  .map((m) => {
+                    const photosList = Array.isArray(m.photos) && m.photos.length > 0
+                      ? m.photos.slice(0, 4)
+                      : m.photoUrl
+                      ? [{ url: m.photoUrl, isMain: true }]
+                      : [];
+
+                    return (
+                      <div
+                        key={m.userId}
+                        style={{
+                          background: "white",
+                          borderRadius: "16px",
+                          border: "1.5px solid #E2E8F0",
+                          padding: "14px",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                        }}
+                      >
+                        {/* Haut : Avatar, Nom, Âge, Ville & Badge En ligne */}
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                          <div style={{ position: "relative", flexShrink: 0 }}>
+                            {m.photoUrl ? (
+                              <Image
+                                src={m.photoUrl}
+                                alt={m.firstName}
+                                width={54}
+                                height={54}
+                                unoptimized
+                                style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #10B981" }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  width: "54px",
+                                  height: "54px",
+                                  borderRadius: "50%",
+                                  background: "#EFF6FF",
+                                  color: "#1D4ED8",
+                                  fontWeight: 800,
+                                  fontSize: "18px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  border: "2px solid #10B981",
+                                }}
+                              >
+                                {m.firstName.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span
+                              style={{
+                                position: "absolute",
+                                bottom: "2px",
+                                right: "2px",
+                                width: "13px",
+                                height: "13px",
+                                background: "#10B981",
+                                border: "2px solid white",
+                                borderRadius: "50%",
+                                boxShadow: "0 0 6px rgba(16,185,129,0.8)",
+                              }}
+                            />
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+                                {m.firstName}
+                                {m.age ? `, ${m.age} ans` : ""}
+                              </h3>
+                              <span style={{ fontSize: "11px", fontWeight: 700, color: "#059669", background: "#ECFDF5", padding: "2px 8px", borderRadius: "100px" }}>
+                                🟢 En ligne
+                              </span>
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, marginTop: "2px" }}>
+                              {m.pseudo ? `@${m.pseudo.replace(/^@/, "")}` : `@${m.firstName.toLowerCase()}`} · 📍 {m.city || "Lomé"}
+                            </div>
+                            {m.profession && (
+                              <div style={{ fontSize: "12px", color: "#334155", marginTop: "2px", fontWeight: 500 }}>
+                                💼 {m.profession}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Bio snippet */}
+                        {m.bio && (
+                          <div style={{ fontSize: "13px", color: "#475569", lineHeight: 1.5, background: "#F8FAFC", padding: "8px 10px", borderRadius: "10px", border: "1px solid #F1F5F9" }}>
+                            {m.bio.length > 120 ? `${m.bio.substring(0, 120)}...` : m.bio}
+                          </div>
+                        )}
+
+                        {/* Mini Galerie Photos de Bio (Jusqu'à 4 photos) */}
+                        {photosList.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
+                              Photos du profil ({photosList.length}/4) :
+                            </div>
+                            <div style={{ display: "flex", gap: "6px", overflowX: "auto" }}>
+                              {photosList.map((ph: any, pIdx: number) => (
+                                <div
+                                  key={pIdx}
+                                  onClick={() => setEnlargedImage(ph.url)}
+                                  style={{
+                                    width: "60px",
+                                    height: "60px",
+                                    borderRadius: "8px",
+                                    overflow: "hidden",
+                                    border: ph.isMain ? "2px solid #2563EB" : "1px solid #CBD5E1",
+                                    cursor: "pointer",
+                                    position: "relative",
+                                    flexShrink: 0,
+                                  }}
+                                  title="Cliquer pour agrandir"
+                                >
+                                  <Image src={ph.url} alt={`Photo ${pIdx + 1}`} fill unoptimized style={{ objectFit: "cover" }} />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Boutons d'action */}
+                        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedPartnerModal(m);
+                              setPartnerModalOpen(true);
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: "8px 10px",
+                              borderRadius: "10px",
+                              border: "1.5px solid #CBD5E1",
+                              background: "white",
+                              color: "#0B2559",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            👁️ Voir Profil
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => startChatWithMember(m)}
+                            style={{
+                              flex: 1,
+                              padding: "8px 10px",
+                              borderRadius: "10px",
+                              border: "none",
+                              background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                              color: "white",
+                              fontSize: "12px",
+                              fontWeight: 800,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "4px",
+                              boxShadow: "0 2px 6px rgba(5,150,105,0.25)",
+                            }}
+                          >
+                            💬 Discuter
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}
-
-          {/* Conversation List */}
-          <div style={{ flex: 1, overflowY: "auto" }}>
-            {conversations.map((conv, index) => {
-              const isSelected = activeConvId === conv.id;
-              const isQuotaExceeded = isFreePlan && index >= 3;
-              return (
-                <button
-                  key={conv.id}
-                  onClick={() => {
-                    if (isQuotaExceeded) {
-                      setQuotaModalOpen(true);
-                      return;
-                    }
-                    setActiveConvId(conv.id);
-                    setMobileView("chat");
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "14px 18px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    border: "none",
-                    borderBottom: "1px solid #F1F5F9",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    background: isSelected ? "#F8FAFC" : "white",
-                    borderLeft: isSelected ? "4px solid #E10600" : "4px solid transparent",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  <div style={{ position: "relative", flexShrink: 0 }}>
-                    {conv.photoUrl && (conv.photoUrl.startsWith("http") || conv.photoUrl.startsWith("/")) ? (
-                      <Image
-                        src={conv.photoUrl}
-                        alt={conv.firstName}
-                        width={48}
-                        height={48}
-                        style={{
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          border: "2px solid #CBD5E1",
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: "48px",
-                          height: "48px",
-                          borderRadius: "50%",
-                          background: "#EEF2FB",
-                          color: "#0B2559",
-                          fontWeight: 800,
-                          fontSize: "17px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border: "2px solid #CBD5E1",
-                        }}
-                      >
-                        {conv.firstName ? conv.firstName.charAt(0).toUpperCase() : "M"}
-                      </div>
-                    )}
-                    {conv.isOnline && (
-                      <span
-                        style={{
-                          position: "absolute",
-                          bottom: "1px",
-                          right: "1px",
-                          width: "12px",
-                          height: "12px",
-                          background: "#10B981",
-                          border: "2px solid white",
-                          borderRadius: "50%",
-                        }}
-                      />
-                    )}
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                      <span style={{ fontWeight: 800, fontSize: "15px", color: "#0F172A" }}>
-                        {conv.firstName}
-                      </span>
-                      <span style={{ fontSize: "11px", color: "#64748B", flexShrink: 0, fontWeight: 500 }}>
-                        {formatTime(conv.lastMessageAt)}
-                      </span>
-                    </div>
-
-                    <div style={{ fontSize: "13px", color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {conv.lastMessage}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
 
           <div style={{ padding: "14px 18px", borderTop: "1px solid #E2E8F0" }}>
             <Link
@@ -1495,7 +1778,7 @@ function MessagesContent() {
               className="btn btn-outline-blue"
               style={{ width: "100%", justifyContent: "center", fontSize: "13px", fontWeight: 700 }}
             >
-              🔍 Choisir un autre partenaire
+              🧭 Découvrir tous les membres
             </Link>
           </div>
         </aside>
@@ -3721,7 +4004,10 @@ function MessagesContent() {
             padding: "16px",
             animation: "fadeIn 0.2s ease-out",
           }}
-          onClick={() => setPartnerModalOpen(false)}
+          onClick={() => {
+            setPartnerModalOpen(false);
+            setSelectedPartnerModal(null);
+          }}
         >
           <div
             style={{
@@ -3739,13 +4025,18 @@ function MessagesContent() {
           >
             {/* Header / Cover */}
             {(() => {
-              const activePartner = onlineMembers.find(
-                (m) => m.userId === activeConv.participantId || m.id === activeConv.participantId
+              const activePartner = selectedPartnerModal || onlineMembers.find(
+                (m) => m.userId === activeConv?.participantId || m.id === activeConv?.participantId
               );
+              const partnerName = activePartner?.firstName || activeConv?.firstName || "Membre";
+              const partnerPseudo = activePartner?.pseudo || activeConv?.pseudo || `@${partnerName.toLowerCase()}`;
+              const partnerPhoto = activePartner?.photoUrl || activeConv?.photoUrl;
               const partnerCover = activePartner?.coverUrl;
-              const partnerPhotos = (activePartner?.photos && activePartner.photos.length > 0)
+              const rawPhotos = (activePartner?.photos && activePartner.photos.length > 0)
                 ? activePartner.photos
-                : (activeConv.photoUrl ? [{ url: activeConv.photoUrl, isMain: true }] : [{ url: "/victoire_profile.jpg", isMain: true }]);
+                : (partnerPhoto ? [{ url: partnerPhoto, isMain: true }] : [{ url: "/victoire_profile.jpg", isMain: true }]);
+              const partnerPhotos = rawPhotos.slice(0, 4);
+              const partnerUserId = activePartner?.userId || activePartner?.id || activeConv?.participantId || "";
 
               return (
                 <>
@@ -3772,7 +4063,10 @@ function MessagesContent() {
                     />
                     <button
                       type="button"
-                      onClick={() => setPartnerModalOpen(false)}
+                      onClick={() => {
+                        setPartnerModalOpen(false);
+                        setSelectedPartnerModal(null);
+                      }}
                       style={{
                         position: "relative",
                         zIndex: 2,
@@ -3809,10 +4103,10 @@ function MessagesContent() {
                         marginBottom: "12px",
                       }}
                     >
-                      {activeConv.photoUrl ? (
+                      {partnerPhoto ? (
                         <Image
-                          src={activeConv.photoUrl}
-                          alt={activeConv.firstName}
+                          src={partnerPhoto}
+                          alt={partnerName}
                           fill
                           unoptimized
                           style={{ objectFit: "cover" }}
@@ -3830,7 +4124,7 @@ function MessagesContent() {
                             fontWeight: 800,
                           }}
                         >
-                          {activeConv.firstName?.charAt(0) || "M"}
+                          {partnerName.charAt(0) || "M"}
                         </div>
                       )}
                     </div>
@@ -3838,11 +4132,11 @@ function MessagesContent() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
                       <div>
                         <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
-                          <span>{activeConv.firstName}</span>
+                          <span>{partnerName}</span>
                           <span style={{ fontSize: "14px", color: "#059669" }}>✓</span>
                         </h2>
                         <div style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>
-                          {activeConv.pseudo || `@${activeConv.firstName.toLowerCase()}`}
+                          {partnerPseudo}
                         </div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#ECFDF5", color: "#059669", padding: "4px 10px", borderRadius: "100px", fontSize: "12px", fontWeight: 700 }}>
@@ -3877,19 +4171,19 @@ function MessagesContent() {
                     {/* Bio */}
                     <div style={{ background: "#F8FAFC", borderRadius: "14px", padding: "14px", border: "1px solid #E2E8F0", marginBottom: "16px" }}>
                       <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
-                        À propos de {activeConv.firstName}
+                        À propos de {partnerName}
                       </div>
                       <p style={{ fontSize: "13.5px", color: "#334155", lineHeight: 1.6, margin: 0 }}>
-                        {activePartner?.bio || (activeConv.id.includes("victoire")
+                        {activePartner?.bio || (partnerUserId.includes("victoire")
                           ? "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖"
                           : "Membre actif sur Meet Me Club Lomé. Disponible pour échanger en direct, partager des moments conviviaux et organiser une belle rencontre dans les meilleurs établissements de Lomé.")}
                       </p>
                     </div>
 
-                    {/* Galerie Photos du membre */}
+                    {/* Galerie Photos du membre (Jusqu'à 4 photos) */}
                     <div style={{ marginBottom: "20px" }}>
                       <div style={{ fontSize: "12px", fontWeight: 800, color: "#0B2559", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>
-                        Photos du membre ({partnerPhotos.length}) · Cliquez pour agrandir
+                        Photos du profil ({partnerPhotos.length}/4) · Cliquez pour agrandir
                       </div>
                       <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
                         {partnerPhotos.map((ph: any, idx: number) => (
@@ -3901,7 +4195,7 @@ function MessagesContent() {
                               height: "80px",
                               borderRadius: "12px",
                               overflow: "hidden",
-                              border: "2px solid #E2E8F0",
+                              border: ph.isMain ? "2px solid #2563EB" : "2px solid #E2E8F0",
                               cursor: "pointer",
                               position: "relative",
                               flexShrink: 0,
@@ -3924,7 +4218,12 @@ function MessagesContent() {
                   type="button"
                   onClick={() => {
                     setPartnerModalOpen(false);
-                    inputRef.current?.focus();
+                    if (selectedPartnerModal) {
+                      startChatWithMember(selectedPartnerModal);
+                      setSelectedPartnerModal(null);
+                    } else {
+                      inputRef.current?.focus();
+                    }
                   }}
                   style={{
                     padding: "12px",
@@ -3942,12 +4241,16 @@ function MessagesContent() {
                   }}
                 >
                   <MessageSquare size={16} />
-                  <span>Discuter avec {activeConv.firstName}</span>
+                  <span>Discuter avec {selectedPartnerModal?.firstName || activeConv?.firstName || "ce membre"}</span>
                 </button>
 
                 <div style={{ display: "flex", gap: "8px" }}>
                   <Link
-                    href={`/rendez-vous/nouveau?avec=${activeConv.participantId}`}
+                    href={`/rendez-vous/nouveau?avec=${selectedPartnerModal?.userId || selectedPartnerModal?.id || activeConv?.participantId || ""}`}
+                    onClick={() => {
+                      setPartnerModalOpen(false);
+                      setSelectedPartnerModal(null);
+                    }}
                     style={{
                       flex: 1,
                       padding: "11px",
@@ -3972,6 +4275,7 @@ function MessagesContent() {
                     type="button"
                     onClick={() => {
                       setPartnerModalOpen(false);
+                      setSelectedPartnerModal(null);
                       startVideoCall();
                     }}
                     style={{

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
-import { getAllProfiles } from "@/lib/db-store";
+import { getAllProfiles, saveProfile } from "@/lib/db-store";
 
 export async function POST(req: NextRequest) {
   try {
@@ -155,6 +155,42 @@ export async function POST(req: NextRequest) {
         // Pour les comptes purement locaux, on accepte n'importe quel mot de passe (≥ 1 car.)
         // L'utilisateur pourra toujours se reconnecter avec le même mot de passe la prochaine fois
         // grâce à la session JWT de 30 jours.
+      }
+
+      // S'assurer que le profil existe dans Supabase et dans le store local
+      try {
+        const { getProfileFromSupabase, upsertProfileInSupabase } = await import("@/lib/supabase-server");
+        const effectiveEmail = user.email || (isEmail ? cleanLower : undefined);
+        let supaProf = await getProfileFromSupabase(user.id, effectiveEmail);
+        if (!supaProf) {
+          supaProf = await upsertProfileInSupabase(user.id, {
+            firstName: user.profile?.firstName || cleanInput.split("@")[0] || "Membre",
+            pseudo: user.profile?.pseudo || cleanInput.split("@")[0] || "membre",
+            email: effectiveEmail,
+            gender: user.profile?.gender || "OTHER",
+            city: user.profile?.city || "Lomé",
+            bio: user.profile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+            plan: user.profile?.plan || "FREE",
+          });
+        }
+        if (supaProf) {
+          saveProfile({
+            userId: user.id,
+            firstName: supaProf.firstName || "Membre",
+            lastName: supaProf.lastName || "",
+            pseudo: supaProf.pseudo || supaProf.firstName,
+            email: effectiveEmail,
+            gender: (supaProf.gender as any) || "OTHER",
+            city: supaProf.city || "Lomé",
+            bio: supaProf.bio || "Nouveau membre sur Meet Me Club.",
+            plan: supaProf.plan || "FREE",
+            photos: supaProf.photos || [],
+            isVerified: true,
+            isVisible: true,
+          });
+        }
+      } catch (profErr) {
+        console.warn("[login] Profile hydrate warning:", profErr);
       }
 
       // ── 4. Création de la session JWT ──────────────────────────────────

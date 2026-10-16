@@ -130,9 +130,15 @@ export function getAllProfiles(): StoredProfile[] {
     if (fs.existsSync(PROFILES_FILE)) {
       const raw = fs.readFileSync(PROFILES_FILE, "utf8");
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         memoryProfiles = parsed;
         return parsed;
+      } else if (memoryProfiles.length > 0) {
+        // Sauvegarder la mémoire sur le disque pour ne rien perdre
+        try {
+          fs.writeFileSync(PROFILES_FILE, JSON.stringify(memoryProfiles, null, 2), "utf8");
+        } catch {}
+        return memoryProfiles;
       }
     }
   } catch {
@@ -143,7 +149,19 @@ export function getAllProfiles(): StoredProfile[] {
 
 export function getProfileByUserId(userId: string): StoredProfile | null {
   const profiles = getAllProfiles();
-  return profiles.find((p) => p.userId === userId || p.id === userId) || null;
+  const clean = userId.trim();
+  const cleanLower = clean.toLowerCase();
+  const isEmail = cleanLower.includes("@");
+
+  return (
+    profiles.find(
+      (p) =>
+        p.userId === clean ||
+        p.id === clean ||
+        (isEmail && p.email && p.email.toLowerCase() === cleanLower) ||
+        (p.pseudo && p.pseudo.toLowerCase() === cleanLower)
+    ) || null
+  );
 }
 
 export function saveProfile(profileData: Partial<StoredProfile> & { userId: string }): StoredProfile {

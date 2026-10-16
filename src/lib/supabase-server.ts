@@ -124,16 +124,17 @@ export async function findUserInSupabase(identifier: string) {
 }
 
 // ── Récupération complète d'un profil depuis Supabase ─────────
-export async function getProfileFromSupabase(userId: string) {
+export async function getProfileFromSupabase(userId: string, email?: string) {
   const admin = getSupabaseAdmin();
   try {
-    // 1. Profil (recherche par userId direct, ou par pseudo, ou par id utilisateur)
+    // 1. Profil (recherche par userId direct)
     let { data: profile } = await admin
       .from("profiles")
       .select("*")
       .eq("userId", userId)
       .maybeSingle();
 
+    // 1.b Recherche par pseudo
     if (!profile) {
       const clean = userId.replace(/^@/, "").trim();
       const { data: byPseudo } = await admin
@@ -144,7 +145,27 @@ export async function getProfileFromSupabase(userId: string) {
       if (byPseudo) profile = byPseudo;
     }
 
+    // 1.c Recherche par email explicite ou par userId s'il ressemble à un email
+    if (!profile) {
+      const targetEmail = (email || (userId.includes("@") ? userId : "")).toLowerCase().trim();
+      if (targetEmail) {
+        const { data: userMatch } = await admin
+          .from("users")
+          .select("id, email")
+          .ilike("email", targetEmail)
+          .maybeSingle();
+        if (userMatch?.id) {
+          const { data: byUserMatch } = await admin
+            .from("profiles")
+            .select("*")
+            .eq("userId", userMatch.id)
+            .maybeSingle();
+          if (byUserMatch) profile = byUserMatch;
+        }
+      }
+    }
 
+    // 1.d Recherche par id utilisateur partiel / début d'email
     if (!profile) {
       const cleanLower = userId.toLowerCase().trim();
       const { data: userMatch } = await admin
@@ -173,7 +194,7 @@ export async function getProfileFromSupabase(userId: string) {
       .eq("id", effectiveUserId)
       .maybeSingle();
 
-    // 3. Photos
+    // 3. Photos (album jusqu'à 4 photos bio + couverture)
     const { data: photos } = await admin
       .from("profile_photos")
       .select("*")
@@ -190,9 +211,10 @@ export async function getProfileFromSupabase(userId: string) {
     const coverPhoto = allPhotos.find((p) => p.status === "COVER" || p.order === 0);
     const coverUrl = profile.coverUrl || coverPhoto?.url || undefined;
 
-    // Album (exclut la couverture dédiée)
+    // Album (exclut la couverture dédiée, jusqu'à 4 photos bio)
     const albumPhotos = allPhotos
       .filter((p) => p.status !== "COVER")
+      .slice(0, 4)
       .map((p, idx) => ({
         id: p.id,
         url: p.url,
@@ -205,14 +227,14 @@ export async function getProfileFromSupabase(userId: string) {
 
     return {
       ...profile,
-      userId,
+      userId: effectiveUserId,
       lastName: profile.lastName || undefined,
       placeOfBirth: profile.placeOfBirth || undefined,
       dateOfBirth: dob ? String(dob).split("T")[0] : undefined,
       age: profile.age || age,
       phone: user?.phone || undefined,
-      email: user?.email || undefined,
-      plan: profile.plan || undefined,
+      email: user?.email || email || undefined,
+      plan: profile.plan || "FREE",
       subscriptionStartedAt: profile.subscriptionStartedAt || undefined,
       subscriptionExpiresAt: profile.subscriptionExpiresAt || undefined,
       likesCount: profile.likesCount !== undefined ? profile.likesCount : undefined,
@@ -232,22 +254,42 @@ export async function ensureUserExistsInSupabase(
   email?: string,
   phone?: string | null,
   dateOfBirth?: string | null
-) {
+): Promise<string> {
   const admin = getSupabaseAdmin();
   const now = new Date().toISOString();
   try {
     const { data: existing } = await admin
       .from("users")
-      .select("id")
+      .select("id, email")
       .eq("id", userId)
       .maybeSingle();
 
     if (!existing) {
-      const cleanEmail =
+      const cleanEmail = (
         email ||
         (userId.includes("@")
           ? userId
-          : `${userId.replace(/[^a-zA-Z0-9_]/g, "")}@meetmeclub.net`);
+          : `${userId.replace(/[^a-zA-Z0-9_]/g, "")}@meetmeclub.net`)
+      ).toLowerCase().trim();
+
+      // Vérifier si un utilisateur existe déjà avec cet email
+      const { data: existingByEmail } = await admin
+        .from("users")
+        .select("id, email")
+        .ilike("email", cleanEmail)
+        .maybeSingle();
+
+      if (existingByEmail) {
+        const userUpdates: Record<string, any> = { updatedAt: now };
+        if (phone) userUpdates.phone = phone;
+        if (dateOfBirth) {
+          userUpdates.dateOfBirth = dateOfBirth;
+          userUpdates.isAdult = true;
+        }
+        await admin.from("users").update(userUpdates).eq("id", existingByEmail.id);
+        return existingByEmail.id;
+      }
+
       const { error: insErr } = await admin.from("users").insert({
         id: userId,
         email: cleanEmail,
@@ -262,17 +304,23 @@ export async function ensureUserExistsInSupabase(
       if (insErr) {
         console.warn("[ensureUserExistsInSupabase] Insert warning:", insErr);
       }
+      return userId;
     } else {
       const userUpdates: Record<string, any> = { updatedAt: now };
+      if (email && (!existing.email || existing.email.includes("@meetmeclub.net"))) {
+        userUpdates.email = email.toLowerCase().trim();
+      }
       if (phone) userUpdates.phone = phone;
       if (dateOfBirth) {
         userUpdates.dateOfBirth = dateOfBirth;
         userUpdates.isAdult = true;
       }
       await admin.from("users").update(userUpdates).eq("id", userId);
+      return userId;
     }
   } catch (err) {
     console.warn("[ensureUserExistsInSupabase] Exception:", err);
+    return userId;
   }
 }
 
@@ -283,6 +331,7 @@ export async function upsertProfileInSupabase(
     firstName?: string;
     lastName?: string | null;
     pseudo?: string | null;
+    email?: string | null;
     gender?: string;
     city?: string;
     neighborhood?: string | null;
@@ -311,13 +360,18 @@ export async function upsertProfileInSupabase(
   const now = new Date().toISOString();
   try {
     // 1. S'assurer que le compte existe dans la table users Supabase
-    await ensureUserExistsInSupabase(userId, undefined, data.phone, data.dateOfBirth);
+    const effectiveUserId = await ensureUserExistsInSupabase(
+      userId,
+      data.email || undefined,
+      data.phone,
+      data.dateOfBirth
+    );
 
-    // 2. Vérifier si un profil existe déjà
+    // 2. Vérifier si un profil existe déjà pour cet utilisateur
     let { data: existing } = await admin
       .from("profiles")
       .select("*")
-      .eq("userId", userId)
+      .eq("userId", effectiveUserId)
       .maybeSingle();
 
     if (!existing && data.pseudo) {
@@ -330,6 +384,22 @@ export async function upsertProfileInSupabase(
       if (byPseudo) existing = byPseudo;
     }
 
+    if (!existing && data.email) {
+      const cleanEmail = data.email.toLowerCase().trim();
+      const { data: userMatch } = await admin
+        .from("users")
+        .select("id")
+        .ilike("email", cleanEmail)
+        .maybeSingle();
+      if (userMatch?.id) {
+        const { data: byUserMatch } = await admin
+          .from("profiles")
+          .select("*")
+          .eq("userId", userMatch.id)
+          .maybeSingle();
+        if (byUserMatch) existing = byUserMatch;
+      }
+    }
 
     let profileId = existing?.id;
 
@@ -338,7 +408,7 @@ export async function upsertProfileInSupabase(
       profileId = `prof_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
       const insertPayload: Record<string, any> = {
         id: profileId,
-        userId,
+        userId: effectiveUserId,
         firstName: data.firstName || "Membre",
         lastName: data.lastName || null,
         pseudo: data.pseudo || null,
@@ -414,7 +484,6 @@ export async function upsertProfileInSupabase(
       if (updateError) {
         console.warn("[upsertProfileInSupabase] Update warning:", updateError);
       }
-      existing = updated || existing;
     }
 
     // 3. Gestion pérenne de la Couverture dans Supabase

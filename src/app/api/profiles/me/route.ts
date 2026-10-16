@@ -16,7 +16,7 @@ export async function GET() {
   // Synchronisation Supabase REST en priorité pour persistence garantie
   try {
     const { getProfileFromSupabase } = await import('@/lib/supabase-server');
-    const supa = await getProfileFromSupabase(session.userId);
+    const supa = await getProfileFromSupabase(session.userId, session.email || undefined);
     if (supa) {
       const mergedPhotos = (supa.photos && supa.photos.length > 0)
         ? supa.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
@@ -45,7 +45,7 @@ export async function GET() {
         bio: supa.bio !== undefined && supa.bio !== null ? supa.bio : (profile?.bio || 'Nouveau membre sur Meet Me Club.'),
         relationshipGoal: (supa.relationshipGoal as any) || profile?.relationshipGoal || 'SERIOUS',
         coverUrl: supa.coverUrl || profile?.coverUrl || undefined,
-        plan: profile?.plan || 'FREE',
+        plan: supa.plan || profile?.plan || 'FREE',
         partnersContacted: profile?.partnersContacted || [],
         photos: mergedPhotos,
         interests: profile?.interests || [],
@@ -211,7 +211,7 @@ export async function PATCH(request: NextRequest) {
     if (Array.isArray(body.photos)) {
       const processedPhotos: Array<{ id: string; url: string; isMain: boolean }> = [];
       const { uploadToSupabaseStorage } = await import('@/lib/supabase-storage');
-      for (let i = 0; i < Math.min(body.photos.length, 8); i++) {
+      for (let i = 0; i < Math.min(body.photos.length, 4); i++) {
         const item = body.photos[i];
         let url = item.url;
         if (url && url.startsWith('data:image/')) {
@@ -263,7 +263,7 @@ export async function PATCH(request: NextRequest) {
       updatedPhotos = [
         newPhotoObj,
         ...updatedPhotos.filter((p) => p.url !== finalAvatarUrl).map((p) => ({ ...p, isMain: false })),
-      ].slice(0, 8);
+      ].slice(0, 4);
     }
 
     // 4. Mise a jour immediate du store local
@@ -271,6 +271,7 @@ export async function PATCH(request: NextRequest) {
     if (coverUrl !== undefined) patchData.coverUrl = coverUrl;
     if (updatedPhotos.length > 0) patchData.photos = updatedPhotos;
     if (calculatedAge !== undefined) patchData.age = calculatedAge;
+    if (session.email && !patchData.email) patchData.email = session.email;
 
     const saved = saveProfile({ ...patchData, userId: session.userId });
 
@@ -281,6 +282,7 @@ export async function PATCH(request: NextRequest) {
         firstName: body.firstName || saved.firstName,
         lastName: body.lastName !== undefined ? body.lastName : saved.lastName,
         pseudo: body.pseudo !== undefined ? body.pseudo : saved.pseudo,
+        email: session.email || saved.email,
         gender: body.gender || saved.gender,
         dateOfBirth: body.dateOfBirth !== undefined ? body.dateOfBirth : saved.dateOfBirth,
         placeOfBirth: body.placeOfBirth !== undefined ? body.placeOfBirth : saved.placeOfBirth,
@@ -301,9 +303,9 @@ export async function PATCH(request: NextRequest) {
         coverUrl: coverUrl !== undefined ? coverUrl : saved.coverUrl,
       });
 
-      // Synchroniser toutes les photos vers Supabase Storage & Database
+      // Synchroniser toutes les photos vers Supabase Storage & Database (jusqu'à 4 photos bio)
       if (updatedPhotos && updatedPhotos.length > 0) {
-        await syncAlbumPhotosInSupabase(session.userId, updatedPhotos);
+        await syncAlbumPhotosInSupabase(session.userId, updatedPhotos.slice(0, 4));
       }
     } catch (supaErr) {
       console.warn('[PATCH supabase sync]', supaErr);
