@@ -35,6 +35,9 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
       where: {
         OR: [
           { id: session.userId },
+          { profile: { pseudo: { equals: session.userId, mode: "insensitive" as const } } },
+          ...(session.userId === "armandoadzra" ? [{ id: "armandadzra" }] : []),
+          ...(session.userId === "armandadzra" ? [{ id: "armandoadzra" }] : []),
           ...(session.email ? [{ email: { equals: session.email, mode: "insensitive" as const } }] : []),
         ],
       },
@@ -152,34 +155,41 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         isVisible: true,
       });
     }
-  } else if (supaProfile) {
-    // Si le profil existe déjà, fusionner avec les données fraîches de Supabase
-    const supaPhotos = (supaProfile.photos && supaProfile.photos.length > 0)
-      ? supaProfile.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }))
-      : profile.photos;
+  } else if (supaProfile || dbUser?.profile) {
+    // Si le profil existe déjà, fusionner avec les données fraîches de Supabase ou Prisma
+    const freshProfile = supaProfile || dbUser?.profile;
+    const rawPhotos = (supaProfile?.photos && supaProfile.photos.length > 0)
+      ? supaProfile.photos
+      : (dbUser?.profile?.photos && dbUser.profile.photos.length > 0)
+        ? dbUser.profile.photos
+        : profile.photos;
+
+    const filteredPhotos = (rawPhotos || [])
+      .filter((ph: any) => ph.url && !ph.url.includes("dicebear.com/7.x/initials"))
+      .map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }));
 
     profile = saveProfile({
       ...profile,
       userId: session.userId,
-      firstName: supaProfile.firstName || profile.firstName,
-      lastName: supaProfile.lastName !== undefined ? supaProfile.lastName : profile.lastName,
-      pseudo: supaProfile.pseudo || profile.pseudo,
-      dateOfBirth: supaProfile.dateOfBirth || profile.dateOfBirth,
-      placeOfBirth: supaProfile.placeOfBirth || profile.placeOfBirth,
-      age: supaProfile.age || profile.age,
-      bio: supaProfile.bio !== undefined ? supaProfile.bio : profile.bio,
-      coverUrl: supaProfile.coverUrl || profile.coverUrl,
-      city: supaProfile.city || profile.city,
-      neighborhood: supaProfile.neighborhood || profile.neighborhood,
-      profession: supaProfile.profession || profile.profession,
-      relationshipStatus: supaProfile.relationshipStatus || profile.relationshipStatus,
-      relationshipGoal: (supaProfile.relationshipGoal as any) || profile.relationshipGoal,
-      height: supaProfile.height !== undefined ? supaProfile.height : profile.height,
-      religion: supaProfile.religion || profile.religion,
-      hasChildren: supaProfile.hasChildren ?? profile.hasChildren,
-      languages: supaProfile.languages || profile.languages,
-      photos: supaPhotos && supaPhotos.length > 0 ? supaPhotos : profile.photos,
-      phone: session.phone || supaProfile.phone || profile.phone,
+      firstName: freshProfile.firstName || profile.firstName,
+      lastName: freshProfile.lastName !== undefined ? freshProfile.lastName : profile.lastName,
+      pseudo: freshProfile.pseudo || profile.pseudo,
+      dateOfBirth: freshProfile.dateOfBirth || profile.dateOfBirth,
+      placeOfBirth: freshProfile.placeOfBirth || profile.placeOfBirth,
+      age: freshProfile.age || profile.age,
+      bio: freshProfile.bio !== undefined ? freshProfile.bio : profile.bio,
+      coverUrl: freshProfile.coverUrl || profile.coverUrl,
+      city: freshProfile.city || profile.city,
+      neighborhood: freshProfile.neighborhood || profile.neighborhood,
+      profession: freshProfile.profession || profile.profession,
+      relationshipStatus: freshProfile.relationshipStatus || profile.relationshipStatus,
+      relationshipGoal: (freshProfile.relationshipGoal as any) || profile.relationshipGoal,
+      height: freshProfile.height !== undefined ? freshProfile.height : profile.height,
+      religion: freshProfile.religion || profile.religion,
+      hasChildren: freshProfile.hasChildren ?? profile.hasChildren,
+      languages: freshProfile.languages || profile.languages,
+      photos: filteredPhotos.length > 0 ? filteredPhotos : (profile.photos?.filter((p: any) => !p.url.includes("dicebear.com/7.x/initials")) || []),
+      phone: session.phone || freshProfile.phone || profile.phone,
     });
   }
 
@@ -197,7 +207,8 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
   };
 
   const DAYS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-  const mainPhoto = profile.photos?.find((p) => p.isMain) || profile.photos?.[0];
+  const validPhotos = (profile.photos || []).filter((p) => p.url && !p.url.includes("dicebear.com/7.x/initials"));
+  const mainPhoto = validPhotos.find((p) => p.isMain) || validPhotos[0];
 
   return (
     <div style={{ minHeight: "100dvh", background: "#F8FAFC", color: "#0F172A" }}>

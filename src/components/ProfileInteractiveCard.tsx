@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera, Edit3, Loader2, Check, Sparkles } from "lucide-react";
+import { Camera, Edit3, Loader2, Check, Sparkles, User } from "lucide-react";
 import type { StoredProfile } from "@/lib/db-store";
 
 interface ProfileInteractiveCardProps {
@@ -42,7 +42,8 @@ export default function ProfileInteractiveCard({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  const mainPhoto = profile.photos?.find((p) => p.isMain) || profile.photos?.[0];
+  const validPhotos = (profile.photos || []).filter((p) => p.url && !p.url.includes("dicebear.com/7.x/initials"));
+  const mainPhoto = validPhotos.find((p) => p.isMain) || validPhotos[0];
   const initialLetter = (profile.firstName || profile.pseudo || "M").charAt(0).toUpperCase();
 
   function showToast(msg: string) {
@@ -357,11 +358,16 @@ export default function ProfileInteractiveCard({
                   justifyContent: "center",
                   height: "100%",
                   width: "100%",
-                  background: "linear-gradient(135deg, #0B2559 0%, #1D4ED8 100%)",
+                  background: "linear-gradient(135deg, #0B2559 0%, #1E3A8A 100%)",
                   color: "white",
+                  padding: "4px",
+                  textAlign: "center",
                 }}
               >
-                <span style={{ fontSize: "32px", fontWeight: 800 }}>{initialLetter}</span>
+                <User size={38} style={{ color: "rgba(255,255,255,0.85)", marginBottom: "2px" }} />
+                <span style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: "#93C5FD" }}>
+                  Photo
+                </span>
               </div>
             )}
 

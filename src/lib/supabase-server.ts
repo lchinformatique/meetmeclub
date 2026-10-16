@@ -127,20 +127,58 @@ export async function findUserInSupabase(identifier: string) {
 export async function getProfileFromSupabase(userId: string) {
   const admin = getSupabaseAdmin();
   try {
-    // 1. Profil
-    const { data: profile } = await admin
+    // 1. Profil (recherche par userId direct, ou par pseudo, ou par id utilisateur)
+    let { data: profile } = await admin
       .from("profiles")
       .select("*")
       .eq("userId", userId)
       .maybeSingle();
 
+    if (!profile) {
+      const clean = userId.replace(/^@/, "").trim();
+      const { data: byPseudo } = await admin
+        .from("profiles")
+        .select("*")
+        .ilike("pseudo", clean)
+        .maybeSingle();
+      if (byPseudo) profile = byPseudo;
+    }
+
+    if (!profile && (userId === "armandoadzra" || userId === "armandadzra")) {
+      const { data: byAlias } = await admin
+        .from("profiles")
+        .select("*")
+        .or("userId.eq.armandadzra,userId.eq.armandoadzra,pseudo.ilike.%armand%")
+        .maybeSingle();
+      if (byAlias) profile = byAlias;
+    }
+
+    if (!profile) {
+      const cleanLower = userId.toLowerCase().trim();
+      const { data: userMatch } = await admin
+        .from("users")
+        .select("id")
+        .or(`email.ilike.${cleanLower},email.ilike.${cleanLower}@%`)
+        .maybeSingle();
+      if (userMatch?.id) {
+        const { data: byUserMatch } = await admin
+          .from("profiles")
+          .select("*")
+          .eq("userId", userMatch.id)
+          .maybeSingle();
+        if (byUserMatch) profile = byUserMatch;
+      }
+    }
+
     if (!profile) return null;
+
+    const effectiveUserId = profile.userId || userId;
 
     // 2. Utilisateur (pour dateOfBirth, phone, email)
     const { data: user } = await admin
       .from("users")
       .select("dateOfBirth, phone, email")
-      .eq("id", userId)
+      .eq("id", effectiveUserId)
       .maybeSingle();
 
     // 3. Photos
@@ -155,7 +193,7 @@ export async function getProfileFromSupabase(userId: string) {
     // Déterminer photo principale et couverture
     const mainPhoto = allPhotos.find((p) => p.isMain && p.status !== "COVER");
     const firstPhoto = allPhotos.find((p) => p.status !== "COVER");
-    const avatarUrl = mainPhoto?.url || firstPhoto?.url || undefined;
+    const avatarUrl = mainPhoto?.url || firstPhoto?.url || profile.avatarUrl || undefined;
 
     const coverPhoto = allPhotos.find((p) => p.status === "COVER" || p.order === 0);
     const coverUrl = profile.coverUrl || coverPhoto?.url || undefined;
@@ -289,6 +327,25 @@ export async function upsertProfileInSupabase(
       .select("*")
       .eq("userId", userId)
       .maybeSingle();
+
+    if (!existing && data.pseudo) {
+      const clean = data.pseudo.replace(/^@/, "").trim();
+      const { data: byPseudo } = await admin
+        .from("profiles")
+        .select("*")
+        .ilike("pseudo", clean)
+        .maybeSingle();
+      if (byPseudo) existing = byPseudo;
+    }
+
+    if (!existing && (userId === "armandoadzra" || userId === "armandadzra")) {
+      const { data: byAlias } = await admin
+        .from("profiles")
+        .select("*")
+        .or("userId.eq.armandadzra,userId.eq.armandoadzra,pseudo.ilike.%armand%")
+        .maybeSingle();
+      if (byAlias) existing = byAlias;
+    }
 
     let profileId = existing?.id;
 

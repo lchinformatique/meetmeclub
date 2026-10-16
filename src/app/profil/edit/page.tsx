@@ -438,7 +438,7 @@ export default function ProfilEditPage() {
         if (mainPic) setAvatarUrl(mainPic);
       }
 
-      setMessage({ type: "success", text: "Votre profil Supabase a été mis à jour avec succès !" });
+      setMessage({ type: "success", text: "Votre profil a été mis à jour avec succès !" });
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("mmclub_profile_updated", {
@@ -472,7 +472,7 @@ export default function ProfilEditPage() {
       <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8FAFC" }}>
         <div style={{ textAlign: "center" }}>
           <Loader2 size={36} color="#0B2559" style={{ animation: "spin 1s linear infinite", margin: "0 auto 12px" }} />
-          <p style={{ color: "#64748B", fontWeight: 600 }}>Chargement de vos informations Supabase...</p>
+          <p style={{ color: "#64748B", fontWeight: 600 }}>Chargement de vos informations...</p>
         </div>
       </div>
     );
@@ -579,7 +579,7 @@ export default function ProfilEditPage() {
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
             <div>
               <h1 style={{ fontSize: "24px", fontWeight: 800, color: "#0B2559", margin: "0 0 6px" }}>
-                Gérer mon profil Supabase
+                Modifier mon profil
               </h1>
               <p style={{ color: "#64748B", fontSize: "14px", margin: 0 }}>
                 Vos informations personnelles, photos d'album et coordonnées vérifiées.
@@ -599,7 +599,7 @@ export default function ProfilEditPage() {
                 fontWeight: 700,
               }}
             >
-              <ShieldCheck size={14} /> Synchronisation Supabase Directe
+              <ShieldCheck size={14} /> Profil vérifié & synchronisé
             </div>
           </div>
 
@@ -1457,7 +1457,7 @@ export default function ProfilEditPage() {
                   cursor: isUnderage ? "not-allowed" : "pointer",
                 }}
               >
-                {saving ? "Enregistrement sur Supabase..." : "Enregistrer les modifications sur Supabase ✓"}
+                {saving ? "Enregistrement en cours..." : "Enregistrer les modifications ✓"}
               </button>
               <Link href="/profil" className="btn btn-outline-blue" style={{ flex: "0 0 auto", padding: "14px 20px" }}>
                 Annuler

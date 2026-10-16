@@ -423,7 +423,7 @@ export default function VipPage() {
               {uploadingMedia && (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#FDE047", fontSize: "13px" }}>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Envoi du média vers Supabase Storage...</span>
+                  <span>Envoi du média en cours...</span>
                 </div>
               )}
 

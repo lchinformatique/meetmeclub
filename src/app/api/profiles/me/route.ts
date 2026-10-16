@@ -115,32 +115,19 @@ export async function GET() {
 
   if (!profile) return NextResponse.json({ error: 'Profil introuvable' }, { status: 404 });
 
-  // ── S'assurer que chaque utilisateur a DIRECTEMENT une photo de profil ──
-  if (!profile.photos || profile.photos.length === 0) {
-    // Vérifier Supabase d'abord
+  // ── S'assurer de récupérer la vraie photo de profil depuis Supabase ──
+  if (!profile.photos || profile.photos.length === 0 || profile.photos[0]?.url?.includes("dicebear.com/7.x/initials")) {
     try {
       const { getProfileFromSupabase } = await import('@/lib/supabase-server');
       const supa = await getProfileFromSupabase(session.userId);
       if (supa?.photos && supa.photos.length > 0) {
-        profile.photos = supa.photos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }));
-        saveProfile({ userId: session.userId, photos: profile.photos });
+        const validPhotos = supa.photos.filter((ph: any) => !ph.url?.includes("dicebear.com/7.x/initials"));
+        if (validPhotos.length > 0) {
+          profile.photos = validPhotos.map((ph: any) => ({ id: ph.id, url: ph.url, isMain: ph.isMain }));
+          saveProfile({ userId: session.userId, photos: profile.photos });
+        }
       }
     } catch {}
-
-    // Si toujours aucune photo, attribuer un avatar professionnel personnalisé
-    if (!profile.photos || profile.photos.length === 0) {
-      const nameForSeed = profile.firstName || profile.pseudo || 'Membre';
-      const defaultAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(nameForSeed)}&backgroundColor=0b2559,1d4ed8&textColor=ffffff`;
-      const directPhoto = { id: `avatar_${session.userId}`, url: defaultAvatar, isMain: true };
-      profile.photos = [directPhoto];
-      saveProfile({ userId: session.userId, photos: [directPhoto] });
-
-      // Synchroniser avec Supabase
-      try {
-        const { savePhotoInSupabase } = await import('@/lib/supabase-server');
-        await savePhotoInSupabase(session.userId, defaultAvatar, true);
-      } catch {}
-    }
   }
 
   const planInfo = PLAN_LIMITS[profile.plan] || PLAN_LIMITS.FREE;
@@ -353,24 +340,38 @@ export async function PATCH(request: NextRequest) {
       if (body.isVisible !== undefined) updateData.isVisible = body.isVisible;
 
       if (Object.keys(updateData).length > 0) {
-        await prisma.profile.upsert({
-          where: { userId: session.userId },
-          update: updateData,
-          create: {
-            userId: session.userId,
-            firstName: body.firstName || saved.firstName || 'Membre',
-            gender: body.gender || saved.gender || 'OTHER',
-            city: body.city || saved.city || 'Lomé',
-            bio: body.bio || saved.bio || 'Membre actif.',
-            relationshipGoal: body.relationshipGoal || saved.relationshipGoal || 'SERIOUS',
-            pseudo: body.pseudo || saved.pseudo || null,
-            neighborhood: body.neighborhood || saved.neighborhood || null,
-            profession: body.profession || saved.profession || null,
-            isVisible: true,
-            profileCompleteness: 75,
-            ...updateData,
+        const existingProf = await prisma.profile.findFirst({
+          where: {
+            OR: [
+              { userId: session.userId },
+              ...(body.pseudo ? [{ pseudo: { equals: body.pseudo, mode: "insensitive" as const } }] : []),
+            ],
           },
         });
+
+        if (existingProf) {
+          await prisma.profile.update({
+            where: { id: existingProf.id },
+            data: { ...updateData, userId: session.userId },
+          });
+        } else {
+          await prisma.profile.create({
+            data: {
+              userId: session.userId,
+              firstName: body.firstName || saved.firstName || "Membre",
+              gender: body.gender || saved.gender || "OTHER",
+              city: body.city || saved.city || "Lomé",
+              bio: body.bio || saved.bio || "Membre actif.",
+              relationshipGoal: body.relationshipGoal || saved.relationshipGoal || "SERIOUS",
+              pseudo: body.pseudo || saved.pseudo || null,
+              neighborhood: body.neighborhood || saved.neighborhood || null,
+              profession: body.profession || saved.profession || null,
+              isVisible: true,
+              profileCompleteness: 75,
+              ...updateData,
+            },
+          });
+        }
       }
     } catch (dbErr) {
       console.warn('[PATCH prisma sync]', dbErr);
