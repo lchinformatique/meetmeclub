@@ -7,6 +7,25 @@ import styles from "../messages.module.css";
 import { formatBubbleTime, formatSeconds, type ChatMessage } from "../_lib/chat-utils";
 import { Watermark } from "./Modals";
 
+// Liens vers le site (annonces du Marché, vitrines…) rendus cliquables ; les autres restent du texte
+const SITE_LINK = /(https?:\/\/(?:www\.)?meetmeclub\.net(\/[^\s]*)?)/g;
+
+function linkify(text: string) {
+  const parts = text.split(SITE_LINK);
+  return parts.map((part, i) => {
+    if (i % 3 === 1) {
+      const path = parts[i + 1] || "/";
+      return (
+        <a key={i} href={path} style={{ color: "inherit", fontWeight: 800, textDecoration: "underline", wordBreak: "break-all" }}>
+          {path.startsWith("/marche/annonce/") ? "Voir l'annonce dans le Marché" : part}
+        </a>
+      );
+    }
+    if (i % 3 === 2) return null;
+    return part;
+  });
+}
+
 function Ticks({ status, partnerOnline }: { status: ChatMessage["status"]; partnerOnline: boolean }) {
   if (status === "PENDING") return <Clock size={13} className={styles.tickPending} />;
   if (status === "FAILED") return <AlertCircle size={14} className={styles.tickFailed} />;
@@ -164,7 +183,7 @@ export default function MessageBubble({
             </span>
           </a>
         )}
-        {showText && <span className={styles.bubbleText}>{msg.body}</span>}
+        {showText && <span className={styles.bubbleText}>{linkify(msg.body)}</span>}
         <span className={styles.meta}>
           {time}
           {mine && <Ticks status={msg.status} partnerOnline={partnerOnline} />}

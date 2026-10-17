@@ -201,14 +201,24 @@ export async function listingsOfPro(proId: string, includeAll = false): Promise<
 
 /** Date de la dernière annonce publiée (pastille « nouveau » du Marché) */
 export async function latestListingAt(): Promise<string | null> {
+  return (await latestListing())?.at || null;
+}
+
+/** Dernière annonce mise en ligne (validation = mise à jour la plus récente) : fenêtre « Nouvelle annonce » */
+export async function latestListing(): Promise<{ id: string; title: string; photo: string | null; price: string; at: string } | null> {
   const { data } = await getSupabaseAdmin()
     .from("pro_listings")
-    .select("createdAt")
+    .select('id, title, photos, price, "priceLabel", "updatedAt"')
     .eq("status", "ACTIVE")
-    .order("createdAt", { ascending: false })
+    .order("updatedAt", { ascending: false })
     .limit(1)
     .maybeSingle();
-  return data?.createdAt || null;
+  if (!data) return null;
+  return { id: data.id, title: data.title, photo: (data.photos as string[] | null)?.[0] || null, price: formatPriceShort(data), at: data.updatedAt };
+}
+
+function formatPriceShort(l: { price: number | null; priceLabel: string | null }) {
+  return l.price !== null && l.price !== undefined ? `${Number(l.price).toLocaleString("fr-FR")} FCFA` : l.priceLabel || "Prix sur demande";
 }
 
 /** Enregistre une image (data URL JPEG) dans l'espace public des médias */

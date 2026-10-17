@@ -75,6 +75,7 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SecurityProtectionProvider from "@/components/SecurityProtectionProvider";
 import RealtimeProvider from "@/components/realtime/RealtimeProvider";
 import VerificationGate from "@/components/VerificationGate";
+import MarketNewsModal from "@/components/MarketNewsModal";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -100,6 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SecurityProtectionProvider>
           <RealtimeProvider>
             <VerificationGate />
+            <MarketNewsModal />
             {children}
             <CustomerSupportWidget />
             <MobileBottomNav />

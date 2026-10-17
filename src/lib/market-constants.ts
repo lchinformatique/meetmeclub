@@ -2,7 +2,7 @@
 // Constantes du Marché utilisables partout (navigateur et serveur).
 
 export type ListingKind = "SALE" | "SERVICE";
-export type ListingStatus = "ACTIVE" | "SOLD" | "DELETED" | "REMOVED";
+export type ListingStatus = "PENDING" | "ACTIVE" | "SOLD" | "DELETED" | "REMOVED";
 
 /** Catégories du Marché (ordre d'affichage) */
 export const CATEGORIES: Record<string, { label: string; icon: string }> = {

@@ -83,7 +83,8 @@ export async function POST(req: NextRequest) {
         city: clean(body.city, 60) || pro.city,
         country: pro.country,
         photos: photoUrls,
-        status: "ACTIVE",
+        // Visible seulement après validation par l'équipe (Admin > Marché > À valider)
+        status: "PENDING",
         createdAt: now,
         updatedAt: now,
       })
@@ -91,7 +92,22 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
     if (error) throw error;
 
-    return NextResponse.json({ success: true, listing: data });
+    try {
+      const { sendAdminAlert, siteUrl } = await import("@/lib/admin-notify");
+      await sendAdminAlert({
+        title: "📢 Annonce à valider",
+        body: `« ${title} » (${pro.name}) attend votre validation avant d'apparaître dans le Marché.`,
+        url: "/admin/marche",
+        tag: "market-review",
+        emailSubject: `Annonce à valider : ${title}`,
+        emailHtml: `<p><strong>${pro.name}</strong> a publié l'annonce <strong>${title}</strong>.</p><p>Elle sera visible dans le Marché et diffusée à tous les membres après votre validation.</p>
+          <p><a href="${siteUrl()}/admin/marche" style="display:inline-block;background:#0B2559;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Vérifier l'annonce</a></p>`,
+      });
+    } catch (e) {
+      console.warn("[listing alert]", e);
+    }
+
+    return NextResponse.json({ success: true, listing: data, pending: true });
   } catch (err: any) {
     if (err?.code === "MARKET_NOT_READY") return NextResponse.json({ error: "Le Marché n'est pas encore activé." }, { status: 503 });
     if (err?.status === 400) return NextResponse.json({ error: err.message }, { status: 400 });

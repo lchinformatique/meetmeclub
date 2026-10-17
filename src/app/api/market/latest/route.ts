@@ -2,13 +2,14 @@
 // GET — date de la dernière annonce publiée (pastille « nouveau » sur l'onglet Marché)
 
 import { NextResponse } from "next/server";
-import { latestListingAt } from "@/lib/market";
+import { latestListing } from "@/lib/market";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    return NextResponse.json({ latest: await latestListingAt() });
+    const listing = await latestListing();
+    return NextResponse.json({ latest: listing?.at || null, listing });
   } catch {
     return NextResponse.json({ latest: null });
   }

@@ -31,7 +31,7 @@ export interface MyListing {
   price: number | null;
   priceLabel: string | null;
   photos: string[];
-  status: "ACTIVE" | "SOLD" | "REMOVED" | "DELETED";
+  status: "PENDING" | "ACTIVE" | "SOLD" | "REMOVED" | "DELETED";
   views: number;
   removedReason: string | null;
   createdAt: string;

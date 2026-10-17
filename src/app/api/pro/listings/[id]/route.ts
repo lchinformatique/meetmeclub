@@ -17,7 +17,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   const { id } = await params;
-  if (!(await ownListing(id, session.userId))) return NextResponse.json({ error: "Annonce introuvable" }, { status: 404 });
+  const current = await ownListing(id, session.userId);
+  if (!current) return NextResponse.json({ error: "Annonce introuvable" }, { status: 404 });
+  // Une annonce en attente ne peut être mise en ligne que par l'équipe
+  if (current.status !== "ACTIVE" && current.status !== "SOLD") {
+    return NextResponse.json({ error: "Annonce en attente de validation par l'équipe." }, { status: 400 });
+  }
 
   const { status } = (await req.json().catch(() => ({}))) as { status?: string };
   if (status !== "SOLD" && status !== "ACTIVE") return NextResponse.json({ error: "Requête invalide" }, { status: 400 });

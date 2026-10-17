@@ -55,7 +55,7 @@ export default function ListingForm({
       });
       const d = await res.json();
       if (!res.ok) return setMsg({ ok: false, text: d.error || "Publication impossible." });
-      setMsg({ ok: true, text: "Annonce publiée dans le Marché ✓" });
+      setMsg({ ok: true, text: "Annonce envoyée ✓ Elle apparaîtra dans le Marché dès sa validation par l'équipe Meet Me Club." });
       setForm((f) => ({ ...f, title: "", price: "", priceLabel: "", description: "" }));
       setPhotos([]);
       onPublished();
@@ -158,7 +158,7 @@ export default function ListingForm({
 
       {msg && <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: msg.ok ? "#166534" : "#B91C1C" }}>{msg.text}</p>}
       <button type="button" onClick={publish} disabled={sending || saleBlocked} style={{ ...primaryBtn, opacity: sending || saleBlocked ? 0.6 : 1 }}>
-        <Send size={18} /> {sending ? "Publication…" : "Publier dans le Marché"}
+        <Send size={18} /> {sending ? "Envoi…" : "Envoyer pour publication"}
       </button>
       <p style={{ margin: 0, fontSize: 12, color: "#505D70", lineHeight: 1.5 }}>
         Interdit : produits illégaux, contenus pour adultes, armes, médicaments, arnaques. Les annonces signalées peuvent être retirées.

@@ -24,6 +24,7 @@ interface Data {
 }
 
 const STATUS: Record<MyListing["status"], { label: string; bg: string; color: string }> = {
+  PENDING: { label: "En attente de validation", bg: "#FEF3C7", color: "#92400E" },
   ACTIVE: { label: "En ligne", bg: "#DCFCE7", color: "#166534" },
   SOLD: { label: "Vendu", bg: "#E2E8F0", color: "#334155" },
   REMOVED: { label: "Retirée par l'équipe", bg: "#FEE2E2", color: "#991B1B" },
@@ -202,6 +203,14 @@ export default function MonEspacePro() {
                     <Eye size={13} /> {l.views} · {timeAgo(l.createdAt)}
                   </span>
                   {l.status === "REMOVED" && l.removedReason && <span style={{ display: "block", fontSize: 12, color: "#991B1B" }}>Motif : {l.removedReason}</span>}
+                  {l.status === "PENDING" && (
+                    <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap", fontSize: 13, fontWeight: 700 }}>
+                      <span style={{ color: "#92400E" }}>L&apos;équipe vérifie votre annonce avant sa mise en ligne.</span>
+                      <button type="button" onClick={() => act(l.id, "DELETE")} style={{ background: "none", border: "none", padding: 0, color: "#B42318", fontWeight: 700, cursor: "pointer" }}>
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
                   {(l.status === "ACTIVE" || l.status === "SOLD") && (
                     <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap", fontSize: 13, fontWeight: 700 }}>
                       <Link href={`/marche/annonce/${l.id}`} style={{ color: NAVY }}>Voir</Link>

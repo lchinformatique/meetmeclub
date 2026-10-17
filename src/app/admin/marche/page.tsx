@@ -8,7 +8,7 @@ import Link from "next/link";
 import { ChevronLeft, Flag, Store } from "lucide-react";
 import { CATEGORIES, formatPrice, timeAgo } from "@/lib/market-constants";
 
-type View = "reported" | "all" | "removed";
+type View = "pending" | "reported" | "all" | "removed";
 
 interface AdminListing {
   id: string;
@@ -29,7 +29,9 @@ interface AdminListing {
 const REMOVE_REASONS = ["Arnaque ou annonce frauduleuse", "Contenu interdit", "Annonce trompeuse", "Doublon / spam"];
 
 export default function AdminMarche() {
-  const [view, setView] = useState<View>("reported");
+  const [view, setView] = useState<View>("pending");
+  const [pending, setPending] = useState(0);
+  const [notice, setNotice] = useState("");
   const [items, setItems] = useState<AdminListing[] | null>(null);
   const [reported, setReported] = useState(0);
   const [ready, setReady] = useState(true);
@@ -46,6 +48,7 @@ export default function AdminMarche() {
       setReady(d.ready !== false);
       setItems(d.listings || []);
       setReported(d.reported || 0);
+      setPending(d.pending || 0);
     } catch (e: any) {
       setError(e.message);
       setItems([]);
@@ -58,7 +61,9 @@ export default function AdminMarche() {
 
   async function post(body: Record<string, string>) {
     const r = await fetch("/api/market/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!r.ok) alert("Action impossible");
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) alert(d.error || "Action impossible");
+    else if (d.broadcasting) setNotice("✅ Annonce en ligne : chaque membre la reçoit dans sa messagerie et sur son téléphone.");
     setRemoving(null);
     load(view);
   }
@@ -86,7 +91,7 @@ export default function AdminMarche() {
             <Store size={24} /> Modération du Marché
           </h1>
           <p style={{ margin: "4px 0 0", fontSize: 14, color: "#505D70" }}>
-            Les annonces sont publiées tout de suite. Retirez celles qui sont signalées ou non conformes.{" "}
+            Chaque annonce attend votre validation avant d'apparaître dans le Marché ; à la validation, tous les membres la reçoivent dans leur messagerie.{" "}
             <Link href="/marche" style={{ color: "#E10600", fontWeight: 700 }}>Voir le Marché</Link>
           </p>
         </div>
@@ -98,6 +103,9 @@ export default function AdminMarche() {
         )}
 
         <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
+          <button type="button" onClick={() => setView("pending")} style={pill(view === "pending")}>
+            À valider {pending ? <span style={{ marginLeft: 4, background: "#E10600", color: "#fff", borderRadius: 999, padding: "1px 7px", fontSize: 12 }}>{pending}</span> : null}
+          </button>
           <button type="button" onClick={() => setView("reported")} style={pill(view === "reported")}>
             Signalées {reported ? <span style={{ marginLeft: 4, background: "#E10600", color: "#fff", borderRadius: 999, padding: "1px 7px", fontSize: 12 }}>{reported}</span> : null}
           </button>
@@ -105,11 +113,12 @@ export default function AdminMarche() {
           <button type="button" onClick={() => setView("removed")} style={pill(view === "removed")}>Retirées</button>
         </div>
 
+        {notice && <div style={{ background: "#ECFDF5", color: "#065F46", padding: 14, borderRadius: 14, fontWeight: 700 }}>{notice}</div>}
         {error && <div style={{ background: "#FEF2F2", color: "#B42318", padding: 14, borderRadius: 14, fontWeight: 700 }}>{error}</div>}
         {items === null && <p style={{ color: "#505D70" }}>Chargement…</p>}
         {items?.length === 0 && !error && (
           <div style={{ background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", color: "#505D70", fontWeight: 600 }}>
-            {view === "reported" ? "Aucune annonce signalée. 🎉" : "Aucune annonce."}
+            {view === "pending" ? "Aucune annonce à valider. 🎉" : view === "reported" ? "Aucune annonce signalée. 🎉" : "Aucune annonce."}
           </div>
         )}
 
@@ -149,11 +158,23 @@ export default function AdminMarche() {
               </div>
             ) : (
               <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                {l.status === "REMOVED" ? (
+                {l.status === "PENDING" ? (
+                  <>
+                    <button type="button" onClick={() => post({ id: l.id, action: "APPROVE" })} style={{ flex: 2, padding: 10, borderRadius: 10, border: "none", background: "#12B76A", color: "#fff", fontWeight: 800, cursor: "pointer" }}>
+                      Valider et diffuser à tous
+                    </button>
+                    <button type="button" onClick={() => setRemoving(l.id)} style={{ flex: 1, padding: 10, borderRadius: 10, border: "1.5px solid #FCA5A5", background: "#FEF2F2", color: "#B42318", fontWeight: 800, cursor: "pointer" }}>
+                      Refuser
+                    </button>
+                  </>
+                ) : l.status === "REMOVED" ? (
                   <button type="button" onClick={() => post({ id: l.id, action: "RESTORE" })} style={{ flex: 1, padding: 10, borderRadius: 10, border: "none", background: "#12B76A", color: "#fff", fontWeight: 800, cursor: "pointer" }}>Remettre en ligne</button>
                 ) : (
                   <>
                     <button type="button" onClick={() => setRemoving(l.id)} style={{ flex: 1, padding: 10, borderRadius: 10, border: "1.5px solid #FCA5A5", background: "#FEF2F2", color: "#B42318", fontWeight: 800, cursor: "pointer" }}>Retirer</button>
+                    {l.status === "ACTIVE" && (
+                      <button type="button" onClick={() => confirm("Envoyer cette annonce à tous les membres (messagerie + notification) ?") && post({ id: l.id, action: "BROADCAST" })} style={{ flex: 1, padding: 10, borderRadius: 10, border: "none", background: "#2F4A8A", color: "#fff", fontWeight: 800, cursor: "pointer" }}>Diffuser à tous</button>
+                    )}
                     {l.reportsCount > 0 && (
                       <button type="button" onClick={() => post({ id: l.id, action: "RESTORE" })} style={{ flex: 1, padding: 10, borderRadius: 10, border: "none", background: "#F1F5F9", color: "#0B2559", fontWeight: 800, cursor: "pointer" }}>Ignorer les signalements</button>
                     )}
