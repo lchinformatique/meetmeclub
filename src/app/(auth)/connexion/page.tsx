@@ -34,7 +34,11 @@ function ConnexionForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    params.get("reason") === "inactivite"
+      ? "🔒 Session verrouillée après 30 minutes d'inactivité. Reconnectez-vous avec Google ou avec votre pseudo et votre mot de passe."
+      : ""
+  );
   const [focusField, setFocusField] = useState("");
   const [deviceLockedEmail, setDeviceLockedEmail] = useState<string | null>(null);
 

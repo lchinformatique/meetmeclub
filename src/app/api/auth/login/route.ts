@@ -140,46 +140,28 @@ export async function POST(req: NextRequest) {
 
     // ── 3. Vérification du mot de passe ────────────────────────────────────
     if (user) {
+      // Les deux comptes de test (vip_master / vip_tester) restent accessibles avec 123456
+      const testAccountOk = Boolean(permanentVip) && password === "123456";
+
       if (user.passwordHash && !user._isLocalOnly) {
         const isMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!isMatch) {
-          // Compte de test meetmeclub.tg / meetmeclub.net ou mot de passe test "123456" → mise à jour
-          const isTestAccount =
-            (user.email &&
-              (user.email.includes("meetmeclub.tg") ||
-                user.email.includes("meetmeclub.net"))) ||
-            password === "123456";
-
-          if (isTestAccount) {
-            try {
-              const newHash = await bcrypt.hash(password, 10);
-              await prisma.user.update({
-                where: { id: user.id },
-                data: { passwordHash: newHash },
-              });
-            } catch {}
-          } else {
-            return NextResponse.json(
-              { error: "Mot de passe incorrect. Veuillez réessayer." },
-              { status: 401 }
-            );
-          }
+        if (!isMatch && !testAccountOk) {
+          return NextResponse.json(
+            { error: "Mot de passe incorrect. Veuillez réessayer." },
+            { status: 401 }
+          );
         }
-      } else if (!user.passwordHash || user._isLocalOnly) {
-        // Compte sans hash (store local ou compte Google/OTP) :
-        // on enregistre le mot de passe saisi pour les prochaines connexions
-        if (!user._isLocalOnly) {
-          try {
-            const newHash = await bcrypt.hash(password, 10);
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { passwordHash: newHash },
-            });
-          } catch {}
-        }
-        // Pour les comptes purement locaux, on accepte n'importe quel mot de passe (≥ 1 car.)
-        // L'utilisateur pourra toujours se reconnecter avec le même mot de passe la prochaine fois
-        // grâce à la session JWT de 30 jours.
+      } else if (!testAccountOk) {
+        // Compte sans mot de passe (créé avec Google) : JAMAIS de mot de passe « au premier essai »,
+        // sinon n'importe qui connaissant le pseudo prendrait le compte.
+        return NextResponse.json(
+          {
+            error:
+              "Ce compte a été créé avec Google. Touchez « Continuer avec Google », ou créez un mot de passe dans Profil › Sécurité pour vous connecter avec votre pseudo.",
+            googleOnly: true,
+          },
+          { status: 401 }
+        );
       }
 
       // S'assurer que le profil existe dans Supabase et dans le store local

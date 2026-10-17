@@ -2,7 +2,7 @@
 // Route protection middleware — runs on Edge, uses JWT session cookie
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifySessionToken } from "@/lib/session";
+import { isIdle, verifySessionToken } from "@/lib/session";
 
 const MEMBER_ROUTES = [
   "/profil",
@@ -32,7 +32,10 @@ export async function middleware(request: NextRequest) {
 
   // Get session from cookie
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const session = token ? await verifySessionToken(token) : null;
+  const rawSession = token ? await verifySessionToken(token) : null;
+  // 30 minutes sans activité → session verrouillée, reconnexion obligatoire
+  const idle = isIdle(rawSession);
+  const session = idle ? null : rawSession;
 
   const isMemberRoute = MEMBER_ROUTES.some((r) => pathname.startsWith(r));
   const isAuthRoute = AUTH_ONLY_ROUTES.some((r) => pathname.startsWith(r));
@@ -42,7 +45,8 @@ export async function middleware(request: NextRequest) {
   if (isMemberRoute && !session) {
     const url = request.nextUrl.clone();
     url.pathname = "/connexion";
-    url.searchParams.set("callbackUrl", pathname);
+    url.searchParams.set("callbackUrl", pathname + request.nextUrl.search);
+    if (idle) url.searchParams.set("reason", "inactivite");
     return NextResponse.redirect(url);
   }
 

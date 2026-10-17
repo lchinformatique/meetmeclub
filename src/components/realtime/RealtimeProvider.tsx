@@ -12,6 +12,7 @@ import { joinPresence, openInbox, removeChannel, sendToUser, type PresenceInfo }
 import { useCallManager, type CallKind, type CallPeer } from "./CallManager";
 import { playMessageChime, unlockAudioOnFirstTouch } from "./tones";
 import { SASPAY_LINKS } from "@/lib/subscription-constants";
+import InactivityLock from "./InactivityLock";
 
 export interface RealtimeMe {
   userId: string;
@@ -491,6 +492,9 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       )}
 
       {call.ui}
+
+      {/* Verrouillage après 30 min d'inactivité (jamais pendant un appel) */}
+      <InactivityLock active={Boolean(me)} paused={call.inCall} />
     </RealtimeContext.Provider>
   );
 }

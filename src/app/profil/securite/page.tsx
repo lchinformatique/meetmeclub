@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import PasswordCard from "@/components/PasswordCard";
 import {
   ShieldCheck,
   CheckCircle2,
@@ -289,6 +290,9 @@ export default function ProfilSecuritePage() {
 
       <main className="container" style={{ maxWidth: "720px", paddingBlock: "36px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+          {/* ── Mot de passe (connexion avec pseudo, en plus de Google) ── */}
+          <PasswordCard />
 
           {/* ── Status Banner Chat ── */}
           <div
