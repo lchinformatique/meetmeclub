@@ -61,6 +61,8 @@ export interface VerificationState {
   /** false tant que la migration v5 (pièce + vidéo) n'a pas été exécutée */
   docsConfigured: boolean;
   profileId: string | null;
+  /** Date d'inscription (début de la période d'essai sans vérification) */
+  createdAt: string | null;
   hasProfilePhoto: boolean;
   selfie: { status: VerificationStatus; gesture: string | null; note: string | null; submittedAt: string | null };
   document: { status: VerificationStatus; type: string | null; note: string | null; reviewedBy: string | null };
@@ -83,6 +85,7 @@ export async function getVerificationState(userId: string): Promise<Verification
     configured: true,
     docsConfigured: true,
     profileId: null,
+    createdAt: null,
     hasProfilePhoto: false,
     selfie: { status: "NONE", gesture: null, note: null, submittedAt: null },
     document: { status: "NONE", type: null, note: null, reviewedBy: null },
@@ -91,7 +94,7 @@ export async function getVerificationState(userId: string): Promise<Verification
 
   const { data, error } = await admin
     .from("profiles")
-    .select('id, "verificationStatus", "verificationGesture", "verificationNote", "verificationSubmittedAt"')
+    .select('id, "createdAt", "verificationStatus", "verificationGesture", "verificationNote", "verificationSubmittedAt"')
     .eq("userId", userId)
     .maybeSingle();
   if (error) {
@@ -101,6 +104,7 @@ export async function getVerificationState(userId: string): Promise<Verification
   if (!data) return state;
 
   state.profileId = data.id;
+  state.createdAt = data.createdAt || null;
   state.selfie = {
     status: asStatus(data.verificationStatus),
     gesture: data.verificationGesture || null,
@@ -138,6 +142,24 @@ export function isStateVerified(s: VerificationState): boolean {
   return !s.configured || s.selfie.status === "APPROVED" || s.document.status === "APPROVED" || s.video.status === "APPROVED";
 }
 
+// ── Période d'essai : 3 jours pour faire sa vérification ───────────────
+/** Un nouveau membre peut être vu et échanger pendant 3 jours avant de devoir être vérifié */
+export const GRACE_DAYS = 3;
+const GRACE_MS = GRACE_DAYS * 24 * 3600 * 1000;
+
+export function graceEndsAt(s: VerificationState): Date | null {
+  if (!s.createdAt) return null;
+  const t = new Date(s.createdAt).getTime();
+  return isNaN(t) ? null : new Date(t + GRACE_MS);
+}
+
+/** Non vérifié, mais encore dans ses 3 premiers jours */
+export function isInGrace(s: VerificationState): boolean {
+  if (isStateVerified(s)) return false;
+  const end = graceEndsAt(s);
+  return Boolean(end && end.getTime() > Date.now());
+}
+
 // ── Contrôle d'accès (appelé par les routes d'échanges) ────────────────
 const cache = new Map<string, { verified: boolean; video: boolean; at: number }>();
 
@@ -153,7 +175,8 @@ async function access(userId: string): Promise<{ verified: boolean; video: boole
     } else {
       const s = await getVerificationState(userId);
       value = {
-        verified: isStateVerified(s),
+        // Vérifié, ou nouveau membre dans ses 3 jours d'essai
+        verified: isStateVerified(s) || isInGrace(s),
         // Migration v5 pas encore exécutée : les appels ne sont pas encore soumis à la vidéo
         video: !s.configured || !s.docsConfigured || s.video.status === "APPROVED",
       };
@@ -213,11 +236,24 @@ export async function getApprovedUserIds(): Promise<Set<string> | null> {
     return new Set([VICTOIRE_USER_ID]);
   }
   const ids = new Set<string>((data || []).map((p: any) => p.userId));
+  // Nouveaux membres dans leurs 3 jours d'essai : visibles (sans badge « vérifié »)
+  const since = new Date(Date.now() - GRACE_MS).toISOString();
+  const { data: fresh } = await admin.from("profiles").select("userId").gte("createdAt", since);
+  (fresh || []).forEach((p: any) => ids.add(p.userId));
   ids.add(VICTOIRE_USER_ID);
   try {
     (await getAdminUserIds()).forEach((id) => ids.add(id));
   } catch {}
   return ids;
+}
+
+/** Membres réellement vérifiés (badge ✓) : selfie, pièce ou vidéo validés */
+export async function getStrictlyVerifiedUserIds(): Promise<Set<string>> {
+  const { data } = await getSupabaseAdmin()
+    .from("profiles")
+    .select("userId")
+    .or("verificationStatus.eq.APPROVED,idDocStatus.eq.APPROVED,videoStatus.eq.APPROVED");
+  return new Set<string>((data || []).map((p: any) => p.userId));
 }
 
 // ── Stockage privé (selfies, pièces, vidéos) ───────────────────────────

@@ -76,6 +76,7 @@ import SecurityProtectionProvider from "@/components/SecurityProtectionProvider"
 import RealtimeProvider from "@/components/realtime/RealtimeProvider";
 import VerificationGate from "@/components/VerificationGate";
 import MarketNewsModal from "@/components/MarketNewsModal";
+import VerificationReminder from "@/components/VerificationReminder";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -102,6 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <RealtimeProvider>
             <VerificationGate />
             <MarketNewsModal />
+            <VerificationReminder />
             {children}
             <CustomerSupportWidget />
             <MobileBottomNav />

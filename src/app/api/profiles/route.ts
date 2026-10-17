@@ -129,12 +129,14 @@ export async function GET(req: NextRequest) {
       .map(fromLocal);
     profiles = [...profiles, ...extraLocal];
 
-    // 4.b Seuls les membres dont le visage a été vérifié par l'administrateur sont affichés.
+    // 4.b Membres vérifiés (ou nouveaux dans leurs 3 jours d'essai) uniquement.
+    let strict: Set<string> | null = null;
     //     Victoire est l'assistante automatique du club : jamais présentée comme membre vérifiée.
     try {
-      const { getApprovedUserIds } = await import("@/lib/verification");
+      const { getApprovedUserIds, getStrictlyVerifiedUserIds } = await import("@/lib/verification");
       const approved = await getApprovedUserIds();
       if (approved) profiles = profiles.filter((p) => approved.has(p.userId));
+      strict = await getStrictlyVerifiedUserIds();
     } catch (verifErr) {
       console.warn("[GET /api/profiles] Vérification:", verifErr);
       profiles = profiles.filter((p) => p.userId === VICTOIRE_ID);
@@ -142,6 +144,8 @@ export async function GET(req: NextRequest) {
     profiles = profiles.map((p) =>
       p.userId === VICTOIRE_ID
         ? asAssistant(p)
+        : strict && !strict.has(p.userId)
+        ? { ...p, isVerified: false, verifications: [] }
         : { ...p, isVerified: true, verifications: [{ type: "SELFIE" }] }
     );
 

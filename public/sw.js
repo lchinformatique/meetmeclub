@@ -19,8 +19,9 @@ self.addEventListener("push", (event) => {
     tag: data.tag || "mmc",
     renotify: true,
     silent: false, // son et vibration du téléphone
-    requireInteraction: isCall,
-    vibrate: isCall ? [400, 200, 400, 200, 400, 200, 400] : [180, 80, 180],
+    // Reste affichée jusqu'à ce que le membre la touche (messages et appels)
+    requireInteraction: true,
+    vibrate: isCall ? [400, 200, 400, 200, 400, 200, 400] : [300, 120, 300, 120, 300],
     timestamp: Date.now(),
     data: { url: data.url || "/messages" },
     actions: isCall

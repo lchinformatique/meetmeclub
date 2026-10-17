@@ -3,6 +3,8 @@
    Bleu marine #0B2559 · Bleu roi #163B8A · Rouge #E10600 */
 
 .page {
+  overflow-x: hidden;
+  max-width: 100vw;
   --navy: #0b2559;
   --navy-2: #163b8a;
   --navy-deep: #071530;
@@ -27,7 +29,7 @@
   margin: 0 auto;
   height: calc(100dvh - var(--header-height, 64px));
   display: grid;
-  grid-template-columns: minmax(320px, 400px) 1fr;
+  grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
   background: #fff;
   border-inline: 1px solid var(--line);
   overflow: hidden;
@@ -35,6 +37,7 @@
 
 /* ── Colonne des discussions ───────────────────────────────── */
 .sidebar {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1736,7 +1739,7 @@
 /* ── Mobile : une seule colonne, plein écran en conversation ── */
 @media (max-width: 768px) {
   .shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     border: none;
   }
 

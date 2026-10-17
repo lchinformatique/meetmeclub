@@ -12,6 +12,8 @@ import {
   GESTURES,
   forgetVerificationCache,
   getVerificationState,
+  graceEndsAt,
+  isInGrace,
   isStateVerified,
   randomGesture,
   randomVideoCode,
@@ -50,7 +52,11 @@ export async function GET() {
     }
 
     const verified = isStateVerified(state);
+    const grace = isInGrace(state);
     return NextResponse.json({
+      // Nouveau membre : peut échanger pendant 3 jours, avec un rappel pour faire sa vérification
+      grace,
+      graceEndsAt: grace ? graceEndsAt(state)?.toISOString() : null,
       configured: true,
       docsConfigured: state.docsConfigured,
       plan,
