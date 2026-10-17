@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, MessageSquare, Calendar, User, Gem, LayoutDashboard } from "lucide-react";
+import { Store, Compass, MessageSquare, Calendar, User, Gem, LayoutDashboard } from "lucide-react";
 import { getLanguage, t, SupportedLanguage } from "@/lib/i18n";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
@@ -45,6 +45,31 @@ export default function MobileBottomNav() {
     };
   }, [pathname]);
 
+  // Pastille « nouveau » du Marché : une annonce plus récente que la dernière visite
+  const [marketNew, setMarketNew] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const check = async () => {
+      try {
+        const { latest } = await (await fetch("/api/market/latest", { cache: "no-store" })).json();
+        let seen: string | null = null;
+        try {
+          seen = localStorage.getItem("mmc:market-seen");
+        } catch {}
+        if (alive) setMarketNew(Boolean(latest && (!seen || new Date(latest) > new Date(seen))));
+      } catch {}
+    };
+    const onSeen = () => setMarketNew(false);
+    check();
+    const timer = setInterval(check, 5 * 60 * 1000);
+    window.addEventListener("mmc:market-seen", onSeen);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener("mmc:market-seen", onSeen);
+    };
+  }, []);
+
   // Messages non lus en temps réel (RealtimeProvider)
   const { unreadTotal: unreadCount, me, adminPending } = useRealtime();
 
@@ -59,7 +84,8 @@ export default function MobileBottomNav() {
   }
 
   const navItems = [
-    { href: "/", label: t("appTitle", lang) === "Meet Me Club" ? (lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil") : "Accueil", Icon: Home },
+    // Le Marché (annonces des pros) remplace « Accueil » : le logo du site ramène à l'accueil
+    { href: "/marche", label: lang === "en" ? "Market" : "Marché", Icon: Store, badge: marketNew && !pathname.startsWith("/marche") ? "•" : undefined },
     { href: "/decouverte", label: lang === "en" ? "Explore" : "Découvrir", Icon: Compass },
     // L'administrateur voit « Admin » à la place de « Plans » (invisible pour les membres)
     me?.isAdmin

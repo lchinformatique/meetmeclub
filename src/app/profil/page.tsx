@@ -12,7 +12,7 @@ import Header from "@/components/Header";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileInteractiveCard from "@/components/ProfileInteractiveCard";
 import SubscriptionCountdown from "@/components/SubscriptionCountdown";
-import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock, MessageSquare } from "lucide-react";
+import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock, MessageSquare, Store } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -449,6 +449,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   { href: "/profil/edit", Icon: Edit3, label: "Modifier mes informations" },
                   { href: "/profil/photos", Icon: Camera, label: "Mes photos" },
                   { href: "/profil/disponibilites", Icon: CalendarDays, label: "Mes créneaux de sortie" },
+                  { href: "/pro/mon-espace", Icon: Store, label: "Mon Espace Pro & mes annonces" },
                   { href: "/profil/securite", Icon: ShieldCheck, label: "Sécurité & Déconnexion" },
                   { href: "/tarifs", Icon: Gem, label: "Voir tous les abonnements" },
                 ].map((item) => (

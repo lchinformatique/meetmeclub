@@ -22,6 +22,7 @@ import {
   ChevronRight,
   ChevronLeft,
   LayoutDashboard,
+  Store,
 } from "lucide-react";
 import LanguageSelector from "./LanguageSelector";
 import { getLanguage, t, SupportedLanguage } from "@/lib/i18n";
@@ -59,6 +60,7 @@ export default function Header() {
   const navLinks: NavLinkItem[] = [
     { href: "/", label: lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil", Icon: Home },
     { href: "/decouverte", label: t("navDiscovery", lang), Icon: Compass },
+    { href: "/marche", label: "Le Marché", Icon: Store },
     { href: "/tarifs", label: "Nos plans d'accès", Icon: Gem },
     { href: "/rendez-vous", label: "Nos packs & Sorties", Icon: CalendarDays },
     { href: "/vip", label: "Mur VIP 👑", Icon: Crown },

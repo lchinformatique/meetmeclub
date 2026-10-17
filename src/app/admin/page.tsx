@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Crown, Megaphone, UserPlus, Users, Wallet, Clock, Sparkles, Zap, CircleOff, ShieldCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Megaphone, UserPlus, Users, Wallet, Clock, Sparkles, Zap, CircleOff, ShieldCheck, Store } from "lucide-react";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
 interface Stats {
@@ -102,6 +102,15 @@ export default function AdminHome() {
           <span style={{ flex: 1 }}>
             <strong style={{ display: "block", fontSize: 17 }}>Membres {stats ? `(${stats.total})` : ""}</strong>
             <span style={{ fontSize: 13, opacity: 0.9 }}>Noms, photos, numéros, plans, statuts et jours restants</span>
+          </span>
+          <ChevronRight size={22} />
+        </Link>
+
+        <Link href="/admin/marche" style={tile("linear-gradient(135deg,#047857,#065F46)")}>
+          <Store size={28} />
+          <span style={{ flex: 1 }}>
+            <strong style={{ display: "block", fontSize: 17 }}>Le Marché</strong>
+            <span style={{ fontSize: 13, opacity: 0.9 }}>Annonces des pros, signalements et retraits</span>
           </span>
           <ChevronRight size={22} />
         </Link>
