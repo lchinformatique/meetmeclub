@@ -88,7 +88,7 @@ export const UNIFIED_PLANS = [
     price: "6 000",
     period: "FCFA / mois",
     subtitle: "Visibilité renforcée & sorties réelles",
-    description: "Votre profil est mis en avant en haut des suggestions selon vos likes et votre habileté, avec tables réservées à Lomé.",
+    description: "Votre profil est mis en avant en haut des suggestions selon vos likes et votre habileté, avec tables réservées.",
     isVip: false,
     isPopular: true,
     features: [
@@ -96,7 +96,7 @@ export const UNIFIED_PLANS = [
       { text: "Profil boosté & classé en haut selon likes & habileté", ok: true, highlight: true },
       { text: "Accès aux membres 6 000, 3 000 et Essai", ok: true },
       { text: "Messages, photos et notes vocales illimités", ok: true },
-      { text: "Tables réservées en lieux partenaires à Lomé", ok: true },
+      { text: "Tables réservées en lieux partenaires", ok: true },
       { text: "Appels audio & vidéo WhatsApp", ok: false },
     ],
     buttonText: "Activer le Pass · 6 000 F",

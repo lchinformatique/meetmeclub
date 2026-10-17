@@ -13,6 +13,7 @@ import LogoutButton from "@/components/LogoutButton";
 import ProfileInteractiveCard from "@/components/ProfileInteractiveCard";
 import SubscriptionCountdown from "@/components/SubscriptionCountdown";
 import { Edit3, Camera, CalendarDays, ShieldCheck, Gem, ChevronRight, Lock, CheckCircle2, Clock, MessageSquare, Store } from "lucide-react";
+import { countryName } from "@/lib/countries";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -78,10 +79,11 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         gender: (supaProfile.gender as any) || "OTHER",
         age: 26,
         phone: session.phone || supaProfile.phone || dbUser?.phone || undefined,
-        city: supaProfile.city || "Lomé",
-        neighborhood: supaProfile.neighborhood || "Centre-ville",
+        city: supaProfile.city || "",
+        country: supaProfile.country || undefined,
+        address: (await (await import("@/lib/supabase-server")).getPrivateAddress(session.userId)) || undefined,
         profession: supaProfile.profession || "Membre actif",
-        bio: supaProfile.bio !== undefined && supaProfile.bio !== null ? supaProfile.bio : "Nouveau membre sur Meet Me Club à Lomé.",
+        bio: supaProfile.bio !== undefined && supaProfile.bio !== null ? supaProfile.bio : "Nouveau membre sur Meet Me Club.",
         relationshipGoal: (supaProfile.relationshipGoal as any) || "SERIOUS",
         relationshipStatus: supaProfile.relationshipStatus || "Célibataire",
         height: supaProfile.height || null,
@@ -94,7 +96,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         subscriptionExpiresAt: supaProfile.subscriptionExpiresAt || undefined,
         partnersContacted: [],
         photos: supaPhotos,
-        interests: ["Discussions", "Sorties Lomé", "Cafés"],
+        interests: ["Discussions", "Sorties", "Cafés"],
         availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,
         isVisible: true,
@@ -113,10 +115,10 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         gender: (dp.gender as any) || "OTHER",
         age: 26,
         phone: session.phone || dbUser.phone || undefined,
-        city: dp.city || "Lomé",
-        neighborhood: dp.neighborhood || "Centre-ville",
+        city: dp.city || "",
+        country: (dp as any).country || undefined,
         profession: dp.profession || "Membre actif",
-        bio: dp.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+        bio: dp.bio || "Nouveau membre sur Meet Me Club.",
         relationshipGoal: (dp.relationshipGoal as any) || "SERIOUS",
         relationshipStatus: dp.relationshipStatus || "Célibataire",
         height: dp.height || null,
@@ -126,7 +128,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         plan: "FREE",
         partnersContacted: [],
         photos: dbPhotos,
-        interests: ["Discussions", "Sorties Lomé", "Cafés"],
+        interests: ["Discussions", "Sorties", "Cafés"],
         availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,
         isVisible: true,
@@ -141,16 +143,15 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         gender: "OTHER",
         age: 26,
         phone: session.phone || undefined,
-        city: "Lomé",
-        neighborhood: "Centre-ville",
+        city: "",
         profession: "Membre actif",
-        bio: "Nouveau membre sur Meet Me Club à Lomé.",
+        bio: "Nouveau membre sur Meet Me Club.",
         relationshipGoal: "SERIOUS",
         relationshipStatus: "Célibataire",
         plan: "FREE",
         partnersContacted: [],
         photos: [],
-        interests: ["Discussions", "Sorties Lomé", "Cafés"],
+        interests: ["Discussions", "Sorties", "Cafés"],
         availabilities: [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
         isVerified: true,
         isVisible: true,
@@ -181,7 +182,8 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
       bio: freshProfile.bio !== undefined ? freshProfile.bio : profile.bio,
       coverUrl: freshProfile.coverUrl || profile.coverUrl,
       city: freshProfile.city || profile.city,
-      neighborhood: freshProfile.neighborhood || profile.neighborhood,
+      country: freshProfile.country || profile.country,
+      address: freshProfile.address || profile.address,
       profession: freshProfile.profession || profile.profession,
       relationshipStatus: freshProfile.relationshipStatus || profile.relationshipStatus,
       relationshipGoal: (freshProfile.relationshipGoal as any) || profile.relationshipGoal,
@@ -245,7 +247,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
       {/* Welcome Toast */}
       {isWelcome && (
         <div style={{ background: "var(--gradient-red)", color: "white", textAlign: "center", padding: "14px 16px", fontWeight: 700, fontSize: "15px" }}>
-          Bienvenue sur Meet Me Club Lomé ! Votre profil a bien été enregistré dans le club.
+          Bienvenue sur Meet Me Club ! Votre profil a bien été enregistré dans le club.
         </div>
       )}
 
@@ -739,12 +741,13 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.relationshipStatus || "Célibataire"}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Quartier à Lomé</span>
-                  <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.neighborhood || "Lomé"}</strong>
+                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Lieu de résidence</span>
+                  <strong style={{ fontSize: "14px", color: "#0F172A" }}>{[profile.city, countryName(profile.country)].filter(Boolean).join(", ") || "À compléter"}</strong>
+                  {!profile.address && <span style={{ display: "block", fontSize: "12px", color: "#B45309", fontWeight: 700 }}>Adresse à compléter</span>}
                 </div>
                 <div>
                   <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Téléphone</span>
-                  <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.phone || "+228 90 XX XX XX"}</strong>
+                  <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.phone || "À compléter"}</strong>
                 </div>
                 <div>
                   <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Taille</span>
@@ -997,7 +1000,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
           <Image src="/logo.png" alt="Meet Me Club" width={38} height={38} style={{ objectFit: "contain" }} />
         </div>
         <div style={{ fontSize: "15px", fontWeight: 800, color: "var(--color-blue)" }}>
-          meet <span style={{ color: "var(--color-red)" }}>me</span> club · Lomé, Togo
+          meet <span style={{ color: "var(--color-red)" }}>me</span> club · International
         </div>
         <p style={{ fontSize: "12px", color: "#64748B", margin: 0 }}>
           « Plus qu&apos;une rencontre, un rendez-vous ! » · Réservé aux 18 ans et plus

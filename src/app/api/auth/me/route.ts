@@ -54,7 +54,7 @@ export async function GET() {
             firstName: supa.firstName || "Membre",
             pseudo: supa.pseudo || undefined,
             email: session.email || undefined,
-            city: supa.city || "Lomé",
+            city: supa.city || "",
             gender: (supa.gender as any) || "OTHER",
             plan: (supa.plan as any) || "FREE",
             subscriptionStartedAt: supa.subscriptionStartedAt || undefined,
@@ -75,7 +75,7 @@ export async function GET() {
     if (resolvedFirstName.startsWith("google_")) {
       resolvedFirstName = "Membre";
     }
-    const resolvedCity = local?.city || user?.profile?.city || "Lomé";
+    const resolvedCity = local?.city || user?.profile?.city || "";
     const validPhoto =
       local?.photos?.find((p) => p.isMain && !p.url.includes("dicebear.com/7.x/initials"))?.url ||
       local?.photos?.find((p) => !p.url.includes("dicebear.com/7.x/initials"))?.url ||

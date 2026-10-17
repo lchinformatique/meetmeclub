@@ -1,5 +1,5 @@
 // src/app/(public)/partenaires/page.tsx
-// Page partenaires — Restaurants, lounges et hôtels partenaires à Lomé
+// Page partenaires — Restaurants, lounges et hôtels partenaires
 
 import Link from "next/link";
 import Image from "next/image";
@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Devenir Partenaire",
-  description: "Rejoignez le réseau d'établissements partenaires Meet Me Club à Lomé. Augmentez votre fréquentation avec une clientèle qualifiée.",
+  description: "Rejoignez le réseau d'établissements partenaires Meet Me Club. Augmentez votre fréquentation avec une clientèle qualifiée.",
 };
 
 export default function PartenairesPage() {
@@ -55,7 +55,7 @@ export default function PartenairesPage() {
             Accueillez les rendez-vous Meet Me Club dans votre établissement
           </h1>
           <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "18px", lineHeight: 1.6 }}>
-            Restaurants, lounges, hôtels, rooftops : développez votre chiffre d&apos;affaires en devenant un lieu officiel de rendez-vous à Lomé.
+            Restaurants, lounges, hôtels, rooftops : développez votre chiffre d&apos;affaires en devenant un lieu officiel de rendez-vous.
           </p>
         </div>
         <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40px", background: "var(--color-gray-50)", clipPath: "ellipse(55% 100% at 50% 100%)" }} />
@@ -102,7 +102,7 @@ export default function PartenairesPage() {
               Demande de partenariat
             </h2>
             <p style={{ color: "var(--color-gray-500)", fontSize: "14px", marginBottom: "28px" }}>
-              Remplissez ce formulaire et notre équipe à Lomé vous contactera sous 24 heures pour convenir d&apos;une visite de présentation.
+              Remplissez ce formulaire et notre équipe vous contactera sous 24 heures pour convenir d&apos;une visite de présentation.
             </p>
 
             <form style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -124,12 +124,12 @@ export default function PartenairesPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div>
-                  <label className="form-label">Quartier à Lomé *</label>
-                  <input type="text" className="form-input" placeholder="Ex: Nyékonakpoè, Kodjoviakopé, Bè…" required />
+                  <label className="form-label">Ville et pays *</label>
+                  <input type="text" className="form-input" placeholder="Ex : Abidjan, Côte d'Ivoire" required />
                 </div>
                 <div>
                   <label className="form-label">Numéro de téléphone (WhatsApp) *</label>
-                  <input type="tel" className="form-input" placeholder="+228 90 00 00 00" required />
+                  <input type="tel" className="form-input" placeholder="Numéro avec l'indicatif du pays" required />
                 </div>
               </div>
 

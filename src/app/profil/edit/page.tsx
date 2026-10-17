@@ -7,7 +7,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { compressImage } from "@/app/messages/_lib/chat-utils";
-import { COUNTRIES, countryFromPhone } from "@/lib/countries";
+import CountryPicker from "@/components/forms/CountryPicker";
+import PhoneField from "@/components/forms/PhoneField";
+import BirthDateField from "@/components/forms/BirthDateField";
+import LanguagePicker from "@/components/forms/LanguagePicker";
 import {
   Camera,
   Loader2,
@@ -36,7 +39,10 @@ interface ProfileData {
   phone: string;
   gender: "MALE" | "FEMALE" | "OTHER";
   city: string;
-  neighborhood: string;
+  /** Pays de résidence (code ISO) */
+  country: string;
+  /** Adresse de résidence : obligatoire, privée (jamais montrée aux autres membres) */
+  address: string;
   profession: string;
   relationshipStatus: string;
   hasChildren: boolean | null;
@@ -46,34 +52,6 @@ interface ProfileData {
   bio: string;
   relationshipGoal: "FRIENDSHIP" | "SERIOUS" | "MARRIAGE" | "CASUAL" | "EXCHANGE";
 }
-
-const CITIES = [
-  "Lomé",
-  "Kpalimé",
-  "Sokodé",
-  "Kara",
-  "Atakpamé",
-  "Dapaong",
-  "Tsévié",
-  "Aného",
-];
-
-const NEIGHBORHOODS_LOME = [
-  "Bè",
-  "Nyékonakpoè",
-  "Tokoin",
-  "Agoè-Nyivé",
-  "Hedzranawoé",
-  "Baguida",
-  "Adidogomé",
-  "Déckon",
-  "Hédzranawoé",
-  "Amoutivé",
-  "Avépozo",
-  "Cacavéli",
-  "Kégué",
-  "Autre",
-];
 
 // Tous les pays du monde (indicatif + drapeau) : voir src/lib/countries.ts
 
@@ -124,9 +102,6 @@ export default function ProfilEditPage() {
   const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
   const [uploadingCover, setUploadingCover] = useState(false);
 
-  const [selectedCountryCode, setSelectedCountryCode] = useState("+228");
-  const [selectedIso, setSelectedIso] = useState("TG");
-  const [rawPhone, setRawPhone] = useState("");
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -141,7 +116,8 @@ export default function ProfilEditPage() {
     phone: "",
     gender: "OTHER",
     city: "",
-    neighborhood: "",
+    country: "",
+    address: "",
     profession: "",
     relationshipStatus: "Célibataire",
     hasChildren: false,
@@ -169,14 +145,6 @@ export default function ProfilEditPage() {
         const data = await res.json();
         if (data.profile) {
           const currentPhone = data.profile.phone || "";
-          const matchedCountry = countryFromPhone(currentPhone);
-          if (matchedCountry) {
-            setSelectedCountryCode(matchedCountry.dial);
-            setSelectedIso(matchedCountry.iso);
-            setRawPhone(currentPhone.trim().slice(matchedCountry.dial.length).trim());
-          } else {
-            setRawPhone(currentPhone);
-          }
 
           // Initialisation Date de Naissance
           let dobValue = "";
@@ -194,12 +162,14 @@ export default function ProfilEditPage() {
             lastName: data.profile.lastName || "",
             pseudo: cleanPseudo,
             dateOfBirth: dobValue,
-            placeOfBirth: data.profile.placeOfBirth || "",
+            // Lieu de naissance : jamais prérempli (anciennes valeurs par défaut ignorées)
+            placeOfBirth: ["Lomé", "Lome"].includes(data.profile.placeOfBirth) ? "" : data.profile.placeOfBirth || "",
             phone: currentPhone,
             gender: data.profile.gender || "OTHER",
             // Valeurs par défaut posées automatiquement autrefois → champ vide à remplir soi-même
             city: data.profile.city || "",
-            neighborhood: ["Centre-ville", "Lomé"].includes(data.profile.neighborhood) ? "" : data.profile.neighborhood || "",
+            country: data.profile.country || "",
+            address: data.profile.address || "",
             profession: ["Professionnel(le)", "Membre actif", "Membre"].includes(data.profile.profession) ? "" : data.profile.profession || "",
             relationshipStatus: data.profile.relationshipStatus || "Célibataire",
             hasChildren: data.profile.hasChildren ?? false,
@@ -373,9 +343,15 @@ export default function ProfilEditPage() {
       return;
     }
 
+    // Transparence et sécurité : pays, ville et adresse de résidence obligatoires
+    if (!form.country || !form.city.trim() || form.address.trim().length < 5) {
+      setMessage({ type: "error", text: "Indiquez votre pays, votre ville et votre adresse de résidence (obligatoires, l'adresse reste privée)." });
+      return;
+    }
+
     setSaving(true);
     try {
-      const finalPhone = rawPhone.trim() ? `${selectedCountryCode} ${rawPhone.trim()}` : "";
+      const finalPhone = form.phone.trim();
       const res = await fetch("/api/profiles/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -387,8 +363,9 @@ export default function ProfilEditPage() {
           placeOfBirth: form.placeOfBirth.trim(),
           phone: finalPhone,
           gender: form.gender,
-          city: form.city,
-          neighborhood: form.neighborhood.trim(),
+          city: form.city.trim(),
+          country: form.country,
+          address: form.address.trim(),
           profession: form.profession.trim(),
           relationshipStatus: form.relationshipStatus,
           hasChildren: form.hasChildren,
@@ -719,7 +696,7 @@ export default function ProfilEditPage() {
                   <Camera size={22} />
                 </div>
               </div>
-              <div style={{ marginTop: "36px" }}>
+              <div style={{ marginTop: "56px", minWidth: 0 }}>
                 <button
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
@@ -1008,16 +985,7 @@ export default function ProfilEditPage() {
                   <label htmlFor="dateOfBirth" className="edit-label">
                     Date de naissance *
                   </label>
-                  <input
-                    id="dateOfBirth"
-                    type="date"
-                    required
-                    min="1930-01-01"
-                    max={MAX_ALLOWED_DOB}
-                    value={form.dateOfBirth}
-                    onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
-                    className={`edit-field ${isUnderage ? "edit-field-error" : ""}`}
-                  />
+                  <BirthDateField idPrefix="dateOfBirth" value={form.dateOfBirth} invalid={isUnderage} onChange={(dateOfBirth) => setForm((f) => ({ ...f, dateOfBirth }))} />
                 </div>
 
                 <div>
@@ -1068,58 +1036,7 @@ export default function ProfilEditPage() {
                 Numéro de téléphone WhatsApp / Appel
               </label>
 
-              {/* Pays (tous les pays du monde) */}
-              <label htmlFor="phone-country" className="edit-label">
-                Pays
-              </label>
-              <select
-                id="phone-country"
-                className="edit-field"
-                value={selectedIso}
-                onChange={(e) => {
-                  const country = COUNTRIES.find((c) => c.iso === e.target.value);
-                  if (!country) return;
-                  setSelectedIso(country.iso);
-                  setSelectedCountryCode(country.dial);
-                  setForm((prev) => ({
-                    ...prev,
-                    phone: rawPhone.trim() ? `${country.dial} ${rawPhone.trim()}` : "",
-                  }));
-                }}
-                style={{ marginBottom: "12px", cursor: "pointer" }}
-              >
-                {COUNTRIES.map((c) => (
-                  <option key={c.iso} value={c.iso}>
-                    {c.flag}  {c.name} ({c.dial})
-                  </option>
-                ))}
-              </select>
-
-              {/* Numéro : indicatif + grand champ */}
-              <label htmlFor="phone-input-field" className="edit-label">
-                Numéro
-              </label>
-              <div className="edit-phone">
-                <span className="edit-phone-dial">
-                  {COUNTRIES.find((c) => c.iso === selectedIso)?.flag} {selectedCountryCode}
-                </span>
-                <input
-                  id="phone-input-field"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel-national"
-                  placeholder="Votre numéro"
-                  value={rawPhone}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^\d\s]/g, "");
-                    setRawPhone(val);
-                    setForm((prev) => ({
-                      ...prev,
-                      phone: val.trim() ? `${selectedCountryCode} ${val.trim()}` : "",
-                    }));
-                  }}
-                />
-              </div>
+              <PhoneField id="phone-input-field" value={form.phone} defaultCountry={form.country || null} onChange={(phone) => setForm((prev) => ({ ...prev, phone }))} />
               <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#64748B" }}>
                 Utilisez le numéro mobile money avec lequel vous payez : vos pass s&apos;activeront automatiquement.
               </p>
@@ -1166,50 +1083,51 @@ export default function ProfilEditPage() {
               </div>
             </div>
 
-            {/* Ville & Quartier */}
+            {/* Pays, ville et adresse de résidence (obligatoires) */}
+            <div className="input-group">
+              <label className="input-label" htmlFor="country" style={{ color: "#0F172A", fontWeight: 700 }}>
+                Pays de résidence *
+              </label>
+              <CountryPicker id="country" value={form.country} onChange={(c) => setForm((prev) => ({ ...prev, country: c.iso }))} />
+            </div>
             <div className="edit-grid-2">
               <div className="input-group">
                 <label className="input-label" htmlFor="city" style={{ color: "#0F172A", fontWeight: 700 }}>
-                  Ville de résidence
+                  Ville de résidence *
                 </label>
                 <input
                   id="city"
                   className="input"
                   type="text"
-                  list="cities-list"
                   autoComplete="address-level2"
                   placeholder="Votre ville"
                   value={form.city}
                   onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  maxLength={60}
                   style={{ fontWeight: 600 }}
                 />
-                <datalist id="cities-list">
-                  {CITIES.map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
               </div>
-
               <div className="input-group">
-                <label className="input-label" htmlFor="neighborhood" style={{ color: "#0F172A", fontWeight: 700 }}>
-                  Quartier
+                <label className="input-label" htmlFor="address" style={{ color: "#0F172A", fontWeight: 700 }}>
+                  Adresse de résidence *
                 </label>
                 <input
-                  id="neighborhood"
+                  id="address"
                   className="input"
-                  list="neighborhoods-list"
-                  placeholder="Votre quartier"
-                  value={form.neighborhood}
-                  onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+                  type="text"
+                  autoComplete="street-address"
+                  placeholder="N°, rue, code postal"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  maxLength={160}
                   style={{ fontWeight: 600 }}
                 />
-                <datalist id="neighborhoods-list">
-                  {NEIGHBORHOODS_LOME.map((n) => (
-                    <option key={n} value={n} />
-                  ))}
-                </datalist>
               </div>
             </div>
+            <p style={{ margin: "-6px 0 0", fontSize: "12px", color: "#64748B", lineHeight: 1.5 }}>
+              🔒 Votre adresse est demandée pour la transparence et la sécurité du club. Elle reste privée : seuls votre pays et
+              votre ville sont visibles des autres membres.
+            </p>
 
             {/* Profession & Situation */}
             <div className="edit-grid-2">
@@ -1300,92 +1218,12 @@ export default function ProfilEditPage() {
               </div>
             </div>
 
-            {/* Section 6 : Langues parlées (Menu déroulant compact + badges sleek) */}
+            {/* Section 6 : Langues parlées (pastilles à toucher) */}
             <div className="input-group">
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                <label className="input-label" htmlFor="lang-dropdown" style={{ color: "#0F172A", fontWeight: 700, margin: 0 }}>
-                  Langues parlées
-                </label>
-                <span style={{ fontSize: "11px", color: "#64748B" }}>
-                  Sélectionnez dans la liste déroulante
-                </span>
-              </div>
-
-              {/* Menu déroulant compact */}
-              <select
-                id="lang-dropdown"
-                className="input"
-                defaultValue=""
-                onChange={(e) => {
-                  handleAddLanguage(e.target.value);
-                  e.target.value = "";
-                }}
-                style={{
-                  maxWidth: "320px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: "#0B2559",
-                  background: "white",
-                  marginBottom: "10px",
-                }}
-              >
-                <option value="" disabled>
-                  + Ajouter une langue à votre profil...
-                </option>
-                {AVAILABLE_LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code} disabled={form.languages.includes(lang.code)}>
-                    {lang.flag} {lang.label} {form.languages.includes(lang.code) ? "(Déjà ajoutée)" : ""}
-                  </option>
-                ))}
-              </select>
-
-              {/* Badges sleek compacts des langues sélectionnées */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {form.languages.map((code) => {
-                  const item = AVAILABLE_LANGUAGES.find((l) => l.code === code) || {
-                    code,
-                    label: code,
-                    flag: "🌐",
-                  };
-                  return (
-                    <span
-                      key={code}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        padding: "5px 12px",
-                        borderRadius: "100px",
-                        background: "#EFF6FF",
-                        border: "1px solid #BFDBFE",
-                        fontSize: "12px",
-                        fontWeight: 700,
-                        color: "#1E40AF",
-                      }}
-                    >
-                      <span>
-                        {item.flag} {item.label}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveLanguage(code)}
-                        title="Retirer cette langue"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#64748B",
-                          cursor: "pointer",
-                          padding: 0,
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        <X size={13} />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
+              <label className="input-label" style={{ color: "#0F172A", fontWeight: 700 }}>
+                Langues parlées
+              </label>
+              <LanguagePicker value={form.languages} onChange={(languages) => setForm((f) => ({ ...f, languages }))} />
             </div>
 
             {/* Section 7 : Bio / Description */}

@@ -32,6 +32,10 @@ export interface StoredProfile {
   placeOfBirth?: string;
   phone?: string;
   city: string;
+  /** Pays de résidence (code ISO, ex. FR) */
+  country?: string;
+  /** Adresse de résidence : privée, jamais montrée aux autres membres */
+  address?: string;
   neighborhood?: string;
   profession?: string;
   educationLevel?: string;
@@ -81,16 +85,14 @@ export const VICTOIRE_PROFILE: StoredProfile = {
   email: "victoire@meetmeclub.net",
   gender: "FEMALE",
   age: 24,
-  phone: "+228 90 12 34 56",
-  city: "Lomé",
-  neighborhood: "Tokoin & Nyékonakpoè",
+  city: "",
   profession: "Styliste & Créatrice de mode",
   relationshipStatus: "Célibataire",
   educationLevel: "Master Mode & Design",
   height: 168,
   hasChildren: false,
   languages: ["Français", "Mina", "Anglais"],
-  bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
+  bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
   relationshipGoal: "SERIOUS",
   plan: "VIP",
   subscriptionStartedAt: "2024-01-01T00:00:00.000Z",
@@ -100,7 +102,7 @@ export const VICTOIRE_PROFILE: StoredProfile = {
   photos: [
     { id: "p_victoire_1", url: "/victoire_profile.jpg", isMain: true }
   ],
-  interests: ["Mode & Style", "Voyages", "Dîners aux chandelles", "Musique", "Sorties Lomé"],
+  interests: ["Mode & Style", "Voyages", "Dîners aux chandelles", "Musique", "Sorties"],
   availabilities: [
     { dayOfWeek: 5, startTime: "18:00", endTime: "22:00" },
     { dayOfWeek: 6, startTime: "15:00", endTime: "23:00" },
@@ -258,8 +260,10 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       dateOfBirth: profileData.dateOfBirth,
       placeOfBirth: profileData.placeOfBirth,
       phone: profileData.phone,
-      city: profileData.city || "Lomé",
-      neighborhood: profileData.neighborhood || "Centre-ville",
+      city: profileData.city || "",
+      country: profileData.country,
+      address: profileData.address,
+      neighborhood: profileData.neighborhood,
       profession: profileData.profession || "Professionnel(le)",
       educationLevel: profileData.educationLevel || "Supérieur",
       relationshipStatus: profileData.relationshipStatus || "Célibataire",
@@ -270,7 +274,7 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       coverUrl: profileData.coverUrl,
       email: profileData.email,
       passwordHash: profileData.passwordHash,
-      bio: profileData.bio || "Membre actif de la communauté Meet Me Club à Lomé.",
+      bio: profileData.bio || "Membre de la communauté Meet Me Club.",
       relationshipGoal: profileData.relationshipGoal || "SERIOUS",
       plan,
       subscriptionStartedAt: subStarted,
@@ -278,7 +282,7 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
       likesCount: likes,
       partnersContacted: profileData.partnersContacted || [],
       photos: Array.isArray(profileData.photos) ? profileData.photos : [],
-      interests: profileData.interests || ["Discussions", "Sorties Lomé", "Cafés"],
+      interests: profileData.interests || ["Discussions", "Sorties", "Cafés"],
       availabilities: profileData.availabilities || [{ dayOfWeek: 5, startTime: "18:00", endTime: "22:00" }],
       isVerified: true,
       isVisible: true,

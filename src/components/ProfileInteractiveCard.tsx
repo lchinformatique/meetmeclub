@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Camera, Edit3, Loader2, Check, Sparkles, User } from "lucide-react";
 import type { StoredProfile } from "@/lib/db-store";
+import { countryName } from "@/lib/countries";
 
 interface ProfileInteractiveCardProps {
   profile: StoredProfile;
@@ -461,8 +462,7 @@ export default function ProfileInteractiveCard({
               fontWeight: 500,
             }}
           >
-            <span>📍 {profile.city || "Lomé"}</span>
-            {profile.neighborhood && <span>· {profile.neighborhood}</span>}
+            <span>📍 {[profile.city, countryName(profile.country)].filter(Boolean).join(", ") || "Lieu à compléter"}</span>
             {profile.age && <span>· {profile.age} ans</span>}
           </p>
 

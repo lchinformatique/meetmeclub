@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, MessageCircle, Phone, Search } from "lucide-react";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
+import { countryName } from "@/lib/countries";
 
 interface Member {
   userId: string;
@@ -16,7 +17,8 @@ interface Member {
   gender?: string;
   age: number | null;
   city?: string;
-  neighborhood?: string;
+  country?: string;
+  address?: string;
   profession?: string;
   bio?: string;
   email: string | null;
@@ -223,7 +225,8 @@ export default function AdminMembres() {
                     <span><b>Téléphone :</b> {m.phone || "—"}</span>
                     <span style={{ wordBreak: "break-all" }}><b>E-mail :</b> {m.email || "—"}</span>
                     <span><b>Âge :</b> {m.age ?? "—"} · <b>Genre :</b> {m.gender === "MALE" ? "Homme" : m.gender === "FEMALE" ? "Femme" : "—"}</span>
-                    <span><b>Ville :</b> {m.city || "—"}{m.neighborhood ? `, ${m.neighborhood}` : ""}</span>
+                    <span><b>Lieu :</b> {[m.city, countryName(m.country)].filter(Boolean).join(", ") || "—"}</span>
+                    <span><b>Adresse :</b> {m.address || "—"}</span>
                     <span><b>Profession :</b> {m.profession || "—"}</span>
                     <span><b>Inscrit le :</b> {fmt(m.createdAt)}</span>
                     <span><b>Fin de l&apos;accès :</b> {fmt(m.expiresAt)}</span>

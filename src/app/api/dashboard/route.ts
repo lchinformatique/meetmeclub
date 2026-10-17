@@ -30,15 +30,15 @@ export async function GET(req: NextRequest) {
   const statsOnly = Boolean(new URL(req.url).searchParams.get("stats"));
 
   const [{ data: profiles }, { data: users }, { data: photos }] = await Promise.all([
-    admin
-      .from("profiles")
-      .select(
+    (async () => {
+      const cols = (withCountry: boolean) =>
         statsOnly
           ? "id, userId, pseudo, plan, subscriptionStartedAt, subscriptionExpiresAt, createdAt"
-          : "id, userId, firstName, lastName, pseudo, gender, city, neighborhood, profession, bio, relationshipGoal, plan, subscriptionStartedAt, subscriptionExpiresAt, likesCount, isVisible, createdAt, updatedAt"
-      )
-      .order("createdAt", { ascending: false })
-      .limit(2000),
+          : `id, userId, firstName, lastName, pseudo, gender, city, ${withCountry ? "country, " : ""}profession, bio, relationshipGoal, plan, subscriptionStartedAt, subscriptionExpiresAt, likesCount, isVisible, createdAt, updatedAt`;
+      const first = await admin.from("profiles").select(cols(true)).order("createdAt", { ascending: false }).limit(2000);
+      // Colonne « country » absente tant que la migration v7 n'est pas exécutée
+      return first.error ? admin.from("profiles").select(cols(false)).order("createdAt", { ascending: false }).limit(2000) : first;
+    })(),
     statsOnly
       ? Promise.resolve({ data: [] as any[] })
       : admin.from("users").select("id, email, phone, status, role, dateOfBirth, createdAt").limit(5000),
@@ -50,6 +50,13 @@ export async function GET(req: NextRequest) {
   ]);
 
   const userById = new Map((users || []).map((u: any) => [u.id, u]));
+
+  // Adresses de résidence (table privée, visibles uniquement par l'administrateur)
+  const addressByUser = new Map<string, string>();
+  if (!statsOnly) {
+    const { data: priv } = await admin.from("member_private").select("userId, address").limit(5000);
+    (priv || []).forEach((r: any) => r.address && addressByUser.set(r.userId, r.address));
+  }
   const photosByProfile = new Map<string, Array<{ url: string; isMain: boolean; order: number }>>();
   for (const ph of photos || []) {
     const list = photosByProfile.get(ph.profileId) || [];
@@ -78,7 +85,8 @@ export async function GET(req: NextRequest) {
       gender: p.gender,
       age,
       city: p.city,
-      neighborhood: p.neighborhood,
+      country: p.country,
+      address: addressByUser.get(p.userId) || null,
       profession: p.profession,
       bio: p.bio,
       email: u.email || null,

@@ -4,8 +4,8 @@ import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sécurité & Confiance | Meet Me Club Togo",
-  description: "Notre engagement pour votre sécurité : vérification vidéo, lieux partenaires surveillés à Lomé, et modération 24/7.",
+  title: "Sécurité & Confiance | Meet Me Club",
+  description: "Notre engagement pour votre sécurité : vérification vidéo, lieux partenaires surveillés, et modération 24/7.",
 };
 
 export default function SecuritePage() {
@@ -35,7 +35,7 @@ export default function SecuritePage() {
             Votre sécurité est notre priorité absolue
           </h1>
           <p style={{ fontSize: "17px", color: "#E2E8F0", lineHeight: 1.6 }}>
-            Rencontrez des personnes réelles et bienveillantes à Lomé dans un environnement contrôlé, respectueux et vérifié.
+            Rencontrez des personnes réelles et bienveillantes dans un environnement contrôlé, respectueux et vérifié.
           </p>
         </div>
       </section>
@@ -63,7 +63,7 @@ export default function SecuritePage() {
             <div style={{ fontSize: "36px", marginBottom: "14px" }}>☕</div>
             <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Lieux Partenaires Sélectionnés</h3>
             <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6 }}>
-              Tous nos établissements partenaires à Lomé (hôtels, salons de thé, lounges) sont des espaces publics sécurisés et de grande renommée.
+              Tous nos établissements partenaires (hôtels, salons de thé, lounges) sont des espaces publics sécurisés et de grande renommée.
             </p>
           </div>
         </div>
@@ -71,7 +71,7 @@ export default function SecuritePage() {
         {/* 5 Règles d'Or */}
         <div style={{ background: "white", padding: "40px 32px", borderRadius: "24px", border: "1px solid #E2E8F0", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", marginBottom: "50px" }}>
           <h2 style={{ fontSize: "24px", fontWeight: 800, color: "#0B2559", marginBottom: "20px" }}>
-            🛡️ Les 5 Règles d'Or pour vos rencontres à Lomé
+            🛡️ Les 5 Règles d'Or pour vos rencontres
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {[

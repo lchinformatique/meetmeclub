@@ -4,6 +4,8 @@
 import { useState } from "react";
 import { ImagePlus, Save } from "lucide-react";
 import { toJpeg } from "@/app/verification/_components/ui";
+import CountryPicker from "@/components/forms/CountryPicker";
+import PhoneField from "@/components/forms/PhoneField";
 import { field, label, NAVY, primaryBtn, type ProSpace } from "./shared";
 
 async function fileToDataUrl(file: File, max: number) {
@@ -28,8 +30,9 @@ export default function BrandForm({
     name: pro?.name || "",
     activity: pro?.activity || "ENTREPRENEUR",
     description: pro?.description || "",
-    city: pro?.city || "Lomé",
-    neighborhood: pro?.neighborhood || "",
+    city: pro?.city || "",
+    country: pro?.country || "",
+    address: pro?.address || "",
     whatsapp: pro?.whatsapp || "",
     facebook: pro?.facebook || "",
     phone: pro?.phone || "",
@@ -69,22 +72,22 @@ export default function BrandForm({
   }
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 12 }}>
       {/* Aperçu bannière + logo */}
       <div style={{ borderRadius: 18, overflow: "hidden", background: "#fff", border: "1px solid #E2E8F0" }}>
-        <label style={{ display: "block", height: 130, cursor: "pointer", position: "relative", background: cover ? `center/cover url("${cover}")` : "linear-gradient(135deg,#0B2559,#163B8A)" }}>
+        <label style={{ display: "block", height: 150, cursor: "pointer", position: "relative", background: cover ? `center/cover url("${cover}")` : "linear-gradient(135deg,#DFE6F7,#F3E8F3)", borderBottom: "1px solid #E4E8F1" }}>
           <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) setCover(await fileToDataUrl(f, 1600)); e.target.value = ""; }} />
-          <span style={{ position: "absolute", right: 10, bottom: 10, background: "rgba(15,23,42,0.7)", color: "#fff", fontSize: 12, fontWeight: 700, padding: "5px 10px", borderRadius: 999, display: "inline-flex", gap: 6, alignItems: "center" }}>
+          <span style={{ position: "absolute", right: 10, top: 10, background: "rgba(255,255,255,0.95)", color: "#2F4A8A", border: "1px solid #E4E8F1", fontSize: 12, fontWeight: 800, padding: "6px 11px", borderRadius: 999, display: "inline-flex", gap: 6, alignItems: "center", boxShadow: "0 4px 12px rgba(30,42,68,0.12)" }}>
             <ImagePlus size={14} /> {cover ? "Changer la bannière" : "Ajouter une bannière"}
           </span>
         </label>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-end", padding: "0 14px 14px", marginTop: -36 }}>
-          <label style={{ width: 76, height: 76, borderRadius: 18, border: "4px solid #fff", background: logo ? `center/cover url("${logo}")` : "#E2E8F0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 6px 16px rgba(0,0,0,0.15)" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-end", padding: "0 14px 14px", marginTop: -40 }}>
+          <label style={{ width: 84, height: 84, borderRadius: 20, border: "4px solid #fff", outline: "1.5px solid #E4E8F1", background: logo ? `center/cover url("${logo}")` : "#EEF2FB", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 6px 16px rgba(0,0,0,0.15)" }}>
             <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => { const f = e.target.files?.[0]; if (f) setLogo(await fileToDataUrl(f, 512)); e.target.value = ""; }} />
             {!logo && <ImagePlus size={24} color={NAVY} />}
           </label>
-          <div style={{ minWidth: 0 }}>
-            <strong style={{ display: "block", fontSize: 17, color: "#0F172A" }}>{form.name || "Nom de votre marque"}</strong>
+          <div style={{ minWidth: 0, paddingTop: 46 }}>
+            <strong style={{ display: "block", fontSize: 17, color: "#1E2A44", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{form.name || "Nom de votre marque"}</strong>
             <span style={{ fontSize: 13, color: "#64748B" }}>
               {activities[form.activity]} {form.city ? `· ${form.city}` : ""}
             </span>
@@ -111,36 +114,39 @@ export default function BrandForm({
         <label style={label}>Présentation</label>
         <textarea style={{ ...field, minHeight: 110, resize: "vertical" }} value={form.description} onChange={set("description")} maxLength={1500} placeholder="Qui êtes-vous, que proposez-vous, vos horaires, vos points forts…" />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div>
+        <label style={label}>Pays *</label>
+        <CountryPicker value={form.country} onChange={(c) => setForm((f) => ({ ...f, country: c.iso }))} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
         <div>
-          <label style={label}>Ville</label>
-          <input style={field} value={form.city} onChange={set("city")} maxLength={60} />
+          <label style={label}>Ville *</label>
+          <input style={field} value={form.city} onChange={set("city")} maxLength={60} placeholder="Votre ville" />
         </div>
         <div>
-          <label style={label}>Quartier</label>
-          <input style={field} value={form.neighborhood} onChange={set("neighborhood")} maxLength={60} placeholder="Ex. Tokoin" />
+          <label style={label}>Adresse *</label>
+          <input style={field} value={form.address} onChange={set("address")} maxLength={160} placeholder="N°, rue, code postal" />
         </div>
       </div>
+      <p style={{ margin: 0, fontSize: 12, color: "#64748B" }}>L&apos;adresse de votre activité est affichée sur votre vitrine : transparence et confiance pour les membres.</p>
 
-      <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 14, padding: 12, display: "grid", gap: 10 }}>
+      <div style={{ background: "#F3FAF7", border: "1px solid #CDE9DF", borderRadius: 14, padding: 12, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
         <strong style={{ fontSize: 14, color: "#166534" }}>Contacts (au moins un) — visibles par les membres connectés</strong>
         <div>
           <label style={label}>Numéro WhatsApp</label>
-          <input style={field} value={form.whatsapp} onChange={set("whatsapp")} inputMode="tel" placeholder="Ex. +228 90 12 34 56" />
+          <PhoneField value={form.whatsapp} defaultCountry={form.country || null} onChange={(whatsapp) => setForm((f) => ({ ...f, whatsapp }))} placeholder="Numéro WhatsApp" />
         </div>
         <div>
           <label style={label}>Page Facebook</label>
           <input style={field} value={form.facebook} onChange={set("facebook")} placeholder="Lien de la page ou nom (ex. hotellebenin)" />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div>
-            <label style={label}>Téléphone</label>
-            <input style={field} value={form.phone} onChange={set("phone")} inputMode="tel" />
-          </div>
-          <div>
-            <label style={label}>Site web</label>
-            <input style={field} value={form.website} onChange={set("website")} placeholder="https://…" />
-          </div>
+        <div>
+          <label style={label}>Téléphone</label>
+          <PhoneField value={form.phone} defaultCountry={form.country || null} onChange={(phone) => setForm((f) => ({ ...f, phone }))} />
+        </div>
+        <div>
+          <label style={label}>Site web</label>
+          <input style={field} value={form.website} onChange={set("website")} placeholder="https://…" />
         </div>
       </div>
 

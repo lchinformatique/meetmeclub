@@ -86,7 +86,7 @@ export default function MonEspacePro() {
     }
 
     return (
-      <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 14 }}>
         {/* Formule et quota */}
         <div style={{ ...panel, background: data.canPublish ? "linear-gradient(135deg,#0B2559,#163B8A)" : "#FFFBEB", color: data.canPublish ? "#fff" : "#92400E" }}>
           {data.canPublish ? (

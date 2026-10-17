@@ -149,7 +149,7 @@ function MessagesApp() {
             photoUrl: p.photos?.find((ph: any) => ph.isMain)?.url || p.photos?.[0]?.url || p.avatarUrl || "",
             photos: p.photos || [],
             city: p.city,
-            neighborhood: p.neighborhood,
+            country: p.country,
             bio: p.bio,
             profession: p.profession,
             relationshipGoal: p.relationshipGoal,

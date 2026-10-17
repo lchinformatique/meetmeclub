@@ -54,7 +54,7 @@ export function getVictoireReply(userMessage: string, mediaType?: "image" | "aud
     );
   }
   if (mediaType === "location") {
-    return reply("Merci ! Pour vos rendez-vous, choisissez de préférence un lieu public et fréquenté de Lomé, et prévenez un proche.");
+    return reply("Merci ! Pour vos rendez-vous, choisissez de préférence un lieu public et fréquenté, et prévenez un proche.");
   }
 
   // Est-ce une vraie personne ?

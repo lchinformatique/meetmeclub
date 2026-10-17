@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
             pseudo: supaProf?.pseudo || permanentVip.pseudo,
             email: permanentVip.email,
             gender: supaProf?.gender || permanentVip.gender,
-            city: supaProf?.city || "Lomé",
+            city: supaProf?.city || "",
             plan: "VIP",
             subscriptionStartedAt: PERMANENT_VIP_START,
             subscriptionExpiresAt: PERMANENT_VIP_EXPIRY,
@@ -198,8 +198,8 @@ export async function POST(req: NextRequest) {
             pseudo: user.profile?.pseudo || cleanInput.split("@")[0] || "membre",
             email: effectiveEmail,
             gender: user.profile?.gender || "OTHER",
-            city: user.profile?.city || "Lomé",
-            bio: user.profile?.bio || "Nouveau membre sur Meet Me Club à Lomé.",
+            city: user.profile?.city || "",
+            bio: user.profile?.bio || "Nouveau membre sur Meet Me Club.",
             plan: realPlan,
           });
         } else if (supaProf.plan !== realPlan && realPlan !== "FREE") {
@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
             pseudo: supaProf.pseudo || supaProf.firstName,
             email: effectiveEmail,
             gender: (supaProf.gender as any) || "OTHER",
-            city: supaProf.city || "Lomé",
+            city: supaProf.city || "",
             bio: supaProf.bio || "Nouveau membre sur Meet Me Club.",
             // Plan Supabase toujours prioritaire — ne jamais forcer FREE sur un VIP
             plan: supaProf.plan || realPlan,

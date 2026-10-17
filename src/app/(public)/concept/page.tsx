@@ -4,8 +4,8 @@ import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Le Concept | Meet Me Club Togo",
-  description: "Découvrez le concept Meet Me Club : de la discussion authentique au rendez-vous sécurisé dans les meilleurs lieux de Lomé.",
+  title: "Le Concept | Meet Me Club",
+  description: "Découvrez le concept Meet Me Club : de la discussion authentique au rendez-vous sécurisé dans les meilleurs lieux.",
 };
 
 export default function ConceptPage() {
@@ -35,7 +35,7 @@ export default function ConceptPage() {
             « Plus qu'une rencontre, un rendez-vous ! »
           </h1>
           <p style={{ fontSize: "17px", color: "#E2E8F0", lineHeight: 1.6 }}>
-            Une expérience sécurisée et authentique au Togo. Échangez librement (amitié, partage d'idées, amour) et passez du virtuel au réel quand vous vous sentez prêt(e).
+            Une expérience sécurisée et authentique, partout dans le monde. Échangez librement (amitié, partage d'idées, amour) et passez du virtuel au réel quand vous vous sentez prêt(e).
           </p>
         </div>
       </section>
@@ -61,9 +61,9 @@ export default function ConceptPage() {
 
           <div className="card" style={{ background: "white", padding: "32px 24px", borderRadius: "20px", border: "1px solid #E2E8F0" }}>
             <div style={{ fontSize: "36px", marginBottom: "12px" }}>🍷</div>
-            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Cadres prestigieux à Lomé</h3>
+            <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Cadres prestigieux</h3>
             <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6 }}>
-              Quand vous décidez de vous rencontrer, nous réservons votre table dans nos établissements partenaires réputés (Coco Beach Bè Plage, Byblos Tokoin, Café de la Paix), avec boissons et repas inclus.
+              Quand vous décidez de vous rencontrer, nous réservons votre table dans nos établissements partenaires réputés (hôtels, restaurants et lounges sélectionnés), avec boissons et repas inclus.
             </p>
           </div>
         </div>

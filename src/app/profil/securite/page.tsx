@@ -320,7 +320,7 @@ export default function ProfilSecuritePage() {
                 </strong>
                 <span style={{ fontSize: "12px", color: "#64748B" }}>
                   {isVisible
-                    ? "Les partenaires compatibles à Lomé peuvent découvrir votre profil."
+                    ? "Les partenaires compatibles peuvent découvrir votre profil."
                     : "Votre profil est masqué de la recherche. Seuls vos contacts actuels peuvent vous écrire."}
                 </span>
               </div>

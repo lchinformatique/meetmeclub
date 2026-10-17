@@ -113,7 +113,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
           <span style={{ fontSize: "16px" }}>🌴</span>
           <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Lieux Partenaires :</span>
           <strong style={{ fontSize: "14px", color: "#B45309", fontWeight: 800 }}>
-            {stats.totalPartners ?? 3} à Lomé
+            {stats.totalPartners ?? 3}
           </strong>
         </div>
         <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
@@ -350,7 +350,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
               {stats.organizedDates.toLocaleString("fr-FR")}
             </div>
             <div style={{ fontSize: "12px", fontWeight: 700, color: "#991B1B", marginTop: "3px" }}>
-              Rencontres Réelles au Togo
+              Rencontres Réelles
             </div>
           </div>
         </div>

@@ -21,7 +21,9 @@ export interface ProSpace {
   coverUrl: string | null;
   description: string | null;
   city: string | null;
-  neighborhood: string | null;
+  country: string | null;
+  address: string | null;
+  neighborhood?: string | null;
   whatsapp: string | null;
   facebook: string | null;
   phone: string | null;
@@ -41,14 +43,15 @@ export interface Listing {
   priceLabel: string | null;
   description: string | null;
   city: string | null;
-  neighborhood: string | null;
+  country: string | null;
+  neighborhood?: string | null;
   photos: string[];
   status: ListingStatus;
   views: number;
   reportsCount: number;
   removedReason: string | null;
   createdAt: string;
-  pro?: Pick<ProSpace, "id" | "slug" | "name" | "logoUrl" | "activity" | "city"> | null;
+  pro?: Pick<ProSpace, "id" | "slug" | "name" | "logoUrl" | "activity" | "city" | "country"> | null;
 }
 
 /** Contacts d'un pro : réservés aux membres connectés */
@@ -104,7 +107,6 @@ export function whatsappLink(raw: string | null | undefined, message: string) {
   if (!raw) return null;
   let digits = raw.replace(/\D/g, "");
   if (digits.startsWith("00")) digits = digits.slice(2);
-  if (digits.length === 8) digits = `228${digits}`; // numéro togolais sans indicatif
   if (digits.length < 8) return null;
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
@@ -116,11 +118,12 @@ export function facebookLink(raw: string | null | undefined) {
   return `https://www.facebook.com/${v.replace(/^@/, "").replace(/^(www\.)?facebook\.com\//i, "")}`;
 }
 
-const LISTING_WITH_PRO = '*, pro:pro_spaces!inner(id, slug, name, "logoUrl", activity, city, "isActive")';
+const LISTING_WITH_PRO = '*, pro:pro_spaces!inner(id, slug, name, "logoUrl", activity, city, country, "isActive")';
 
 export interface MarketQuery {
   category?: string;
   city?: string;
+  country?: string;
   kind?: string;
   q?: string;
   page?: number;
@@ -140,6 +143,7 @@ export async function searchListings(query: MarketQuery) {
   if (query.category && CATEGORIES[query.category]) req = req.eq("category", query.category);
   if (query.kind === "SALE" || query.kind === "SERVICE") req = req.eq("kind", query.kind);
   if (query.city) req = req.ilike("city", `%${query.city.replace(/[%_,()]/g, "")}%`);
+  if (query.country && /^[A-Z]{2}$/.test(query.country)) req = req.eq("country", query.country);
   if (query.q) {
     const term = query.q.replace(/[%_,()]/g, " ").trim().slice(0, 60);
     if (term) req = req.or(`title.ilike.%${term}%,description.ilike.%${term}%`);

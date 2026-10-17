@@ -22,6 +22,7 @@ import styles from "../messages.module.css";
 import Avatar from "./Avatar";
 import { GOAL_LABELS, LOME_SPOTS, VICTOIRE_ID, isRenderableUrl, type Member } from "../_lib/chat-utils";
 import { SASPAY_LINKS } from "@/lib/subscription-constants";
+import { countryName } from "@/lib/countries";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
 function Sheet({ onClose, children, label }: { onClose: () => void; children: React.ReactNode; label: string }) {
@@ -81,8 +82,7 @@ export function PartnerSheet({
 
       <div className={styles.sheetFacts}>
         <span>
-          <MapPin size={15} /> {member.city || "Lomé"}
-          {member.neighborhood ? ` · ${member.neighborhood}` : ""}
+          <MapPin size={15} /> {[member.city, countryName(member.country)].filter(Boolean).join(", ") || "—"}
         </span>
         {member.profession && (
           <span>
@@ -271,14 +271,14 @@ export function LocationModal({
         <LocateFixed size={18} /> {locating ? "Localisation…" : "Ma position actuelle"}
       </button>
       {error && <p className={styles.formError}>{error}</p>}
-      <div className={styles.spotList}>
-        <span className={styles.spotTitle}>Lieux de rendez-vous à Lomé</span>
+      {LOME_SPOTS.length > 0 && <div className={styles.spotList}>
+        <span className={styles.spotTitle}>Lieux de rendez-vous suggérés</span>
         {LOME_SPOTS.map((s) => (
           <button key={s.name} type="button" onClick={() => onShare(s.name, s.lat, s.lng)}>
             <MapPin size={16} /> {s.name}
           </button>
         ))}
-      </div>
+      </div>}
     </Sheet>
   );
 }

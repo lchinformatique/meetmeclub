@@ -14,7 +14,8 @@ export interface ProSpace {
   coverUrl: string | null;
   description: string | null;
   city: string | null;
-  neighborhood: string | null;
+  country: string | null;
+  address: string | null;
   whatsapp: string | null;
   facebook: string | null;
   phone: string | null;

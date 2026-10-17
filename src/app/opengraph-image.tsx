@@ -6,7 +6,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const alt = "Meet Me Club — Plus qu'une rencontre, un rendez-vous ! Rencontres sérieuses et vérifiées à Lomé.";
+export const alt = "Meet Me Club — Plus qu'une rencontre, un rendez-vous ! Rencontres sérieuses et vérifiées, partout dans le monde.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -74,7 +74,7 @@ export default async function OpengraphImage() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingRight: 64, gap: 22 }}>
           <div style={{ display: "flex", alignItems: "center", fontSize: 24, fontWeight: 700, letterSpacing: 4, color: "#FCA5A5" }}>
             <div style={{ width: 14, height: 14, background: "#E10600", transform: "rotate(45deg)", marginRight: 16, display: "flex" }} />
-            CLUB PRIVÉ DE RENCONTRES · LOMÉ
+            CLUB PRIVÉ DE RENCONTRES · INTERNATIONAL
           </div>
           <div style={{ display: "flex", flexDirection: "column", fontSize: 58, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08 }}>
             <div style={{ display: "flex" }}>Plus qu&apos;une rencontre,</div>

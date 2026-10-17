@@ -10,9 +10,9 @@ export const metadata: Metadata = {
     template: "%s | Meet Me Club",
   },
   description:
-    "Rencontrez des célibataires vérifiés à Lomé : chat privé, appels vidéo et vrais rendez-vous dans les meilleurs lieux. Inscription gratuite, réservée aux 18 ans et plus.",
+    "Rencontrez des célibataires vérifiés du monde entier : chat privé, appels vidéo et vrais rendez-vous dans les meilleurs lieux. Inscription gratuite, réservée aux 18 ans et plus.",
   applicationName: "Meet Me Club",
-  keywords: ["rencontres Togo", "rencontres Lomé", "dating Afrique", "rendez-vous Lomé", "meet me club"],
+  keywords: ["rencontres sérieuses", "site de rencontre", "célibataires vérifiés", "rendez-vous", "dating Afrique", "meet me club"],
   authors: [{ name: "Meet Me Club" }],
   creator: "Meet Me Club",
   // Adresse publique du site pour les aperçus de liens (jamais localhost en ligne)
@@ -28,13 +28,13 @@ export const metadata: Metadata = {
     siteName: "Meet Me Club",
     title: "Meet Me Club 💞 Plus qu'une rencontre, un rendez-vous !",
     description:
-      "Des célibataires vérifiés t'attendent à Lomé. Discute en privé, appelle en vidéo, rencontre-les pour de vrai. Inscription gratuite en 1 minute.",
+      "Des célibataires vérifiés du monde entier t'attendent. Discute en privé, appelle en vidéo, rencontre-les pour de vrai. Inscription gratuite en 1 minute.",
     // Image d'aperçu : src/app/opengraph-image.jpg (logo + slogan + couple)
   },
   twitter: {
     card: "summary_large_image",
     title: "Meet Me Club 💞 Plus qu'une rencontre, un rendez-vous !",
-    description: "Des célibataires vérifiés t'attendent à Lomé. Inscription gratuite en 1 minute.",
+    description: "Des célibataires vérifiés du monde entier t'attendent. Inscription gratuite en 1 minute.",
   },
   manifest: "/manifest.json",
   icons: {

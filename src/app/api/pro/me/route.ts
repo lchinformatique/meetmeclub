@@ -7,6 +7,7 @@ import { getSession } from "@/lib/session";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { getMemberPlan } from "@/lib/member-plan";
 import { isMemberVerified, NOT_VERIFIED_ERROR } from "@/lib/verification";
+import { COUNTRIES } from "@/lib/countries";
 import {
   ACTIVITIES,
   CATEGORIES,
@@ -72,6 +73,12 @@ export async function PUT(req: NextRequest) {
     if (!whatsapp && !facebook && !phone) {
       return NextResponse.json({ error: "Ajoutez au moins un contact : WhatsApp, Facebook ou téléphone." }, { status: 400 });
     }
+    const country = typeof body.country === "string" && COUNTRIES.some((c) => c.iso === body.country) ? body.country : null;
+    const city = clean(body.city, 60);
+    const address = clean(body.address, 160);
+    if (!country || !city || !address || address.length < 5) {
+      return NextResponse.json({ error: "Indiquez le pays, la ville et l'adresse de votre activité." }, { status: 400 });
+    }
     const website = clean(body.website, 200);
     if (website && !/^https?:\/\//i.test(website)) {
       return NextResponse.json({ error: "Le site web doit commencer par https://" }, { status: 400 });
@@ -83,8 +90,9 @@ export async function PUT(req: NextRequest) {
       name,
       activity,
       description: clean(body.description, 1500),
-      city: clean(body.city, 60),
-      neighborhood: clean(body.neighborhood, 60),
+      city,
+      country,
+      address,
       whatsapp,
       facebook,
       phone,

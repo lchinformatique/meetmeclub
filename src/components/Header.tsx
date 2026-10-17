@@ -60,10 +60,10 @@ export default function Header() {
   const navLinks: NavLinkItem[] = [
     { href: "/", label: lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil", Icon: Home },
     { href: "/decouverte", label: t("navDiscovery", lang), Icon: Compass },
-    { href: "/marche", label: "Le Marché", Icon: Store },
-    { href: "/tarifs", label: "Nos plans d'accès", Icon: Gem },
-    { href: "/rendez-vous", label: "Nos packs & Sorties", Icon: CalendarDays },
-    { href: "/vip", label: "Mur VIP 👑", Icon: Crown },
+    { href: "/marche", label: "Marché", Icon: Store },
+    { href: "/tarifs", label: "Plans", Icon: Gem },
+    { href: "/rendez-vous", label: "Sorties", Icon: CalendarDays },
+    { href: "/vip", label: "Mur VIP", Icon: Crown },
     { href: "/messages", label: t("navMessages", lang), Icon: MessageSquare },
   ];
   const [sessionUser, setSessionUser] = useState<UserSession | null>(null);
@@ -300,7 +300,7 @@ export default function Header() {
                   textTransform: "uppercase",
                 }}
               >
-                International · Sorties Togo
+                Club international
               </span>
             </div>
           </Link>
@@ -912,11 +912,11 @@ export default function Header() {
       ══════════════════════════════════════════ */}
       <style>{`
         /* ── Responsive breakpoints ── */
-        @media (min-width: 1024px) {
+        @media (min-width: 1280px) {
           .header-desktop-nav { display: flex !important; }
           .header-hamburger   { display: none !important; }
         }
-        @media (max-width: 1023px) {
+        @media (max-width: 1279px) {
           .header-desktop-nav      { display: none !important; }
           .header-hamburger        { display: flex !important; }
           .header-login-btn        { display: none !important; }
@@ -929,7 +929,7 @@ export default function Header() {
         }
 
         /* ── MacBook & Small PC Screen Optimizations (1024px - 1320px) ── */
-        @media (min-width: 1024px) and (max-width: 1320px) {
+        @media (min-width: 1280px) and (max-width: 1480px) {
           .header-desktop-nav {
             gap: 3px !important;
           }
@@ -957,7 +957,7 @@ export default function Header() {
           }
         }
 
-        @media (min-width: 1024px) and (max-width: 1140px) {
+        @media (min-width: 1280px) and (max-width: 1360px) {
           .header-desktop-nav {
             gap: 2px !important;
           }
@@ -980,6 +980,15 @@ export default function Header() {
             padding: 6px 11px !important;
             font-size: 12px !important;
           }
+        }
+
+        /* ── Très petits téléphones : marque compacte ── */
+        @media (max-width: 420px) {
+          .header-logo-subtitle { display: none !important; }
+        }
+        /* Téléphones : profil et déconnexion sont dans le menu ☰ */
+        @media (max-width: 639px) {
+          .profile-btn, .header-logout-btn { display: none !important; }
         }
 
         /* ── Logo hover ── */

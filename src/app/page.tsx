@@ -9,6 +9,8 @@ import Footer from "@/components/Footer";
 import CommunityStatsWidget from "@/components/CommunityStatsWidget";
 import HeroLiveStatsCard from "@/components/HeroLiveStatsCard";
 import UnifiedPricingCards from "@/components/UnifiedPricingCards";
+import HeroSearch from "@/components/home/HeroSearch";
+import HomeMarketSection from "@/components/home/HomeMarketSection";
 import {
   ShieldCheck,
   CheckCircle2,
@@ -28,8 +30,11 @@ import {
 export const metadata: Metadata = {
   title: "Meet Me Club — Votre histoire commence ici",
   description:
-    "Plus qu'une rencontre, un rendez-vous ! Le Club Privé de Rencontres International — Chats ouverts au monde entier et rendez-vous réels au Togo.",
+    "Plus qu'une rencontre, un rendez-vous ! Le Club Privé de Rencontres International : célibataires vérifiés du monde entier, vrais rendez-vous et Marché des bonnes adresses.",
 };
+
+// Dernières annonces du Marché rafraîchies toutes les 2 minutes
+export const revalidate = 120;
 
 // ── How it works steps ──────────────────────────────────────────
 const STEPS = [
@@ -119,21 +124,21 @@ const TESTIMONIALS = [
   {
     name: "Amivi K.",
     age: 26,
-    city: "Lomé",
+    city: "",
     text: "J'ai rencontré quelqu'un de formidable. Le fait que tout soit organisé à l'avance m'a rassurée. Le restaurant était parfait !",
     avatar: "👩🏾",
   },
   {
     name: "Kofi A.",
     age: 31,
-    city: "Lomé",
+    city: "",
     text: "Enfin une application qui pense à tout ! J'ai réservé le dîner directement depuis l'appli. Elle a adoré la surprise.",
     avatar: "👨🏿",
   },
   {
     name: "Essi M.",
     age: 24,
-    city: "Lomé",
+    city: "",
     text: "Le QR code à l'arrivée, les rappels automatiques… Meet Me Club c'est vraiment du sérieux. Je recommande à 100%.",
     avatar: "👩🏾",
   },
@@ -147,7 +152,7 @@ const FAQ = [
   },
   {
     q: "Comment fonctionne le paiement ?",
-    a: "Vous payez via T-Money ou Flooz directement dans l'application. L'argent est sécurisé jusqu'à la confirmation du rendez-vous.",
+    a: "Vous payez par Mobile Money (T-Money, Flooz) directement dans l'application ; le paiement par carte bancaire arrive bientôt. L'argent est sécurisé jusqu'à la confirmation du rendez-vous.",
   },
   {
     q: "Est-ce que mon numéro de téléphone est partagé ?",
@@ -287,7 +292,7 @@ export default function HomePage() {
                   textShadow: "0 1px 8px rgba(0,0,0,0.4)",
                 }}
               >
-                Rejoignez des célibataires authentiques du monde entier. Échangez et chattez librement, et vivez vos vraies rencontres dans nos cadres partenaires exclusifs au Togo.
+                Rejoignez des célibataires authentiques du monde entier. Échangez et chattez librement, puis vivez vos vraies rencontres dans des lieux partenaires sélectionnés.
               </p>
 
               <p
@@ -301,6 +306,8 @@ export default function HomePage() {
               >
                 Votre histoire commence ici
               </p>
+
+              <HeroSearch />
 
               <div className="hero-cta-group">
                 <Link
@@ -358,7 +365,7 @@ export default function HomePage() {
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                   <MapPin size={16} className="text-red-400" />
-                  <span>Sorties au Togo</span>
+                  <span>Rencontres internationales</span>
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                   <ShieldCheck size={16} className="text-amber-400" />
@@ -394,6 +401,9 @@ export default function HomePage() {
       <section style={{ maxWidth: "1060px", margin: "-45px auto 32px", paddingInline: "20px", position: "relative", zIndex: 10 }}>
         <CommunityStatsWidget />
       </section>
+
+      {/* ── Le Marché : dernières annonces visibles de tous ── */}
+      <HomeMarketSection />
 
       {/* ── Three Pillars ─────────────────────────────────────── */}
       <section className="section" style={{ background: "var(--color-gray-50)", paddingTop: "40px" }}>
@@ -687,7 +697,7 @@ export default function HomePage() {
             Votre histoire commence ici
           </h2>
           <p style={{ fontSize: "18px", color: "rgba(255,255,255,0.85)", marginBottom: "32px" }}>
-            Rejoignez plus de 1 200 célibataires qui ont déjà trouvé leur rendez-vous à Lomé.
+            Rejoignez les célibataires vérifiés du monde entier : votre prochain rendez-vous commence ici.
           </p>
           <Link
             href="/connexion"

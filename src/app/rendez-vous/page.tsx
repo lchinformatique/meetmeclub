@@ -1,698 +1,202 @@
 "use client";
 // src/app/rendez-vous/page.tsx
-// Rendez-vous dashboard — list of upcoming & past appointments
+// Mes sorties : invitations envoyées et reçues, dans les hôtels et logements du Marché.
+// L'invité(e) accepte ou refuse ; l'équipe Meet Me Club confirme ensuite avec le lieu.
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import Header from "@/components/Header";
-import { Calendar, CheckCircle2, Clock, MapPin, MessageSquare, Star } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, MapPin, Plus, XCircle } from "lucide-react";
+import { countryName } from "@/lib/countries";
 
-type Status = "PENDING" | "ACCEPTED" | "COMPLETED" | "CANCELLED";
-
-interface Rdv {
+interface Sortie {
   id: string;
-  withFirstName: string;
-  withPhoto: string;
-  pack: string;
-  packColor: string;
-  partnerName: string;
-  partnerAddress: string;
+  role: "proposer" | "guest";
+  other: { userId: string; firstName: string; pseudo?: string; photo?: string };
+  venue: { title?: string; proName?: string; address?: string; city?: string; country?: string; photo?: string | null } | null;
+  packName: string;
+  price: number | null;
   scheduledAt: string;
-  status: Status;
-  priceFcfa: number;
-  note?: string;
-  qrCode?: string;
+  note?: string | null;
+  status: "WAITING_GUEST" | "WAITING_TEAM" | "CONFIRMED" | "DECLINED_GUEST" | "DECLINED_TEAM" | "CANCELLED";
+  statusLabel: string;
+  teamNote?: string | null;
 }
 
-const DEMO_RDV: Rdv[] = [
-  {
-    id: "rdv-1",
-    withFirstName: "Afi",
-    withPhoto:
-      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=120&h=120&q=80",
-    pack: "Dîner",
-    packColor: "var(--color-red)",
-    partnerName: "Coco Beach Lomé",
-    partnerAddress: "Boulevard du Mono, Bè-Plage, Lomé",
-    scheduledAt: "2026-10-15T19:30:00Z",
-    status: "ACCEPTED",
-    priceFcfa: 12000,
-    qrCode: "QR-MMC-20261015-AFI",
-  },
-  {
-    id: "rdv-2",
-    withFirstName: "Akua",
-    withPhoto:
-      "https://images.unsplash.com/photo-1611432579699-484f7990b127?auto=format&fit=crop&w=120&h=120&q=80",
-    pack: "Complice",
-    packColor: "var(--color-blue)",
-    partnerName: "Byblos Lomé",
-    partnerAddress: "Rue de la Victoire, Tokoin, Lomé",
-    scheduledAt: "2026-10-18T20:00:00Z",
-    status: "PENDING",
-    priceFcfa: 5000,
-    note: "J'espère que tu aimeras l'endroit, il est très cosy !",
-  },
-  {
-    id: "rdv-3",
-    withFirstName: "Esi",
-    withPhoto:
-      "https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?auto=format&fit=crop&w=120&h=120&q=80",
-    pack: "Découverte",
-    packColor: "var(--color-gray-500)",
-    partnerName: "Café de la Paix",
-    partnerAddress: "Avenue 24 Janvier, Lomé",
-    scheduledAt: "2026-10-08T17:00:00Z",
-    status: "COMPLETED",
-    priceFcfa: 2000,
-  },
-];
-
-const STATUS_CONFIG: Record<
-  Status,
-  { label: string; color: string; bg: string; icon: string }
-> = {
-  PENDING: {
-    label: "En attente",
-    color: "#D97706",
-    bg: "rgba(217,119,6,0.10)",
-    icon: "⏳",
-  },
-  ACCEPTED: {
-    label: "Confirmé",
-    color: "var(--color-success)",
-    bg: "rgba(16,185,129,0.10)",
-    icon: "✅",
-  },
-  COMPLETED: {
-    label: "Terminé",
-    color: "var(--color-gray-500)",
-    bg: "rgba(107,114,128,0.10)",
-    icon: "⭐",
-  },
-  CANCELLED: {
-    label: "Annulé",
-    color: "var(--color-error)",
-    bg: "rgba(239,68,68,0.10)",
-    icon: "✕",
-  },
+const STATUS_STYLE: Record<Sortie["status"], { bg: string; color: string }> = {
+  WAITING_GUEST: { bg: "#FEF3C7", color: "#92400E" },
+  WAITING_TEAM: { bg: "#DBEAFE", color: "#1E40AF" },
+  CONFIRMED: { bg: "#DCFCE7", color: "#166534" },
+  DECLINED_GUEST: { bg: "#F1F5F9", color: "#475569" },
+  DECLINED_TEAM: { bg: "#FEE2E2", color: "#991B1B" },
+  CANCELLED: { bg: "#F1F5F9", color: "#475569" },
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
+const ACTIVE = ["WAITING_GUEST", "WAITING_TEAM", "CONFIRMED"];
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+export default function MesSortiesPage() {
+  const [sorties, setSorties] = useState<Sortie[] | null>(null);
+  const [tab, setTab] = useState<"active" | "past">("active");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
-export default function RendezVousPage() {
-  const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all");
-  const [expandedId, setExpandedId] = useState<string | null>("rdv-1");
+  const load = useCallback(async () => {
+    try {
+      const r = await fetch("/api/sorties", { cache: "no-store" });
+      if (r.status === 401) {
+        window.location.href = "/connexion?callbackUrl=/rendez-vous";
+        return;
+      }
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "Chargement impossible");
+      setSorties(d.sorties || []);
+    } catch (e: any) {
+      setError(e.message);
+      setSorties([]);
+    }
+  }, []);
 
-  const filtered = DEMO_RDV.filter((r) => {
-    if (filter === "upcoming")
-      return r.status === "PENDING" || r.status === "ACCEPTED";
-    if (filter === "past")
-      return r.status === "COMPLETED" || r.status === "CANCELLED";
-    return true;
-  });
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function act(id: string, action: "ACCEPT" | "DECLINE" | "CANCEL") {
+    if (action === "CANCEL" && !confirm("Annuler cette sortie ?")) return;
+    setBusy(id);
+    try {
+      const r = await fetch(`/api/sorties/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) alert(d.error || "Action impossible");
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const now = Date.now();
+  const list = (sorties || []).filter((s) =>
+    tab === "active" ? ACTIVE.includes(s.status) && new Date(s.scheduledAt).getTime() > now - 6 * 3600 * 1000 : !(ACTIVE.includes(s.status) && new Date(s.scheduledAt).getTime() > now - 6 * 3600 * 1000)
+  );
+  const toAnswer = (sorties || []).filter((s) => s.role === "guest" && s.status === "WAITING_GUEST").length;
 
   return (
-    <div
-      style={{
-        minHeight: "100dvh",
-        background: "var(--color-gray-50)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* ── Standardized Header ──────────────────────────── */}
+    <div style={{ minHeight: "100dvh", background: "#F4F6FB" }}>
       <Header />
-
-      {/* ── Content ────────────────────────────────────── */}
-      <div
-        className="container"
-        style={{ paddingTop: "32px", paddingBottom: "48px", maxWidth: "820px" }}
-      >
-        {/* Page heading */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: "28px",
-            flexWrap: "wrap",
-            gap: "12px",
-          }}
-        >
-          <div>
-            <h1 style={{ fontSize: "26px", fontWeight: 800, color: "var(--color-blue)" }}>
-              Mes rendez-vous
+      <main className="container" style={{ maxWidth: 760, paddingTop: 20, paddingBottom: "calc(110px + env(safe-area-inset-bottom))" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: "clamp(1.4rem, 4vw, 1.9rem)", fontWeight: 800, color: "#0B2559", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+              <Calendar size={26} /> Mes sorties
             </h1>
-            <p style={{ color: "var(--color-gray-500)", fontSize: "15px", marginTop: "4px" }}>
-              Gérez vos rencontres planifiées
+            <p style={{ margin: "4px 0 0", color: "#475569", fontSize: 14 }}>
+              Invitez un membre dans un hôtel ou un logement du Marché. L&apos;équipe confirme chaque sortie avec le lieu.
             </p>
           </div>
-          <Link
-            href="/rendez-vous/nouveau"
-            className="btn btn-primary"
-            style={{ gap: "8px" }}
-          >
-            ＋ Proposer un rendez-vous
+          <Link href="/messages" className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Plus size={18} /> Inviter un membre
           </Link>
         </div>
 
-        {/* Stats bar */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "12px",
-            marginBottom: "28px",
-          }}
-        >
-          {[
-            { label: "À venir", value: 2, color: "var(--color-blue)", Icon: Calendar },
-            { label: "Réalisés", value: 1, color: "var(--color-success)", Icon: CheckCircle2 },
-            { label: "En attente", value: 1, color: "#D97706", Icon: Clock },
-          ].map((s) => {
-            const SIcon = s.Icon;
-            return (
-              <div
-                key={s.label}
-                className="card"
-                style={{ padding: "16px 20px", textAlign: "center" }}
-              >
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px", color: s.color }}>
-                  <SIcon size={24} />
-                </div>
-                <div
-                  style={{ fontSize: "28px", fontWeight: 800, color: s.color }}
-                >
-                  {s.value}
-                </div>
-                <div style={{ fontSize: "13px", color: "var(--color-gray-500)" }}>
-                  {s.label}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {toAnswer > 0 && (
+          <div style={{ background: "#FEF3C7", color: "#92400E", borderRadius: 14, padding: "12px 14px", fontWeight: 700, marginBottom: 12 }}>
+            📩 {toAnswer} invitation{toAnswer > 1 ? "s" : ""} en attente de votre réponse.
+          </div>
+        )}
 
-        {/* Filter tabs */}
-        <div
-          style={{
-            display: "flex",
-            background: "var(--color-gray-100)",
-            borderRadius: "var(--radius-full)",
-            padding: "4px",
-            marginBottom: "20px",
-            width: "fit-content",
-          }}
-        >
-          {(
-            [
-              { key: "all", label: "Tous" },
-              { key: "upcoming", label: "À venir" },
-              { key: "past", label: "Passés" },
-            ] as const
-          ).map((t) => (
+        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          {([
+            ["active", "À venir"],
+            ["past", "Historique"],
+          ] as const).map(([k, l]) => (
             <button
-              key={t.key}
-              onClick={() => setFilter(t.key)}
-              style={{
-                padding: "8px 20px",
-                borderRadius: "var(--radius-full)",
-                border: "none",
-                fontWeight: 600,
-                fontSize: "14px",
-                cursor: "pointer",
-                transition: "all var(--transition-fast)",
-                background: filter === t.key ? "white" : "transparent",
-                color:
-                  filter === t.key ? "var(--color-blue)" : "var(--color-gray-500)",
-                boxShadow: filter === t.key ? "var(--shadow-sm)" : "none",
-              }}
+              key={k}
+              type="button"
+              onClick={() => setTab(k)}
+              style={{ padding: "9px 16px", borderRadius: 999, border: "none", fontWeight: 800, fontSize: 14, cursor: "pointer", background: tab === k ? "#0B2559" : "#fff", color: tab === k ? "#fff" : "#0B2559" }}
             >
-              {t.label}
+              {l}
             </button>
           ))}
         </div>
 
-        {/* RDV Cards */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {filtered.length === 0 && (
-            <div
-              className="card card-padded"
-              style={{ textAlign: "center", color: "var(--color-gray-400)" }}
-            >
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px", color: "var(--color-gray-400)" }}>
-                <Calendar size={44} />
-              </div>
-              <p style={{ fontSize: "16px", fontWeight: 600 }}>
-                Aucun rendez-vous dans cette catégorie
-              </p>
-              <Link
-                href="/decouverte"
-                className="btn btn-primary"
-                style={{ marginTop: "16px", display: "inline-flex" }}
-              >
-                Découvrir des profils →
-              </Link>
+        {error && <div style={{ background: "#FEF2F2", color: "#B42318", padding: 14, borderRadius: 14, fontWeight: 700, marginBottom: 12 }}>{error}</div>}
+        {sorties === null && <p style={{ color: "#64748B" }}>Chargement…</p>}
+
+        {sorties !== null && list.length === 0 && (
+          <div style={{ background: "#fff", borderRadius: 18, padding: "28px 20px", textAlign: "center", color: "#475569" }}>
+            <p style={{ fontSize: 40, margin: 0 }}>🥂</p>
+            <p style={{ fontWeight: 700, margin: "8px 0 14px" }}>
+              {tab === "active" ? "Aucune sortie prévue pour le moment." : "Aucune sortie passée."}
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <Link href="/messages" className="btn btn-primary">Inviter un membre</Link>
+              <Link href="/marche?categorie=HOTEL" className="btn btn-ghost">Voir les lieux</Link>
             </div>
-          )}
+          </div>
+        )}
 
-          {filtered.map((rdv) => {
-            const sc = STATUS_CONFIG[rdv.status];
-            const isExpanded = expandedId === rdv.id;
-
+        <div style={{ display: "grid", gap: 12 }}>
+          {list.map((s) => {
+            const st = STATUS_STYLE[s.status];
+            const when = new Date(s.scheduledAt).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+            const place = [s.venue?.address, s.venue?.city, countryName(s.venue?.country)].filter(Boolean).join(", ");
             return (
-              <div
-                key={rdv.id}
-                className="card"
-                style={{
-                  overflow: "hidden",
-                  border:
-                    rdv.status === "ACCEPTED"
-                      ? "2px solid rgba(16,185,129,0.30)"
-                      : "1px solid var(--color-gray-200)",
-                }}
-              >
-                {/* Card header — always visible */}
-                <button
-                  onClick={() => setExpandedId(isExpanded ? null : rdv.id)}
-                  style={{
-                    width: "100%",
-                    padding: "18px 24px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    border: "none",
-                    background: "white",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  {/* Profile photo */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={rdv.withPhoto}
-                    alt={rdv.withFirstName}
-                    style={{
-                      width: "54px",
-                      height: "54px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      border: "2px solid var(--color-gray-200)",
-                      flexShrink: 0,
-                    }}
-                  />
-
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        marginBottom: "4px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          fontSize: "16px",
-                          color: "var(--color-blue)",
-                        }}
-                      >
-                        Rendez-vous avec {rdv.withFirstName}
-                      </span>
-                      {/* Status badge */}
-                      <span
-                        style={{
-                          background: sc.bg,
-                          color: sc.color,
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          padding: "3px 10px",
-                          borderRadius: "var(--radius-full)",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        {sc.icon} {sc.label}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "16px",
-                        fontSize: "13px",
-                        color: "var(--color-gray-500)",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span>📅 {formatDate(rdv.scheduledAt)}</span>
-                      <span>🕐 {formatTime(rdv.scheduledAt)}</span>
-                      <span
-                        style={{
-                          color: rdv.packColor,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Pack {rdv.pack}
-                      </span>
-                    </div>
+              <div key={s.id} style={{ background: "#fff", borderRadius: 18, overflow: "hidden", boxShadow: "0 4px 14px rgba(11,37,89,0.07)" }}>
+                <div style={{ display: "flex", gap: 12, padding: 14 }}>
+                  <div style={{ width: 84, height: 84, borderRadius: 14, flexShrink: 0, background: s.venue?.photo ? `center/cover url("${s.venue.photo}")` : "#E2E8F0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }}>
+                    {!s.venue?.photo && "🏨"}
                   </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "inline-block", fontSize: 12, fontWeight: 800, padding: "3px 10px", borderRadius: 999, background: st.bg, color: st.color }}>
+                      {s.statusLabel}
+                    </span>
+                    <strong style={{ display: "block", fontSize: 16, color: "#0F172A", marginTop: 4 }}>
+                      {s.role === "proposer" ? `Avec ${s.other.firstName}` : `Invitation de ${s.other.firstName}`}
+                    </strong>
+                    <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "#334155", fontWeight: 600 }}>
+                      <Clock size={14} /> {when}
+                    </span>
+                    <span style={{ display: "flex", alignItems: "flex-start", gap: 5, fontSize: 13, color: "#64748B", marginTop: 2 }}>
+                      <MapPin size={14} style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ minWidth: 0 }}>
+                        <strong style={{ color: "#0B2559" }}>{s.venue?.proName}</strong>
+                        {s.venue?.title ? ` · ${s.venue.title}` : ""}
+                        {place ? <span style={{ display: "block" }}>{place}</span> : null}
+                      </span>
+                    </span>
+                    <span style={{ display: "block", fontSize: 13, color: "#475569", marginTop: 2 }}>
+                      Pack {s.packName}
+                      {s.price ? ` · ${s.price.toLocaleString("fr-FR")} FCFA` : ""}
+                    </span>
+                    {s.note && <span style={{ display: "block", fontSize: 13, color: "#475569", fontStyle: "italic", marginTop: 4 }}>« {s.note} »</span>}
+                    {s.teamNote && <span style={{ display: "block", fontSize: 13, color: "#1E40AF", marginTop: 4 }}>Équipe Meet Me Club : {s.teamNote}</span>}
+                  </div>
+                </div>
 
-                  {/* Chevron */}
-                  <span
-                    style={{
-                      fontSize: "18px",
-                      color: "var(--color-gray-400)",
-                      transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform var(--transition-fast)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    ▾
-                  </span>
-                </button>
-
-                {/* Expanded details */}
-                {isExpanded && (
-                  <div
-                    style={{
-                      borderTop: "1px solid var(--color-gray-100)",
-                      padding: "20px 24px",
-                      background: "var(--color-gray-50)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "16px",
-                    }}
-                  >
-                    {/* Venue */}
-                    <div
-                      style={{
-                        background: "white",
-                        borderRadius: "var(--radius-md)",
-                        padding: "16px",
-                        border: "1px solid var(--color-gray-200)",
-                        display: "flex",
-                        gap: "14px",
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <span style={{ fontSize: "28px" }}>📍</span>
-                      <div>
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            fontSize: "15px",
-                            color: "var(--color-blue)",
-                            marginBottom: "2px",
-                          }}
-                        >
-                          {rdv.partnerName}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "13px",
-                            color: "var(--color-gray-500)",
-                          }}
-                        >
-                          {rdv.partnerAddress}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Pack & Price */}
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "12px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          background: "white",
-                          borderRadius: "var(--radius-md)",
-                          padding: "14px 16px",
-                          border: "1px solid var(--color-gray-200)",
-                          textAlign: "center",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "var(--color-gray-400)",
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Pack choisi
-                        </div>
-                        <div
-                          style={{
-                            fontWeight: 800,
-                            fontSize: "18px",
-                            color: rdv.packColor,
-                          }}
-                        >
-                          {rdv.pack}
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          background: "white",
-                          borderRadius: "var(--radius-md)",
-                          padding: "14px 16px",
-                          border: "1px solid var(--color-gray-200)",
-                          textAlign: "center",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "var(--color-gray-400)",
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Montant
-                        </div>
-                        <div
-                          style={{
-                            fontWeight: 800,
-                            fontSize: "18px",
-                            color: "var(--color-blue)",
-                          }}
-                        >
-                          {rdv.priceFcfa.toLocaleString("fr-FR")} FCFA
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Note */}
-                    {rdv.note && (
-                      <div
-                        style={{
-                          background: "rgba(11,46,107,0.04)",
-                          borderRadius: "var(--radius-md)",
-                          padding: "14px 16px",
-                          border: "1px solid rgba(11,46,107,0.10)",
-                          fontSize: "14px",
-                          color: "var(--color-gray-600)",
-                          fontStyle: "italic",
-                        }}
-                      >
-                        💬 &laquo;{rdv.note}&raquo;
-                      </div>
-                    )}
-
-                    {/* QR Code (if accepted) */}
-                    {rdv.qrCode && rdv.status === "ACCEPTED" && (
-                      <div
-                        style={{
-                          background: "white",
-                          borderRadius: "var(--radius-md)",
-                          padding: "20px",
-                          border: "2px dashed rgba(16,185,129,0.4)",
-                          textAlign: "center",
-                        }}
-                      >
-                        <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-gray-600)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                          🎟️ Votre code d&apos;accès
-                        </div>
-                        {/* QR code placeholder */}
-                        <div
-                          style={{
-                            width: "120px",
-                            height: "120px",
-                            margin: "0 auto 12px",
-                            background: "linear-gradient(135deg, var(--color-blue) 0%, var(--color-blue-dark) 100%)",
-                            borderRadius: "var(--radius-md)",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <span style={{ fontSize: "40px" }}>📱</span>
-                        </div>
-                        <div
-                          style={{
-                            fontWeight: 800,
-                            fontSize: "14px",
-                            color: "var(--color-blue)",
-                            letterSpacing: "2px",
-                          }}
-                        >
-                          {rdv.qrCode}
-                        </div>
-                        <p
-                          style={{
-                            fontSize: "12px",
-                            color: "var(--color-gray-400)",
-                            marginTop: "8px",
-                          }}
-                        >
-                          Présentez ce code à l&apos;entrée du restaurant
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      {rdv.status === "PENDING" && (
-                        <>
-                          <button className="btn btn-primary" style={{ flex: 1 }}>
-                            ✅ Confirmer
-                          </button>
-                          <button
-                            className="btn btn-ghost"
-                            style={{
-                              flex: 1,
-                              color: "var(--color-error)",
-                              borderColor: "var(--color-error)",
-                            }}
-                          >
-                            ✕ Refuser
-                          </button>
-                        </>
-                      )}
-                      {rdv.status === "ACCEPTED" && (
-                        <>
-                          <Link
-                            href={`/messages?conv=${rdv.withFirstName.toLowerCase()}`}
-                            className="btn btn-outline-blue"
-                            style={{ flex: 1, justifyContent: "center" }}
-                          >
-                            💬 Envoyer un message
-                          </Link>
-                          <button
-                            className="btn btn-ghost"
-                            style={{
-                              flex: 1,
-                              color: "var(--color-error)",
-                            }}
-                          >
-                            Annuler
-                          </button>
-                        </>
-                      )}
-                      {rdv.status === "COMPLETED" && (
-                        <button className="btn btn-outline-blue" style={{ flex: 1 }}>
-                          ⭐ Laisser un avis
+                {(s.status === "WAITING_GUEST" || s.status === "WAITING_TEAM") && (
+                  <div style={{ display: "flex", gap: 8, padding: "0 14px 14px", flexWrap: "wrap" }}>
+                    {s.role === "guest" && s.status === "WAITING_GUEST" && (
+                      <>
+                        <button type="button" disabled={busy === s.id} onClick={() => act(s.id, "ACCEPT")} style={{ flex: 1, minWidth: 120, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: 11, borderRadius: 12, border: "none", background: "#12B76A", color: "#fff", fontWeight: 800, cursor: "pointer" }}>
+                          <CheckCircle2 size={18} /> Accepter
                         </button>
-                      )}
-                    </div>
+                        <button type="button" disabled={busy === s.id} onClick={() => act(s.id, "DECLINE")} style={{ flex: 1, minWidth: 120, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: 11, borderRadius: 12, border: "1.5px solid #FCA5A5", background: "#FEF2F2", color: "#B42318", fontWeight: 800, cursor: "pointer" }}>
+                          <XCircle size={18} /> Refuser
+                        </button>
+                      </>
+                    )}
+                    {(s.role === "proposer" || s.status === "WAITING_TEAM") && (
+                      <button type="button" disabled={busy === s.id} onClick={() => act(s.id, "CANCEL")} style={{ flex: 1, minWidth: 120, padding: 11, borderRadius: 12, border: "1.5px solid #CBD5E1", background: "#fff", color: "#475569", fontWeight: 800, cursor: "pointer" }}>
+                        Annuler la sortie
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-
-        {/* Empty state CTA */}
-        {DEMO_RDV.length === 0 && (
-          <div className="card card-padded" style={{ textAlign: "center", marginTop: "40px" }}>
-            <div style={{ fontSize: "64px", marginBottom: "16px" }}>💕</div>
-            <h2 style={{ fontSize: "22px", marginBottom: "8px", color: "var(--color-blue)" }}>
-              Aucun rendez-vous pour l&apos;instant
-            </h2>
-            <p
-              style={{
-                color: "var(--color-gray-500)",
-                marginBottom: "24px",
-                lineHeight: 1.6,
-              }}
-            >
-              Découvrez des profils et proposez votre premier rendez-vous !
-            </p>
-            <Link href="/decouverte" className="btn btn-primary btn-lg">
-              Découvrir des profils →
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* Footer brand signature */}
-      <footer
-        style={{
-          marginTop: "60px",
-          padding: "36px 16px 28px",
-          textAlign: "center",
-          borderTop: "1px solid var(--color-gray-200)",
-          background: "white",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "12px",
-        }}
-      >
-        <div
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "50%",
-            overflow: "hidden",
-            border: "2px solid var(--color-red)",
-            background: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 10px rgba(225, 6, 0, 0.15)",
-            padding: "3px",
-          }}
-        >
-          <Image src="/logo.png" alt="Meet Me Club" width={38} height={38} style={{ objectFit: "contain" }} />
-        </div>
-        <div style={{ fontSize: "15px", fontWeight: 800, color: "var(--color-blue)" }}>
-          meet <span style={{ color: "var(--color-red)" }}>me</span> club · Lomé, Togo
-        </div>
-        <p style={{ fontSize: "12px", color: "var(--color-gray-500)", margin: 0 }}>
-          « Plus qu&apos;une rencontre, un rendez-vous ! » · 🔞 Réservé aux 18 ans et plus
-        </p>
-      </footer>
+      </main>
     </div>
   );
 }

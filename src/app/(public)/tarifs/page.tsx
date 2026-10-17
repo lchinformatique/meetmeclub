@@ -7,8 +7,8 @@ import type { Metadata } from "next";
 import UnifiedPricingCards from "@/components/UnifiedPricingCards";
 
 export const metadata: Metadata = {
-  title: "Tarifs & Abonnements | Meet Me Club Togo",
-  description: "Plan Gratuit (3 partenaires) ou Pass Essentiel illimité pour discuter, échanger et faire des rencontres authentiques à Lomé.",
+  title: "Tarifs & Abonnements | Meet Me Club",
+  description: "Plan Gratuit (3 partenaires) ou Pass Essentiel illimité pour discuter, échanger et faire des rencontres authentiques.",
 };
 
 const PLANS = [
@@ -75,7 +75,7 @@ const PLANS = [
       { text: "Profil boosté & classé en haut selon likes & habileté", ok: true, highlight: true },
       { text: "Accès aux membres 6 000, 3 000 et Essai", ok: true },
       { text: "Messages, photos et notes vocales illimités", ok: true },
-      { text: "Réservations de tables en lieux partenaires à Lomé", ok: true },
+      { text: "Réservations de tables en lieux partenaires", ok: true },
       { text: "Chronomètre précis et alertes de renouvellement", ok: true },
       { text: "Appels audio & vidéo WhatsApp", ok: false },
     ],
@@ -183,7 +183,7 @@ export default function TarifsPage() {
               margin: "0 auto",
             }}
           >
-            Discutez, faites-vous des amis ou organisez des rencontres réelles à Lomé.
+            Discutez, faites-vous des amis ou organisez des rencontres réelles.
             Commencez gratuitement avec <strong style={{ color: "white" }}>3 partenaires</strong>, puis passez à l'illimité quand vous le souhaitez.
           </p>
         </div>
@@ -311,7 +311,7 @@ export default function TarifsPage() {
               </div>
               <div>
                 <div style={{ fontSize: "16px", fontWeight: 800, color: "#002D72" }}>Mixx by yas</div>
-                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>T-Money · Togocom</div>
+                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>T-Money · Mobile Money</div>
               </div>
             </div>
 

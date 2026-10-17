@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
         priceLabel: priceNum === null ? clean(body.priceLabel, 40) || (kind === "SERVICE" ? "Sur devis" : "Prix sur demande") : null,
         description,
         city: clean(body.city, 60) || pro.city,
-        neighborhood: clean(body.neighborhood, 60) || pro.neighborhood,
+        country: pro.country,
         photos: photoUrls,
         status: "ACTIVE",
         createdAt: now,

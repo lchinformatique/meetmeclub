@@ -35,6 +35,7 @@ export interface Member {
   photos: Array<{ url: string; isMain?: boolean }>;
   city?: string;
   neighborhood?: string;
+  country?: string;
   bio?: string;
   profession?: string;
   relationshipGoal?: string;
@@ -66,11 +67,7 @@ export const GOAL_LABELS: Record<string, string> = {
 };
 
 export const LOME_SPOTS = [
-  { name: "Plage de Lomé — Boulevard du Mono", lat: 6.1264, lng: 1.2255 },
-  { name: "Bè Plage — Coco Beach", lat: 6.132, lng: 1.258 },
   { name: "Hôtel 2 Février — Place de l'Indépendance", lat: 6.1305, lng: 1.2162 },
-  { name: "Tokoin — Café & Lounge", lat: 6.145, lng: 1.218 },
-  { name: "Agoè-Nyivé — Carrefour 2 Lions", lat: 6.205, lng: 1.198 },
 ];
 
 export function isRenderableUrl(url?: string | null): url is string {

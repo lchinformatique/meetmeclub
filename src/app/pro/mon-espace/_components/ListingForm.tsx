@@ -29,7 +29,7 @@ export default function ListingForm({
   onPublished: () => void;
 }) {
   const [kind, setKind] = useState<"SALE" | "SERVICE">(salesLeft === 0 ? "SERVICE" : "SALE");
-  const [form, setForm] = useState({ title: "", category: "", price: "", priceLabel: "", description: "", city: pro.city || "", neighborhood: pro.neighborhood || "" });
+  const [form, setForm] = useState({ title: "", category: "", price: "", priceLabel: "", description: "", city: pro.city || "" });
   const [photos, setPhotos] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -69,7 +69,7 @@ export default function ListingForm({
   const saleBlocked = kind === "SALE" && salesLeft === 0;
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 12 }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {(["SALE", "SERVICE"] as const).map((k) => (
           <button
@@ -130,15 +130,9 @@ export default function ListingForm({
         <label style={label}>Description *</label>
         <textarea style={{ ...field, minHeight: 120, resize: "vertical" }} value={form.description} onChange={set("description")} maxLength={3000} placeholder="État, caractéristiques, horaires, conditions, livraison…" />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <div>
-          <label style={label}>Ville</label>
-          <input style={field} value={form.city} onChange={set("city")} maxLength={60} />
-        </div>
-        <div>
-          <label style={label}>Quartier</label>
-          <input style={field} value={form.neighborhood} onChange={set("neighborhood")} maxLength={60} />
-        </div>
+      <div>
+        <label style={label}>Ville</label>
+        <input style={field} value={form.city} onChange={set("city")} maxLength={60} />
       </div>
 
       <div>

@@ -120,7 +120,7 @@ export default function HeroLiveStatsCard() {
           </div>
           <div>
             <div style={{ fontSize: "15px", fontWeight: 800, color: "white" }}>
-              Meet Me Club Lomé
+              Meet Me Club
             </div>
             <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.8)" }}>
               Club Privé · Vraie communauté active

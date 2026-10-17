@@ -207,7 +207,7 @@ function ActivationContent() {
                 <input
                   type="tel"
                   inputMode="tel"
-                  placeholder="Ex : +228 90 XX XX XX"
+                  placeholder="Votre numéro avec l'indicatif du pays"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   style={{ width: "100%", padding: "12px 14px", borderRadius: "10px", border: "1px solid #CBD5E1", fontSize: "15px" }}

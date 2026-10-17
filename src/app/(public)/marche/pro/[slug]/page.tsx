@@ -9,6 +9,7 @@ import { FacebookIcon, WhatsAppIcon } from "../../_components/BrandIcons";
 import { getSession } from "@/lib/session";
 import { ACTIVITIES, facebookLink, getProBySlug, listingsOfPro, whatsappLink } from "@/lib/market";
 import ListingCard from "../../_components/ListingCard";
+import { countryName } from "@/lib/countries";
 import s from "../../marche.module.css";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!pro || !pro.isActive) return { title: "Vitrine introuvable" };
   return {
     title: `${pro.name} — ${ACTIVITIES[pro.activity] || "Pro"} · Le Marché Meet Me Club`,
-    description: (pro.description || `${pro.name}, ${ACTIVITIES[pro.activity] || "professionnel"} ${pro.city ? `à ${pro.city}` : "au Togo"}.`).slice(0, 160),
+    description: (pro.description || `${pro.name}, ${ACTIVITIES[pro.activity] || "professionnel"} ${pro.city ? `à ${pro.city}` : ""}${pro.country ? ` (${countryName(pro.country)})` : ""}.`).slice(0, 160),
     openGraph: { images: pro.coverUrl || pro.logoUrl ? [{ url: (pro.coverUrl || pro.logoUrl)! }] : undefined },
   };
 }
@@ -36,7 +37,9 @@ export default async function VitrinePage({ params }: Props) {
 
   return (
     <div className={s.page}>
-      <div className={s.cover} style={pro.coverUrl ? { backgroundImage: `url("${pro.coverUrl}")` } : undefined} />
+      <div className={s.cover} style={pro.coverUrl ? { backgroundImage: `url("${pro.coverUrl}")` } : undefined}>
+        <div className={s.coverShade} />
+      </div>
       <div className={s.container}>
         <div className={s.proHead}>
           {pro.logoUrl ? (
@@ -45,13 +48,15 @@ export default async function VitrinePage({ params }: Props) {
           ) : (
             <span className={s.proLogo}>{pro.name.charAt(0).toUpperCase()}</span>
           )}
-          <div style={{ paddingBottom: 6, minWidth: 0 }}>
+          <div className={s.proName}>
             <h1 className={s.h1} style={{ margin: 0 }}>{pro.name}</h1>
-            <div style={{ color: "#475569", fontSize: 14, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-              <span style={{ fontWeight: 700 }}>{ACTIVITIES[pro.activity] || "Professionnel"}</span>
-              {(pro.city || pro.neighborhood) && (
+            <div style={{ color: "var(--ink-soft)", fontSize: 14, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+              <span className={s.tag} style={pro.activity === "INDIVIDUAL" ? { background: "var(--ok-soft)", color: "var(--ok)" } : { background: "var(--brand-soft)", color: "var(--brand)" }}>
+                {pro.activity === "INDIVIDUAL" ? "Particulier" : "Pro"} · {ACTIVITIES[pro.activity] || "Professionnel"}
+              </span>
+              {(pro.city || pro.country) && (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  <MapPin size={14} /> {[pro.neighborhood, pro.city].filter(Boolean).join(", ")}
+                  <MapPin size={14} /> {[pro.address, pro.city, countryName(pro.country)].filter(Boolean).join(", ")}
                 </span>
               )}
             </div>

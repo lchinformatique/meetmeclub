@@ -46,7 +46,10 @@ export async function GET() {
         dateOfBirth: supa.dateOfBirth || profile?.dateOfBirth || undefined,
         placeOfBirth: supa.placeOfBirth || profile?.placeOfBirth || undefined,
         age: supa.age || profile?.age || undefined,
-        city: supa.city || profile?.city || 'Lomé',
+        city: supa.city || profile?.city || '',
+        country: supa.country || profile?.country || undefined,
+        // Adresse privée : lue uniquement pour le membre lui-même
+        address: (await (await import('@/lib/supabase-server')).getPrivateAddress(session.userId)) || profile?.address || undefined,
         neighborhood: supa.neighborhood || profile?.neighborhood || undefined,
         profession: supa.profession || profile?.profession || undefined,
         relationshipStatus: supa.relationshipStatus || profile?.relationshipStatus || 'Célibataire',
@@ -109,7 +112,7 @@ export async function GET() {
       email: session.email || undefined,
       phone: session.phone || undefined,
       gender: (dbUser?.profile?.gender as any) || 'OTHER',
-      city: dbUser?.profile?.city || 'Lomé',
+      city: dbUser?.profile?.city || '',
       age: 26,
       bio: dbUser?.profile?.bio || 'Nouveau membre sur Meet Me Club.',
       relationshipGoal: (dbUser?.profile?.relationshipGoal as any) || 'SERIOUS',
@@ -315,7 +318,7 @@ export async function PATCH(request: NextRequest) {
       // Seuls les champs réellement envoyés par le formulaire sont écrits : le store local de ce
       // serveur peut être périmé et ne doit jamais écraser des données plus récentes.
       const FIELDS = [
-        'firstName', 'lastName', 'pseudo', 'gender', 'dateOfBirth', 'placeOfBirth', 'city', 'neighborhood',
+        'firstName', 'lastName', 'pseudo', 'gender', 'dateOfBirth', 'placeOfBirth', 'city', 'country', 'address', 'neighborhood',
         'profession', 'bio', 'relationshipGoal', 'relationshipStatus', 'height', 'religion', 'hasChildren',
         'languages', 'educationLevel', 'phone',
       ] as const;
@@ -399,7 +402,7 @@ export async function PATCH(request: NextRequest) {
               userId: session.userId,
               firstName: body.firstName || saved.firstName || "Membre",
               gender: body.gender || saved.gender || "OTHER",
-              city: body.city || saved.city || "Lomé",
+              city: body.city || saved.city || "",
               bio: body.bio || saved.bio || "Membre actif.",
               relationshipGoal: body.relationshipGoal || saved.relationshipGoal || "SERIOUS",
               pseudo: body.pseudo || saved.pseudo || null,

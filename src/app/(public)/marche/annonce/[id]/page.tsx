@@ -11,6 +11,8 @@ import { getSession } from "@/lib/session";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { ACTIVITIES, CATEGORIES, KIND_LABEL, facebookLink, formatPrice, getListing, timeAgo, whatsappLink } from "@/lib/market";
 import ReportButton from "../../_components/ReportButton";
+import CategoryIcon from "../../_components/CategoryIcon";
+import { countryName } from "@/lib/countries";
 import Gallery from "./Gallery";
 import s from "../../marche.module.css";
 
@@ -27,7 +29,7 @@ async function load(id: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const listing = await load((await params).id);
   if (!listing) return { title: "Annonce introuvable" };
-  const description = `${formatPrice(listing)} · ${listing.city || "Togo"} — ${(listing.description || "").slice(0, 140)}`;
+  const description = `${formatPrice(listing)} · ${[listing.city, countryName(listing.country)].filter(Boolean).join(", ")} — ${(listing.description || "").slice(0, 140)}`;
   return {
     title: `${listing.title} — Le Marché Meet Me Club`,
     description,
@@ -67,7 +69,7 @@ export default async function AnnoncePage({ params }: Props) {
             <>
               <span style={{ color: "#94A3B8" }}>/</span>
               <Link href={`/marche?categorie=${listing.category}`} style={{ color: "#0B2559", fontWeight: 600, textDecoration: "none" }}>
-                {cat.icon} {cat.label}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CategoryIcon category={listing.category} size={15} boxed={false} /> {cat.label}</span>
               </Link>
             </>
           )}
@@ -88,7 +90,7 @@ export default async function AnnoncePage({ params }: Props) {
               <h1 className={s.h1}>{listing.title}</h1>
               <div className={s.price} style={{ fontSize: 22 }}>{formatPrice(listing)}</div>
               <p style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748B", fontSize: 14, margin: "8px 0 14px" }}>
-                <MapPin size={15} /> {[listing.neighborhood, listing.city].filter(Boolean).join(", ") || "Togo"} · publiée {timeAgo(listing.createdAt)} · {listing.views || 0} vue{(listing.views || 0) > 1 ? "s" : ""}
+                <MapPin size={15} /> {[listing.city, countryName(listing.country || pro.country)].filter(Boolean).join(", ") || "Lieu non précisé"} · publiée {timeAgo(listing.createdAt)} · {listing.views || 0} vue{(listing.views || 0) > 1 ? "s" : ""}
               </p>
               <p className={s.desc}>{listing.description}</p>
             </div>

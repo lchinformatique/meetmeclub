@@ -5,7 +5,8 @@ import { z } from "zod";
 
 // ── Helpers ─────────────────────────────────────────────────────
 
-const togoPhoneRegex = /^\+228[0-9]{8}$/;
+// Numéro international (format E.164) : + indicatif du pays + numéro, 8 à 15 chiffres
+const phoneRegex = /^\+[1-9][0-9]{7,14}$/;
 const minAge = 18;
 
 function getMinDateOfBirth() {
@@ -21,8 +22,8 @@ export const SendOtpSchema = z.object({
     .string()
     .min(1, "Téléphone ou email requis")
     .refine(
-      (v) => togoPhoneRegex.test(v) || z.string().email().safeParse(v).success,
-      "Numéro de téléphone (+228XXXXXXXX) ou email valide requis"
+      (v) => phoneRegex.test(v.replace(/\s+/g, "")) || z.string().email().safeParse(v).success,
+      "Numéro de téléphone avec l'indicatif du pays (ex. +33612345678) ou email valide requis"
     ),
   type: z.enum(["SMS", "EMAIL", "WHATSAPP"]).default("SMS"),
   purpose: z
@@ -50,7 +51,7 @@ export const VerifyOtpSchema = z.object({
 export const RegisterSchema = z.object({
   phone: z
     .string()
-    .regex(togoPhoneRegex, "Numéro au format +228XXXXXXXX requis")
+    .regex(phoneRegex, "Numéro avec l'indicatif du pays requis (ex. +33612345678)")
     .optional(),
   email: z.string().email("Email invalide").optional(),
   dateOfBirth: z

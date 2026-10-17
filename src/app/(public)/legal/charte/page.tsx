@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Charte de bonne conduite",
-  description: "Règles de respect, courtoisie et sécurité au sein de la communauté Meet Me Club à Lomé.",
+  description: "Règles de respect, courtoisie et sécurité au sein de la communauté Meet Me Club.",
 };
 
 export default function ChartePage() {
@@ -75,7 +75,7 @@ export default function ChartePage() {
               4. Respect des lieux partenaires
             </h2>
             <p style={{ color: "var(--color-gray-600)", fontSize: "14px", lineHeight: 1.7 }}>
-              Adoptez une tenue et une attitude soignées dans nos restaurants, lounges et espaces VIP partenaires à Lomé. Présentez courtoisement votre QR code à l&apos;accueil.
+              Adoptez une tenue et une attitude soignées dans nos restaurants, lounges et espaces VIP partenaires. Présentez courtoisement votre QR code à l&apos;accueil.
             </p>
           </div>
 

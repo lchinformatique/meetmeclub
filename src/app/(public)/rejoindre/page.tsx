@@ -220,7 +220,7 @@ export default function RejoindrePage() {
               }}
             >
               <Lock size={15} className="text-red-600" />
-              <span>Espace Privé Membres · Lomé, Togo</span>
+              <span>Espace Privé Membres · International</span>
             </div>
 
             <h1
@@ -281,7 +281,7 @@ export default function RejoindrePage() {
                   className="btn btn-primary btn-lg"
                   style={{ width: "100%", justifyContent: "center" }}
                 >
-                  Explorer les profils à Lomé →
+                  Explorer les profils →
                 </Link>
                 <Link
                   href="/profil"

@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, ChevronLeft, Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck, Sparkles, User, AtSign } from "lucide-react";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
 import styles from "./inscription.module.css";
+import BirthDateField from "@/components/forms/BirthDateField";
 
 function ageFrom(value: string): number | null {
   if (!value) return null;
@@ -170,7 +171,7 @@ export default function InscriptionPage() {
             <img src="/logo-icon.png" alt="Meet Me Club" />
             <div>
               <h1>Créer mon compte</h1>
-              <p>Rencontres et sorties réelles à Lomé · réservé aux 18 ans et plus</p>
+              <p>Rencontres et sorties réelles · réservé aux 18 ans et plus</p>
             </div>
           </div>
 
@@ -223,10 +224,7 @@ export default function InscriptionPage() {
 
             <label className={styles.field}>
               <span>Date de naissance *</span>
-              <div className={`${styles.inputWrap} ${fieldError("dateOfBirth") || (age !== null && age < 18) ? styles.invalid : ""}`}>
-                <CalendarDays size={17} />
-                <input type="date" value={dateOfBirth} max={maxDate} min="1930-01-01" onChange={(e) => setDateOfBirth(e.target.value)} autoComplete="bday" />
-              </div>
+              <BirthDateField idPrefix="inscription-dob" value={dateOfBirth} invalid={Boolean(fieldError("dateOfBirth") || (age !== null && age < 18))} onChange={setDateOfBirth} />
               {age !== null && age >= 18 && (
                 <em className={styles.ok}>
                   <CheckCircle2 size={14} /> {age} ans — accès autorisé

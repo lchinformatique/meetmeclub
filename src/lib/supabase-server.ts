@@ -390,6 +390,8 @@ export async function upsertProfileInSupabase(
     email?: string | null;
     gender?: string;
     city?: string;
+    country?: string | null;
+    address?: string | null;
     neighborhood?: string | null;
     profession?: string | null;
     bio?: string | null;
@@ -461,7 +463,8 @@ export async function upsertProfileInSupabase(
         lastName: data.lastName || null,
         pseudo: data.pseudo || null,
         gender: data.gender || "OTHER",
-        city: data.city || "Lomé",
+        city: data.city || "",
+        country: data.country || null,
         neighborhood: data.neighborhood || null,
         profession: data.profession || null,
         bio: data.bio !== undefined ? data.bio : "Nouveau membre sur Meet Me Club.",
@@ -503,6 +506,7 @@ export async function upsertProfileInSupabase(
       if (data.pseudo !== undefined) updatePayload.pseudo = data.pseudo;
       if (data.gender !== undefined) updatePayload.gender = data.gender;
       if (data.city !== undefined) updatePayload.city = data.city;
+      if (data.country !== undefined) updatePayload.country = data.country;
       if (data.neighborhood !== undefined) updatePayload.neighborhood = data.neighborhood;
       if (data.profession !== undefined) updatePayload.profession = data.profession;
       if (data.bio !== undefined) updatePayload.bio = data.bio;
@@ -589,6 +593,14 @@ export async function upsertProfileInSupabase(
       }
     }
 
+    // 5. Adresse de résidence : table privée, accessible uniquement au serveur
+    if (data.address !== undefined) {
+      const { error: addrErr } = await admin
+        .from("member_private")
+        .upsert({ userId: effectiveUserId, address: data.address || null, updatedAt: now }, { onConflict: "userId" });
+      if (addrErr) console.warn("[upsertProfileInSupabase] Adresse:", addrErr.message);
+    }
+
     return existing;
   } catch (err) {
     console.warn("[upsertProfileInSupabase] Exception:", err);
@@ -636,8 +648,7 @@ export async function seedPermanentVictoire() {
         lastName: "Lawson",
         pseudo: "victoire_lome",
         gender: "FEMALE",
-        city: "Lomé",
-        neighborhood: "Tokoin & Nyékonakpoè",
+        city: "",
         profession: "Styliste & Créatrice de mode",
         educationLevel: "Master Mode & Design",
         height: 168,
@@ -645,7 +656,7 @@ export async function seedPermanentVictoire() {
         relationshipStatus: "Célibataire",
         hasChildren: false,
         languages: ["Français", "Mina", "Anglais"],
-        bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
+        bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
         relationshipGoal: "SERIOUS",
         plan: "VIP",
         likesCount: 68,
@@ -950,8 +961,8 @@ export async function getPublicProfilesFromSupabase(currentUserId?: string) {
         lastName: p.lastName || undefined,
         pseudo: p.pseudo || p.firstName,
         gender: p.gender || "OTHER",
-        city: p.city || "Lomé",
-        neighborhood: p.neighborhood || "Lomé",
+        city: p.city || "",
+        country: p.country || undefined,
         profession: p.profession || undefined,
         bio: p.bio || undefined,
         coverUrl,
@@ -982,10 +993,11 @@ export async function getPublicProfilesFromSupabase(currentUserId?: string) {
         lastName: "Lawson",
         pseudo: "victoire_lome",
         gender: "FEMALE",
-        city: "Lomé",
-        neighborhood: "Tokoin & Nyékonakpoè",
+        city: "",
+        country: undefined,
+        placeOfBirth: undefined,
         profession: "Styliste & Créatrice de mode",
-        bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil à Lomé, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
+        bio: "✨ Passionnée d'art, de mode et de voyages, souriante et chaleureuse. J'adore les dîners au coucher de soleil, les sorties conviviales et les belles rencontres. Écris-moi, je réponds toujours avec grand plaisir ! 💖",
         coverUrl: undefined,
         relationshipGoal: "SERIOUS",
         plan: "VIP",
@@ -995,7 +1007,6 @@ export async function getPublicProfilesFromSupabase(currentUserId?: string) {
         photos: [{ id: "ph_victoire_main", url: "/victoire_profile.jpg", isMain: true }],
         avatarUrl: "/victoire_profile.jpg",
         dateOfBirth: "2000-05-14",
-        placeOfBirth: "Lomé",
         age: 24,
         isVerified: true,
       }));
@@ -1173,5 +1184,15 @@ export async function createVipPostInSupabase(post: {
     return data || localPost;
   } catch {
     return localPost;
+  }
+}
+
+// ── Adresse de résidence privée (table member_private, serveur uniquement) ──
+export async function getPrivateAddress(userId: string): Promise<string | null> {
+  try {
+    const { data } = await getSupabaseAdmin().from("member_private").select("address").eq("userId", userId).maybeSingle();
+    return data?.address || null;
+  } catch {
+    return null;
   }
 }

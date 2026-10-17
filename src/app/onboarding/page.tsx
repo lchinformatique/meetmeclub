@@ -4,6 +4,8 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import CountryPicker from "@/components/forms/CountryPicker";
+import PhoneField from "@/components/forms/PhoneField";
 import Image from "next/image";
 
 const DAYS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -16,7 +18,7 @@ const LANGUAGES = [
 ];
 const GOALS = [
   { value: "EXCHANGE", label: "Échanger & Discuter", desc: "Partager des idées, passions et discuter librement" },
-  { value: "FRIENDSHIP", label: "Amitié & Sorties", desc: "Rencontres amicales, activités à Lomé" },
+  { value: "FRIENDSHIP", label: "Amitié & Sorties", desc: "Rencontres amicales, activités et sorties" },
   { value: "SERIOUS", label: "Relation sérieuse", desc: "Relation durable et sincère" },
   { value: "MARRIAGE", label: "Mariage", desc: "Cherche à fonder un foyer" },
   { value: "CASUAL", label: "Sortie simple", desc: "Dîner ou café ponctuel" },
@@ -40,7 +42,8 @@ type FormData = {
   age: string;
   phone: string;
   city: string;
-  neighborhood: string;
+  country: string;
+  address: string;
   profession: string;
   educationLevel: string;
   relationshipStatus: string;
@@ -62,8 +65,9 @@ const INITIAL: FormData = {
   gender: "",
   age: "25",
   phone: "",
-  city: "Lomé",
-  neighborhood: "",
+  city: "",
+  country: "",
+  address: "",
   profession: "",
   educationLevel: "",
   relationshipStatus: "",
@@ -114,7 +118,9 @@ export default function OnboardingPage() {
       if (!form.gender) { setError("Veuillez sélectionner votre genre (Femme ou Homme)."); return; }
     }
     if (step === 2) {
-      if (!form.city.trim()) { setError("Veuillez sélectionner votre ville de résidence."); return; }
+      if (!form.country) { setError("Choisissez votre pays de résidence."); return; }
+      if (!form.city.trim()) { setError("Indiquez votre ville de résidence."); return; }
+      if (form.address.trim().length < 5) { setError("Indiquez votre adresse de résidence (elle reste privée)."); return; }
     }
     if (step === 7) {
       if (!form.relationshipGoal) { setError("Veuillez sélectionner ce que vous recherchez."); return; }
@@ -147,8 +153,9 @@ export default function OnboardingPage() {
           gender: form.gender || undefined,
           age: form.age ? parseInt(form.age) : undefined,
           phone: form.phone || undefined,
-          city: form.city,
-          neighborhood: form.neighborhood || undefined,
+          city: form.city.trim(),
+          country: form.country || undefined,
+          address: form.address.trim() || undefined,
           profession: form.profession || undefined,
           educationLevel: form.educationLevel || undefined,
           relationshipStatus: form.relationshipStatus || undefined,
@@ -388,11 +395,11 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "12px", marginBottom: "16px" }}>
-                <div className="input-group">
-                  <label htmlFor="phone" className="input-label" style={{ fontWeight: 700, color: "#0F172A" }}>Téléphone Togo (T-Money/Flooz)</label>
-                  <input id="phone" type="tel" className="input" placeholder="+228 90 00 00 00" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
-                </div>
+              <div className="input-group" style={{ marginBottom: "12px" }}>
+                <label htmlFor="phone" className="input-label" style={{ fontWeight: 700, color: "#0F172A" }}>Téléphone (WhatsApp)</label>
+                <PhoneField id="phone" value={form.phone} defaultCountry={form.country || null} onChange={(phone) => setForm((f) => ({ ...f, phone }))} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "12px", marginBottom: "16px" }}>
                 <div className="input-group">
                   <label htmlFor="age" className="input-label" style={{ fontWeight: 700, color: "#0F172A" }}>Âge *</label>
                   <input id="age" type="number" min={18} max={99} className="input" placeholder="25" value={form.age} onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))} />
@@ -422,24 +429,23 @@ export default function OnboardingPage() {
           {/* ── STEP 2: Location ── */}
           {step === 2 && (
             <div>
-              <h2 style={{ fontSize: "22px", marginBottom: "6px" }}>Où êtes-vous ? 📍</h2>
-              <p style={{ color: "var(--color-gray-500)", marginBottom: "24px", fontSize: "15px" }}>Pour trouver des profils proches de vous</p>
+              <h2 style={{ fontSize: "22px", marginBottom: "6px" }}>Où résidez-vous ? 📍</h2>
+              <p style={{ color: "var(--color-gray-500)", marginBottom: "24px", fontSize: "15px" }}>Pour la sécurité du club et pour trouver des profils proches de vous</p>
+
+              <div className="input-group" style={{ marginBottom: "16px" }}>
+                <label htmlFor="country" className="input-label">Pays de résidence *</label>
+                <CountryPicker id="country" value={form.country} onChange={(c) => setForm((f) => ({ ...f, country: c.iso }))} />
+              </div>
 
               <div className="input-group" style={{ marginBottom: "16px" }}>
                 <label htmlFor="city" className="input-label">Ville *</label>
-                <select id="city" className="input" value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}>
-                  <option value="Lomé">Lomé</option>
-                  <option value="Kpalimé">Kpalimé</option>
-                  <option value="Sokodé">Sokodé</option>
-                  <option value="Atakpamé">Atakpamé</option>
-                  <option value="Kara">Kara</option>
-                </select>
+                <input id="city" type="text" className="input" placeholder="Votre ville" autoComplete="address-level2" maxLength={60} value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
               </div>
 
               <div className="input-group">
-                <label htmlFor="neighborhood" className="input-label">Quartier (optionnel)</label>
-                <input id="neighborhood" type="text" className="input" placeholder="Ex: Bè, Tokoin, Adidogomé..." value={form.neighborhood} onChange={(e) => setForm((f) => ({ ...f, neighborhood: e.target.value }))} />
-                <p style={{ fontSize: "12px", color: "var(--color-gray-400)" }}>Votre adresse exacte ne sera jamais partagée.</p>
+                <label htmlFor="address" className="input-label">Adresse de résidence *</label>
+                <input id="address" type="text" className="input" placeholder="N°, rue, code postal" autoComplete="street-address" maxLength={160} value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
+                <p style={{ fontSize: "12px", color: "var(--color-gray-400)" }}>🔒 Votre adresse reste privée : seuls votre pays et votre ville sont visibles des autres membres.</p>
               </div>
             </div>
           )}
@@ -731,7 +737,7 @@ export default function OnboardingPage() {
                     style={{ width: "18px", height: "18px", marginTop: "2px", accentColor: "#0B2E6B", cursor: "pointer" }}
                   />
                   <span>
-                    J&apos;ai lu et j&apos;accepte expressément les <strong>Conditions Générales d&apos;Utilisation</strong> et la Charte de Sécurité de Meet Me Club Togo. *
+                    J&apos;ai lu et j&apos;accepte expressément les <strong>Conditions Générales d&apos;Utilisation</strong> et la Charte de Sécurité de Meet Me Club. *
                   </span>
                 </label>
 

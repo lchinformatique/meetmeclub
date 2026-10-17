@@ -42,9 +42,9 @@ const FAQ_KNOWLEDGE_BASE = [
     actionText: "Tester la messagerie sécurisée",
   },
   {
-    keywords: ["rendez-vous", "rdv", "restaurant", "table", "lieu", "boisson", "sortie", "lome", "togo", "coco beach", "byblos"],
+    keywords: ["rendez-vous", "rdv", "restaurant", "table", "lieu", "boisson", "sortie", "hotel", "hôtel", "appartement"],
     response:
-      "Pour les membres se trouvant ou voyageant au Togo, vous pouvez organiser une rencontre dans nos établissements partenaires vérifiés (Coco Beach Bè Plage, Byblos Tokoin, Café de la Paix, etc.). Avec les formules Complice et VIP, la table est réservée et les consommations sont incluses !",
+      "Choisissez votre lieu de rendez-vous parmi les hôtels, résidences et établissements partenaires du Marché, dans votre ville. L'équipe Meet Me Club confirme le lieu avec le partenaire avant de valider votre rendez-vous.",
     actionUrl: "/rendez-vous/nouveau",
     actionText: "Proposer un rendez-vous",
   },
@@ -61,7 +61,7 @@ const INITIAL_BOT_MESSAGES: BotMessage[] = [
   {
     id: "m_welcome",
     sender: "bot",
-    text: "Bonjour et bienvenue sur Meet Me Club Togo ! Je suis l'Assistant Robot 24h/24. Comment puis-je vous aider aujourd'hui ?",
+    text: "Bonjour et bienvenue sur Meet Me Club ! Je suis l'Assistant Robot 24h/24. Comment puis-je vous aider aujourd'hui ?",
     time: "À l'instant",
   },
 ];

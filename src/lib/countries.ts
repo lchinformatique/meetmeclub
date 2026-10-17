@@ -83,3 +83,9 @@ export function countryFromPhone(phone: string): Country | null {
     [...COUNTRIES].sort((a, b) => b.dial.length - a.dial.length).find((c) => clean.startsWith(c.dial)) || null
   );
 }
+
+/** Nom du pays à partir de son code ISO (« FR » → « France ») */
+export function countryName(iso?: string | null): string {
+  if (!iso) return "";
+  return COUNTRIES.find((c) => c.iso === iso.toUpperCase())?.name || "";
+}

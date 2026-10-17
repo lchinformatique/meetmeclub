@@ -15,7 +15,7 @@ const faqs: FAQItem[] = [
   {
     category: "Abonnements & Quotas",
     q: "Comment fonctionne le Plan Gratuit ?",
-    a: "Le Plan Gratuit permet à toute personne de s'inscrire, de créer son profil complet avec ses coordonnées et ses photos, d'apparaître dans la base de données de Lomé et de choisir/échanger avec jusqu'à 3 partenaires distincts sans payer un seul franc. C'est l'idéal pour tester le service et faire ses premières rencontres !",
+    a: "Le Plan Gratuit permet à toute personne de s'inscrire, de créer son profil complet avec ses coordonnées et ses photos, d'apparaître dans la base de données des membres et de choisir/échanger avec jusqu'à 3 partenaires distincts sans payer un seul franc. C'est l'idéal pour tester le service et faire ses premières rencontres !",
   },
   {
     category: "Abonnements & Quotas",
@@ -24,8 +24,8 @@ const faqs: FAQItem[] = [
   },
   {
     category: "Abonnements & Quotas",
-    q: "Quels modes de paiement sont acceptés au Togo ?",
-    a: "Nous acceptons les paiements locaux les plus simples et rapides : T-Money (Togocom) et Moov Money (Flooz). L'activation de votre abonnement est immédiate.",
+    q: "Quels modes de paiement sont acceptés ?",
+    a: "Nous acceptons aujourd'hui le Mobile Money (T-Money, Flooz / Moov Money), avec une activation immédiate. Le paiement par carte bancaire (CB, Visa, Mastercard) arrive bientôt pour les membres du monde entier.",
   },
   {
     category: "Échanges & Rencontres",
@@ -40,7 +40,7 @@ const faqs: FAQItem[] = [
   {
     category: "Sécurité & Lieux",
     q: "Où se déroulent les rendez-vous si je souhaite faire une sortie ?",
-    a: "Si vous décidez d'aller boire un verre ou dîner, vous pouvez choisir parmi notre réseau d'établissements partenaires sécurisés à Lomé (Hôtels, Lounges, Salons de thé). Des réductions exclusives et des accueils VIP y sont réservés pour nos membres.",
+    a: "Si vous décidez d'aller boire un verre ou dîner, vous pouvez choisir parmi notre réseau d'établissements partenaires sécurisés (Hôtels, Lounges, Salons de thé). Des réductions exclusives et des accueils VIP y sont réservés pour nos membres.",
   },
   {
     category: "Sécurité & Lieux",
@@ -82,7 +82,7 @@ export default function FAQPage() {
             Tout ce que vous devez savoir
           </h1>
           <p style={{ fontSize: "17px", color: "#E2E8F0", lineHeight: 1.6 }}>
-            Consultez nos réponses pour profiter au maximum de votre expérience Meet Me Club au Togo.
+            Consultez nos réponses pour profiter au maximum de votre expérience Meet Me Club.
           </p>
         </div>
       </section>

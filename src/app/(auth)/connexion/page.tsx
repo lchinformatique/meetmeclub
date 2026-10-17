@@ -257,7 +257,7 @@ function ConnexionForm() {
                   meet <span style={{ color: "#E10600" }}>me</span> club
                 </span>
                 <span style={{ fontSize: "10px", fontWeight: 700, color: "#8B99B5", letterSpacing: "0.9px", textTransform: "uppercase" }}>
-                  Club Privé International · Sorties Togo
+                  Club Privé International · Rencontres & Sorties
                 </span>
               </div>
             </Link>
@@ -523,7 +523,7 @@ function ConnexionForm() {
           </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "#8B99B5", fontWeight: 600 }}>
             <LogIn size={12} style={{ color: "#0B2559" }} />
-            Meet Me Club · Lomé
+            Meet Me Club · International
           </span>
         </div>
       </div>

@@ -6,46 +6,21 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { countryName } from "@/lib/countries";
 
-// ── Fake partners data ─────────────────────────────────────────
-const PARTNERS = [
-  {
-    id: "p1",
-    name: "Coco Beach Lomé",
-    neighborhood: "Bè-Plage",
-    address: "Boulevard du Mono, Bè-Plage",
-    rating: 4.8,
-    reviewCount: 124,
-    coverUrl:
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=600&q=80",
-    ambiance: "Vue mer, terrasse romantique, musique douce",
-    acceptedPacks: ["DECOUVERTE", "COMPLICE", "DINER", "VIP_PREMIUM"],
-  },
-  {
-    id: "p2",
-    name: "Byblos Lomé",
-    neighborhood: "Tokoin",
-    address: "Rue de la Victoire, Tokoin",
-    rating: 4.6,
-    reviewCount: 87,
-    coverUrl:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
-    ambiance: "Lounge cosy, lumières tamisées, cocktails signature",
-    acceptedPacks: ["COMPLICE", "DINER", "VIP_PREMIUM"],
-  },
-  {
-    id: "p3",
-    name: "Café de la Paix",
-    neighborhood: "Centre-ville",
-    address: "Avenue 24 Janvier, Lomé",
-    rating: 4.4,
-    reviewCount: 56,
-    coverUrl:
-      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80",
-    ambiance: "Café colonial chic, terrasse ombragée",
-    acceptedPacks: ["DECOUVERTE", "COMPLICE"],
-  },
-];
+// Lieux de sortie : annonces d'hôtels et de logements du Marché (chargées depuis /api/sorties)
+interface VenueOption {
+  id: string;
+  name: string;
+  title: string;
+  address: string;
+  place: string;
+  coverUrl: string | null;
+  priceLabel: string;
+  acceptedPacks: string[];
+}
+
+const ALL_PACKS = ["DECOUVERTE", "COMPLICE", "DINER", "VIP_PREMIUM"];
 
 const PACK_PAYMENT_LINKS: Record<string, string> = {
   DECOUVERTE: "https://link.saspay.me/ge3_of7gd20",   // 2 000 F
@@ -119,6 +94,10 @@ function NouveauRdvInner() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [userPlan, setUserPlan] = useState<string>("FREE");
+  const [venues, setVenues] = useState<VenueOption[] | null>(null);
+  const [venueCity, setVenueCity] = useState("");
+  const [guestName, setGuestName] = useState<string>("");
+  const [submitError, setSubmitError] = useState("");
   // Modal paiement obligatoire pour TOUS les packs
   const [paymentModal, setPaymentModal] = useState<{
     open: boolean;
@@ -128,6 +107,39 @@ function NouveauRdvInner() {
   }>({ open: false, pack: null, paid: false, confirmed: false });
   // Modal abonnement requis (plan insuffisant)
   const [lockedModal, setLockedModal] = useState<{ open: boolean; packName?: string; price?: string; link?: string; desc?: string } | null>(null);
+
+  // Lieux disponibles (filtrés par ville)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetch(`/api/sorties?venues=1&city=${encodeURIComponent(venueCity.trim())}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) =>
+          setVenues(
+            (d.venues || []).map((v: any) => ({
+              id: v.listingId,
+              name: v.proName,
+              title: v.title,
+              address: v.address || "",
+              place: [v.city, countryName(v.country)].filter(Boolean).join(", "),
+              coverUrl: v.photo,
+              priceLabel: v.priceLabel,
+              acceptedPacks: ALL_PACKS,
+            }))
+          )
+        )
+        .catch(() => setVenues([]));
+    }, 350);
+    return () => clearTimeout(t);
+  }, [venueCity]);
+
+  // Prénom de la personne invitée
+  useEffect(() => {
+    if (!withUserId) return;
+    fetch("/api/profiles", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setGuestName((d.profiles || []).find((p: any) => p.userId === withUserId)?.firstName || ""))
+      .catch(() => {});
+  }, [withUserId]);
 
   useEffect(() => {
     fetch("/api/profiles/me")
@@ -144,7 +156,7 @@ function NouveauRdvInner() {
     setPaymentModal({ open: true, pack: pk, paid: false, confirmed: false });
   }
 
-  const selectedPartner = PARTNERS.find((p) => p.id === selectedPartnerId);
+  const selectedPartner = (venues || []).find((p) => p.id === selectedPartnerId);
   const selectedPack = PACKS.find((p) => p.id === selectedPackId);
 
   const minDate = new Date();
@@ -152,11 +164,35 @@ function NouveauRdvInner() {
   const minDateStr = minDate.toISOString().split("T")[0];
 
   async function handleSubmit() {
+    setSubmitError("");
+    if (!withUserId) {
+      setSubmitError("Choisissez d'abord la personne à inviter depuis votre messagerie.");
+      return;
+    }
     setLoading(true);
-    // Simulate API call — replace with real fetch to /api/appointments
-    await new Promise((r) => setTimeout(r, 1500));
-    setLoading(false);
-    setSubmitted(true);
+    try {
+      const res = await fetch("/api/sorties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          receiverId: withUserId,
+          listingId: selectedPartnerId,
+          pack: selectedPackId,
+          scheduledAt: new Date(`${date}T${time}`).toISOString(),
+          note,
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSubmitError(d.error || "Envoi impossible. Réessayez.");
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setSubmitError("Connexion perdue. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const STEP_LABELS = ["Lieu", "Pack", "Date & heure", "Confirmation"];
@@ -189,8 +225,8 @@ function NouveauRdvInner() {
             Demande envoyée !
           </h2>
           <p style={{ color: "var(--color-gray-500)", lineHeight: 1.7, marginBottom: "8px" }}>
-            Votre proposition de rendez-vous a été transmise. Vous serez
-            notifié dès que l&apos;autre personne accepte.
+            Votre invitation a été envoyée{guestName ? ` à ${guestName}` : ""}. Dès qu&apos;elle est acceptée, l&apos;équipe
+            Meet Me Club contacte le lieu pour confirmer, puis vous recevez la confirmation.
           </p>
           {selectedPartner && selectedPack && (
             <div
@@ -426,11 +462,35 @@ function NouveauRdvInner() {
                 fontSize: "15px",
               }}
             >
-              Tous nos partenaires sont vérifiés et sélectionnés pour vous
+              Hôtels et logements du Marché. L&apos;équipe confirme chaque sortie avec le lieu.
             </p>
 
+            {!withUserId && (
+              <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", color: "#92400E", borderRadius: 14, padding: "12px 14px", fontSize: 14, fontWeight: 600, marginBottom: 16, lineHeight: 1.5 }}>
+                Pour inviter quelqu&apos;un, ouvrez votre conversation avec cette personne puis le menu « Rendez-vous ».{" "}
+                <Link href="/messages" style={{ color: "#B45309", fontWeight: 800 }}>Aller à mes messages</Link>
+              </div>
+            )}
+            {withUserId && guestName && (
+              <p style={{ margin: "0 0 14px", fontWeight: 700, color: "var(--color-blue)" }}>Invitation pour : {guestName}</p>
+            )}
+            <input
+              className="input"
+              value={venueCity}
+              onChange={(e) => setVenueCity(e.target.value)}
+              placeholder="Filtrer par ville"
+              aria-label="Filtrer les lieux par ville"
+              style={{ marginBottom: 14 }}
+            />
+            {venues === null && <p style={{ color: "var(--color-gray-500)" }}>Chargement des lieux…</p>}
+            {venues?.length === 0 && (
+              <div style={{ background: "white", borderRadius: 16, padding: 20, textAlign: "center", color: "var(--color-gray-600)", border: "1px solid var(--color-gray-200)" }}>
+                Aucun hôtel ou logement disponible{venueCity ? " dans cette ville" : ""} pour le moment.{" "}
+                <Link href="/marche?categorie=HOTEL" style={{ color: "var(--color-red)", fontWeight: 700 }}>Voir le Marché</Link>
+              </div>
+            )}
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {PARTNERS.map((p) => (
+              {(venues || []).map((p) => (
                 <button
                   key={p.id}
                   onClick={() => setSelectedPartnerId(p.id)}
@@ -455,7 +515,7 @@ function NouveauRdvInner() {
                   <div style={{ position: "relative", height: "140px" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={p.coverUrl}
+                      src={p.coverUrl || "/hero-bg.jpg"}
                       alt={p.name}
                       style={{
                         width: "100%",
@@ -511,7 +571,7 @@ function NouveauRdvInner() {
                         marginBottom: "6px",
                       }}
                     >
-                      📍 {p.neighborhood} — {p.address}
+                      📍 {[p.address, p.place].filter(Boolean).join(" — ")}
                     </div>
                     <div
                       style={{
@@ -520,7 +580,7 @@ function NouveauRdvInner() {
                         fontStyle: "italic",
                       }}
                     >
-                      ✨ {p.ambiance}
+                      ✨ {p.title}
                     </div>
                     <div
                       style={{
@@ -530,7 +590,7 @@ function NouveauRdvInner() {
                         fontWeight: 600,
                       }}
                     >
-                      ★ {p.rating} ({p.reviewCount} avis)
+                      {p.priceLabel}
                     </div>
                   </div>
                 </button>
@@ -932,7 +992,7 @@ function NouveauRdvInner() {
               <div style={{ position: "relative", height: "160px" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={selectedPartner.coverUrl}
+                  src={selectedPartner.coverUrl || "/hero-bg.jpg"}
                   alt={selectedPartner.name}
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
@@ -1118,9 +1178,10 @@ function NouveauRdvInner() {
                 style={{ flex: 2 }}
                 id="btn-confirm-rdv"
               >
-                {loading ? "" : "✅ Envoyer la proposition"}
+                {loading ? "" : "✅ Envoyer l'invitation"}
               </button>
             </div>
+            {submitError && <p style={{ color: "#B91C1C", fontWeight: 700, fontSize: 14, marginTop: 12 }}>{submitError}</p>}
           </div>
         )}
 
@@ -1363,7 +1424,7 @@ function NouveauRdvInner() {
                   <span>💳 Payer via Mixx by yas ou Moov Money (Saspay)</span>
                 </a>
                 <div style={{ fontSize: "12px", color: "#64748B" }}>
-                  Paiement sécurisé et instantané au Togo
+                  Paiement sécurisé et instantané
                 </div>
 
                 <Link

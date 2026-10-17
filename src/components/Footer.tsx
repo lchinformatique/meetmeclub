@@ -57,13 +57,13 @@ export default function Footer() {
             </div>
 
             <p style={{ fontSize: "12px", lineHeight: 1.5, color: "rgba(255,255,255,0.65)", marginBottom: "10px" }}>
-              Le club privé international de vraies rencontres avec réservation au Togo.
+              Le club privé international de vraies rencontres avec réservation de sorties.
             </p>
 
             <div style={{ fontSize: "12px", display: "flex", flexDirection: "column", gap: "4px", color: "rgba(255,255,255,0.8)" }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <MapPin size={13} className="text-red-400" />
-                <span>Lomé, Togo</span>
+                <span>Club international · en ligne</span>
               </span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <Mail size={13} className="text-amber-300" />
@@ -82,7 +82,7 @@ export default function Footer() {
                 ["Découvrir les profils", "/decouverte"],
                 ["Nos tarifs & plans", "/tarifs"],
                 ["Rejoindre le club", "/rejoindre"],
-                ["Lieux partenaires à Lomé", "/partenaires"],
+                ["Lieux partenaires", "/partenaires"],
               ].map(([label, href]) => (
                 <li key={href}>
                   <Link

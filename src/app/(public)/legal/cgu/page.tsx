@@ -32,7 +32,7 @@ export default function CGUPage() {
         </div>
         <div>
           <h1 style={{ fontSize: "28px", fontWeight: 800, color: "var(--color-blue)", margin: 0 }}>Conditions Générales d&apos;Utilisation</h1>
-          <p style={{ color: "var(--color-gray-400)", fontSize: "14px", margin: 0 }}>Dernière mise à jour : Octobre 2026 · Meet Me Club Lomé</p>
+          <p style={{ color: "var(--color-gray-400)", fontSize: "14px", margin: 0 }}>Dernière mise à jour : Octobre 2026 · Meet Me Club</p>
         </div>
       </div>
 

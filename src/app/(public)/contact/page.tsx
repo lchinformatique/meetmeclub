@@ -37,7 +37,7 @@ export default function ContactPage() {
             <span style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>SUPPORT & CONTACT</span>
           </div>
           <h1 style={{ fontSize: "clamp(2rem, 5vw, 2.8rem)", fontWeight: 800, marginBottom: "16px" }}>
-            Une question ? Notre équipe à Lomé vous répond
+            Une question ? Notre équipe vous répond
           </h1>
           <p style={{ fontSize: "17px", color: "#E2E8F0", lineHeight: 1.6 }}>
             Assistance 7j/7 disponible via WhatsApp, email ou directement sur la plateforme.
@@ -59,7 +59,7 @@ export default function ContactPage() {
               </div>
               <h3 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "8px" }}>Assistance Directe WhatsApp</h3>
               <p style={{ fontSize: "14px", opacity: 0.95, lineHeight: 1.6, marginBottom: "20px" }}>
-                Réponse instantanée par notre service client togolais pour toute assistance sur votre compte ou vos réservations.
+                Réponse instantanée par notre service client pour toute assistance sur votre compte ou vos réservations.
               </p>
               <a
                 href="https://wa.me/22890283580?text=Bonjour%20Meet%20Me%20Club%2C%20je%20souhaite%20continuer%20la%20discussion."
@@ -89,7 +89,7 @@ export default function ContactPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "14px", fontSize: "14px", color: "#475569" }}>
                 <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                   <span style={{ fontSize: "20px" }}>📍</span>
-                  <span><strong>Bureau d'accueil :</strong> Lomé, Togo</span>
+                  <span><strong>Assistance :</strong> en ligne, 7 jours sur 7</span>
                 </div>
                 <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                   <span style={{ fontSize: "20px" }}>📧</span>
@@ -148,7 +148,7 @@ export default function ContactPage() {
                     <input
                       type="tel"
                       required
-                      placeholder="+228 90 XX XX XX"
+                      placeholder="Votre numéro avec l'indicatif du pays"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       style={{ width: "100%", padding: "12px 14px", borderRadius: "10px", border: "1px solid #CBD5E1", fontSize: "14px" }}

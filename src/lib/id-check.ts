@@ -74,7 +74,7 @@ export async function checkIdentityDocument(input: {
       fallbacks: "default",
       output_config: { effort: "medium", format: betaZodOutputFormat(IdReading) },
       system:
-        "Tu aides l'équipe d'un club de rencontres au Togo à vérifier les pièces d'identité de ses membres majeurs. " +
+        "Tu aides l'équipe d'un club de rencontres international à vérifier les pièces d'identité de ses membres majeurs. " +
         "Lis la ou les photos de la pièce (recto, puis verso éventuel) et décris fidèlement ce que tu vois. " +
         "N'invente aucune information : si un champ est illisible ou absent, mets null. Sois strict sur les signes de falsification.",
       messages: [

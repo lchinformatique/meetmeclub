@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Crown, Megaphone, UserPlus, Users, Wallet, Clock, Sparkles, Zap, CircleOff, ShieldCheck, Store } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Megaphone, UserPlus, Users, Wallet, Clock, Sparkles, Zap, CircleOff, ShieldCheck, Store, CalendarCheck } from "lucide-react";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
 interface Stats {
@@ -102,6 +102,15 @@ export default function AdminHome() {
           <span style={{ flex: 1 }}>
             <strong style={{ display: "block", fontSize: 17 }}>Membres {stats ? `(${stats.total})` : ""}</strong>
             <span style={{ fontSize: 13, opacity: 0.9 }}>Noms, photos, numéros, plans, statuts et jours restants</span>
+          </span>
+          <ChevronRight size={22} />
+        </Link>
+
+        <Link href="/admin/sorties" style={tile("linear-gradient(135deg,#7C3AED,#5B21B6)")}>
+          <CalendarCheck size={28} />
+          <span style={{ flex: 1 }}>
+            <strong style={{ display: "block", fontSize: 17 }}>Sorties à confirmer</strong>
+            <span style={{ fontSize: 13, opacity: 0.9 }}>Négociez avec le lieu puis validez les rendez-vous</span>
           </span>
           <ChevronRight size={22} />
         </Link>

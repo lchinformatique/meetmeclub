@@ -191,7 +191,7 @@ export default function VipPage() {
             }}
           >
             <Crown size={16} />
-            <span>Club VIP International · Togo</span>
+            <span>Club VIP International</span>
           </div>
 
           <h1
@@ -644,7 +644,7 @@ export default function VipPage() {
                       </span>
                     </div>
                     <span style={{ fontSize: "12px", color: "#94A3B8" }}>
-                      {post.authorPseudo || "@membre_vip"} · Lomé
+                      {post.authorPseudo || "@membre_vip"}
                     </span>
                   </div>
                 </div>

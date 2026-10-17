@@ -1,6 +1,6 @@
 "use client";
 // src/app/decouverte/page.tsx
-// Member Discovery Page — Browse verified profiles in Togo with Plan Quota Enforcement
+// Member Discovery Page — Browse verified profiles worldwide with Plan Quota Enforcement
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import CommunityStatsWidget from "@/components/CommunityStatsWidget";
 import { Sparkles, Crown } from "lucide-react";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
 import { PartnerSheet, Lightbox } from "@/app/messages/_components/Modals";
+import { countryName } from "@/lib/countries";
 
 interface ProfileItem {
   id: string;
@@ -19,7 +20,8 @@ interface ProfileItem {
   pseudo: string | null;
   gender: string;
   city: string;
-  neighborhood: string | null;
+  neighborhood?: string | null;
+  country?: string | null;
   profession: string | null;
   relationshipGoal: string;
   bio: string | null;
@@ -52,7 +54,7 @@ export default function DecouvertePage() {
   const [loading, setLoading] = useState(true);
   const [genderFilter, setGenderFilter] = useState<string>("ALL");
   const [goalFilter, setGoalFilter] = useState<string>("ALL");
-  const [cityFilter, setCityFilter] = useState<string>("ALL");
+  const [cityFilter, setCityFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [matchModal, setMatchModal] = useState<ProfileItem | null>(null);
@@ -199,12 +201,15 @@ export default function DecouvertePage() {
       if (!p) return false;
       if (genderFilter !== "ALL" && p.gender !== genderFilter) return false;
       if (goalFilter !== "ALL" && p.relationshipGoal !== goalFilter) return false;
-      if (cityFilter !== "ALL" && p.city !== cityFilter) return false;
+      if (cityFilter.trim()) {
+        const where = `${p.city || ""} ${countryName((p as any).country)}`.toLowerCase();
+        if (!where.includes(cityFilter.trim().toLowerCase())) return false;
+      }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const fName = (p.firstName || "").toLowerCase();
         const pseudo = (p.pseudo || "").toLowerCase();
-        const neigh = (p.neighborhood || "").toLowerCase();
+        const neigh = `${p.city || ""} ${countryName(p.country)}`.toLowerCase();
         const prof = (p.profession || "").toLowerCase();
         const matchesName = fName.includes(q) || pseudo.includes(q);
         const matchesNeighborhood = neigh.includes(q);
@@ -245,7 +250,7 @@ export default function DecouvertePage() {
             <div className="container" style={{ maxWidth: "860px", margin: "0 auto" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", borderRadius: "9999px", padding: "6px 18px", marginBottom: "22px" }}>
                 <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", boxShadow: "0 0 8px #10B981" }} />
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>Le Club Privé n°1 de Rendez-vous au Togo · Lomé</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>Le Club Privé International de Rendez-vous</span>
               </div>
 
               <h1 style={{ fontSize: "clamp(2rem, 5.5vw, 3.2rem)", fontWeight: 800, color: "white", marginBottom: "18px", lineHeight: 1.15 }}>
@@ -253,7 +258,7 @@ export default function DecouvertePage() {
               </h1>
 
               <p style={{ fontSize: "clamp(1.05rem, 2.5vw, 1.25rem)", color: "rgba(255,255,255,0.92)", marginBottom: "16px", lineHeight: 1.7, maxWidth: "760px", margin: "0 auto 16px" }}>
-                Meet Me Club est le premier club privé international pensé pour transformer les simples échanges virtuels en <strong>vrais rendez-vous inoubliables</strong> dans les plus beaux cadres de Lomé. Fini les faux profils et les conversations sans suite : ici, tout est authentique, sécurisé et organisé de A à Z.
+                Meet Me Club est le premier club privé international pensé pour transformer les simples échanges virtuels en <strong>vrais rendez-vous inoubliables</strong> dans les plus beaux cadres. Fini les faux profils et les conversations sans suite : ici, tout est authentique, sécurisé et organisé de A à Z.
               </p>
 
               <p className="font-script" style={{ fontSize: "clamp(1.4rem, 3.5vw, 1.9rem)", color: "#FFD700", marginBottom: "36px" }}>
@@ -274,7 +279,7 @@ export default function DecouvertePage() {
                   <div style={{ fontSize: "28px", marginBottom: "10px" }}>🍽️</div>
                   <div style={{ fontSize: "15px", fontWeight: 800, color: "white", marginBottom: "6px" }}>Lieux Partenaires Sélectionnés</div>
                   <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>
-                    Restaurants réputés, lounges feutrés et salons privés à Lomé où votre table et vos consommations sont prêtes à l&apos;arrivée.
+                    Restaurants réputés, lounges feutrés et salons privés où votre table et vos consommations sont prêtes à l&apos;arrivée.
                   </div>
                 </div>
 
@@ -291,7 +296,7 @@ export default function DecouvertePage() {
               <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "28px", padding: "20px", background: "rgba(0,0,0,0.2)", borderRadius: "20px", border: "1px solid rgba(255,255,255,0.1)" }}>
                 {[
                   { v: "1 200+", l: "Célibataires Inscrits" },
-                  { v: "12", l: "Lieux Partenaires Lomé" },
+                  { v: "12", l: "Lieux Partenaires" },
                   { v: "340+", l: "Rendez-vous Réalisés" },
                   { v: "4.7 / 5 ★", l: "Satisfaction Membres" },
                 ].map((s) => (
@@ -428,7 +433,7 @@ export default function DecouvertePage() {
                 </h2>
 
                 <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.9)", lineHeight: 1.6, marginBottom: "24px", maxWidth: "520px", margin: "0 auto 24px" }}>
-                  Rejoignez dès maintenant notre communauté de célibataires à Lomé. Dès votre premier accès, bénéficiez de <strong>3 jours d&apos;essai offert</strong> avec 3 contacts inclus pour démarrer vos premières discussions !
+                  Rejoignez dès maintenant notre communauté de célibataires. Dès votre premier accès, bénéficiez de <strong>3 jours d&apos;essai offert</strong> avec 3 contacts inclus pour démarrer vos premières discussions !
                 </p>
 
                 {/* Avantages Inclus */}
@@ -556,7 +561,7 @@ export default function DecouvertePage() {
               <p style={{ margin: "4px 0 0", fontSize: "13px", color: "rgba(255, 255, 255, 0.9)" }}>
                 {isFreePlan
                   ? "Vous pouvez échanger, discuter ou fixer un rendez-vous avec jusqu'à 3 membres de votre choix."
-                  : "Aucune limite : discutez, partagez des passions et faites-vous des amis librement à Lomé !"}
+                  : "Aucune limite : discutez, partagez des passions et faites-vous des amis librement !"}
               </p>
             </div>
           </div>
@@ -623,7 +628,7 @@ export default function DecouvertePage() {
         >
           <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "6px" }}>
             <h1 style={{ fontSize: "26px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
-              Membres Meet Me Club à Lomé
+              Membres Meet Me Club
             </h1>
             <span style={{ fontSize: "12px", fontWeight: 700, color: "#059669", background: "#ECFDF5", padding: "3px 10px", borderRadius: "9999px" }}>
               ✓ Profils certifiés
@@ -687,30 +692,27 @@ export default function DecouvertePage() {
             </select>
 
             {/* City filter */}
-            <select
+            <input
               className="input"
               value={cityFilter}
               onChange={(e) => setCityFilter(e.target.value)}
+              placeholder="Ville ou pays"
+              aria-label="Filtrer par ville ou pays"
               style={{ color: "#0F172A", fontWeight: 600 }}
-            >
-              <option value="ALL">Toutes les villes</option>
-              <option value="Lomé">Lomé</option>
-              <option value="Kpalimé">Kpalimé</option>
-              <option value="Kara">Kara</option>
-            </select>
+            />
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", color: "#475569" }}>
             <span>
               <strong style={{ color: "#0F172A" }}>{filtered.length}</strong> profil(s) visible(s)
             </span>
-            {(genderFilter !== "ALL" || goalFilter !== "ALL" || cityFilter !== "ALL" || searchQuery) && (
+            {(genderFilter !== "ALL" || goalFilter !== "ALL" || cityFilter.trim() !== "" || searchQuery) && (
               <button
                 type="button"
                 onClick={() => {
                   setGenderFilter("ALL");
                   setGoalFilter("ALL");
-                  setCityFilter("ALL");
+                  setCityFilter("");
                   setSearchQuery("");
                 }}
                 className="btn btn-ghost btn-sm"
@@ -897,7 +899,7 @@ export default function DecouvertePage() {
                         </h3>
                       </div>
                       <p style={{ fontSize: "13px", color: "#E2E8F0", marginTop: "3px", margin: 0, fontWeight: 500 }}>
-                        {profile.city} {profile.neighborhood ? `· ${profile.neighborhood}` : ""}
+                        {[profile.city, countryName(profile.country)].filter(Boolean).join(", ")}
                       </p>
                     </div>
                   </div>
@@ -1057,7 +1059,7 @@ export default function DecouvertePage() {
                 marginBottom: "14px",
               }}
             >
-              <span>☕ Rendez-vous & Sorties Clé en Main à Lomé</span>
+              <span>☕ Rendez-vous & Sorties Clé en Main</span>
             </div>
             <h2
               style={{
@@ -1083,7 +1085,7 @@ export default function DecouvertePage() {
                 textShadow: "0 1px 6px rgba(0, 0, 0, 0.25)",
               }}
             >
-              Proposez un vrai rendez-vous à votre partenaire dans les plus beaux cadres de Lomé avec nos 4 packs clé en main.
+              Proposez un vrai rendez-vous à votre partenaire dans les plus beaux cadres avec nos 4 packs clé en main.
             </p>
           </div>
 
@@ -1461,7 +1463,7 @@ export default function DecouvertePage() {
                 Vérification d&apos;identité obligatoire
               </h2>
               <p style={{ fontSize: "14px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
-                Pour garantir un espace 100% réel, sécurisé et protéger l&apos;image des membres à Lomé, vous devez certifier votre identité avant d&apos;entrer en contact avec des partenaires.
+                Pour garantir un espace 100% réel, sécurisé et protéger l&apos;image des membres, vous devez certifier votre identité avant d&apos;entrer en contact avec des partenaires.
               </p>
             </div>
 
@@ -1571,7 +1573,7 @@ export default function DecouvertePage() {
             photoUrl: (sheetProfile.photos?.find((p) => p.isMain) || sheetProfile.photos?.[0])?.url,
             photos: sheetProfile.photos || [],
             city: sheetProfile.city,
-            neighborhood: sheetProfile.neighborhood || undefined,
+            country: sheetProfile.country || undefined,
             bio: sheetProfile.bio || undefined,
             profession: sheetProfile.profession || undefined,
             relationshipGoal: sheetProfile.relationshipGoal,
@@ -1678,7 +1680,7 @@ export default function DecouvertePage() {
           <Image src="/logo.png" alt="Meet Me Club" width={38} height={38} style={{ objectFit: "contain" }} />
         </div>
         <div style={{ fontSize: "16px", fontWeight: 800, color: "#0B2E6B" }}>
-          meet <span style={{ color: "#E10600" }}>me</span> club · Lomé, Togo
+          meet <span style={{ color: "#E10600" }}>me</span> club · International
         </div>
         <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
           « Plus qu'une rencontre, un rendez-vous ! » · 🔞 Réservé aux 18 ans et plus
