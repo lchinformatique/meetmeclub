@@ -21,6 +21,8 @@ export interface RealtimeMe {
   photoUrl?: string | null;
   city?: string;
   plan?: string;
+  /** Administrateur (vip_master) : accès à l'espace de gestion */
+  isAdmin?: boolean;
 }
 
 type Listener = (event: string, payload: any) => void;
@@ -31,6 +33,8 @@ interface Toast {
   title: string;
   body: string;
   photoUrl?: string;
+  /** Page ouverte au toucher (sinon la conversation, ou le profil) */
+  href?: string;
 }
 
 interface RealtimeContextValue {
@@ -47,6 +51,8 @@ interface RealtimeContextValue {
   startCall: (peer: CallPeer, kind: CallKind, conversationId?: string) => void;
   inCall: boolean;
   push: { supported: boolean; permission: NotificationPermission | "unsupported"; enable: () => Promise<boolean> };
+  /** Administrateur : nombre de paiements à valider (pastille du menu Admin) */
+  adminPending: number;
 }
 
 const RealtimeContext = createContext<RealtimeContextValue | null>(null);
@@ -65,6 +71,7 @@ const NOOP_CONTEXT: RealtimeContextValue = {
   startCall: () => {},
   inCall: false,
   push: { supported: false, permission: "unsupported", enable: async () => false },
+  adminPending: 0,
 };
 
 export function useRealtime() {
@@ -135,6 +142,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
           photoUrl: data.user.avatarUrl || null,
           city: data.user.city,
           plan: data.user.subscriptionTier,
+          isAdmin: Boolean(data.user.isAdmin),
         });
       })
       .catch(() => {});
@@ -171,6 +179,25 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       setUnreadByConversation(map);
     } catch {}
   }, []);
+
+  // ── Administrateur : paiements à valider ─────────────────────
+  const [adminPending, setAdminPending] = useState(0);
+  const refreshAdmin = useCallback(async () => {
+    try {
+      const res = await fetch("/api/dashboard?summary=1", { cache: "no-store" });
+      if (res.ok) setAdminPending((await res.json()).pendingPayments || 0);
+    } catch {}
+  }, []);
+  const refreshAdminRef = useRef(refreshAdmin);
+  useEffect(() => {
+    refreshAdminRef.current = refreshAdmin;
+  }, [refreshAdmin]);
+  useEffect(() => {
+    if (!me?.isAdmin) return;
+    refreshAdmin();
+    const id = setInterval(refreshAdmin, 60_000);
+    return () => clearInterval(id);
+  }, [me?.isAdmin, refreshAdmin, pathname]);
 
   const markConversationRead = useCallback((conversationId: string) => {
     setUnreadByConversation((prev) => {
@@ -244,6 +271,19 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       try {
       if (event.startsWith("call-")) {
         handleSignalRef.current(event, payload);
+      } else if (event === "admin-alert") {
+        // Administrateur : tentative de paiement ou nouveau membre
+        playMessageChime();
+        refreshAdminRef.current();
+        const toast: Toast = {
+          id: `admin-${Date.now()}`,
+          conversationId: "",
+          title: payload?.title || "Alerte administrateur",
+          body: "Touchez pour ouvrir l'espace de gestion",
+          href: payload?.url || "/admin",
+        };
+        setToasts((prev) => [...prev, toast].slice(-3));
+        setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== toast.id)), 9000);
       } else if (event === "like") {
         playMessageChime();
         const toast: Toast = {
@@ -432,6 +472,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
     startCall: call.startCall,
     inCall: call.inCall,
     push: { supported: pushSupported, permission: pushPermission, enable: enablePush },
+    adminPending,
   };
 
   return (
@@ -448,7 +489,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
               className={styles.toast}
               onClick={() => {
                 setToasts((prev) => prev.filter((x) => x.id !== t.id));
-                router.push(t.conversationId ? `/messages?conv=${encodeURIComponent(t.conversationId)}` : "/profil");
+                router.push(t.href || (t.conversationId ? `/messages?conv=${encodeURIComponent(t.conversationId)}` : "/profil"));
               }}
             >
               {t.photoUrl ? (

@@ -1,7 +1,7 @@
 // src/app/api/auth/register/route.ts
 // Direct registration via Email — No OTP required
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
@@ -194,6 +194,12 @@ export async function POST(req: NextRequest) {
       role: user.role,
       status: user.status,
       email: cleanEmail,
+    });
+
+    // Alerte à l'administrateur : nouveau membre
+    after(async () => {
+      const { alertNewMember } = await import("@/lib/admin-notify");
+      await alertNewMember({ firstName: resolvedName, pseudo: resolvedPseudo, email: cleanEmail, via: "e-mail" }).catch(() => {});
     });
 
     return NextResponse.json({

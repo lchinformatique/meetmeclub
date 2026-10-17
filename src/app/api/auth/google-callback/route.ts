@@ -3,7 +3,7 @@
 // L'identité est VÉRIFIÉE côté serveur à partir du jeton Supabase (jamais l'e-mail envoyé par le navigateur).
 // À l'inscription : prénom, nom, pseudo et date de naissance (18 ans minimum) sont enregistrés.
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
 import { saveProfile } from "@/lib/db-store";
@@ -201,6 +201,16 @@ export async function POST(req: NextRequest) {
       status: user.status || "ACTIVE",
       email: cleanEmail,
     });
+
+    // Alerte à l'administrateur : nouveau membre
+    if (isNew) {
+      const newName = existingProfile?.firstName || firstName;
+      const newPseudo = existingProfile?.pseudo || pseudo;
+      after(async () => {
+        const { alertNewMember } = await import("@/lib/admin-notify");
+        await alertNewMember({ firstName: newName, pseudo: newPseudo, email: cleanEmail, via: "Google" }).catch(() => {});
+      });
+    }
 
     // Nouveau membre (ou date de naissance manquante) → compléter son profil et sa bio
     const needsCompletion = isNew || !(existingProfile?.dateOfBirth || dob);

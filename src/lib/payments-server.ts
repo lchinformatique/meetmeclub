@@ -298,52 +298,26 @@ export async function notifyAdminsOfRequest(req: {
   /** true = le membre vient de lancer le paiement SasPay (pas encore confirmé) */
   attempt?: boolean;
 }) {
-  const admin = getSupabaseAdmin();
   const { getProfileFromSupabase } = await import("./supabase-server");
-  const { sendPushToUser } = await import("./push-server");
+  const { sendAdminAlert, siteUrl } = await import("./admin-notify");
   const member = await getProfileFromSupabase(req.userId).catch(() => null);
   const who = member?.pseudo ? `${member.firstName || ""} (@${member.pseudo})` : member?.firstName || "Un membre";
   const label = PLAN_LABEL[req.plan];
 
-  // Administrateurs : rôle ADMIN + compte vip_master (retrouvé par pseudo/e-mail)
-  const { getAdminUserIds } = await import("./admin-auth");
-  const adminIds = await getAdminUserIds();
-  await Promise.allSettled(
-    adminIds.map((id) =>
-      sendPushToUser(id, {
-        kind: "message",
-        title: req.attempt ? `💳 Tentative de paiement : ${label}` : `💳 Paiement à valider : ${label}`,
-        body: req.attempt
-          ? `${who} paie via SasPay${req.phone ? ` (${req.phone})` : ""}. Validez dès réception de l'e-mail SasPay.`
-          : `${who} · ${req.phone || req.reference || "sans référence"} — touchez pour valider`,
-        url: "/admin/paiements",
-        tag: "activation-request",
-      })
-    )
-  );
-
-  const to = process.env.ADMIN_NOTIFY_EMAIL;
-  const apiKey = process.env.RESEND_API_KEY;
-  if (to && apiKey) {
-    try {
-      const { Resend } = await import("resend");
-      const site = process.env.NEXT_PUBLIC_APP_URL || "https://www.meetmeclub.net";
-      await new Resend(apiKey).emails.send({
-        from: process.env.EMAIL_FROM || "noreply@meetmeclub.net",
-        to,
-        subject: `Paiement à valider — ${label} — ${who}`,
-        html: `<div style="font-family:Arial,sans-serif;max-width:480px">
-          <h2 style="color:#0B2559">Demande d'activation : ${label}</h2>
-          <p><strong>Membre :</strong> ${who}</p>
-          <p><strong>Numéro utilisé :</strong> ${req.phone || "—"}<br/><strong>Référence :</strong> ${req.reference || "—"}</p>
-          <p>Vérifiez l'e-mail de paiement SasPay correspondant, puis validez :</p>
-          <p><a href="${site}/admin/paiements" style="display:inline-block;background:#E10600;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Valider sur Meet Me Club</a></p>
-        </div>`,
-      });
-    } catch (err) {
-      console.warn("[notifyAdminsOfRequest] e-mail", err);
-    }
-  }
+  // Téléphone de l'administrateur + pastille du menu Admin + e-mail
+  await sendAdminAlert({
+    title: req.attempt ? `💳 Tentative de paiement : ${label}` : `💳 Paiement à valider : ${label}`,
+    body: req.attempt
+      ? `${who} paie via SasPay${req.phone ? ` (${req.phone})` : ""}. Validez dès réception de l'e-mail SasPay.`
+      : `${who} · ${req.phone || req.reference || "sans référence"} — touchez pour valider`,
+    url: "/admin/paiements",
+    tag: "activation-request",
+    emailSubject: `${req.attempt ? "Tentative de paiement" : "Paiement à valider"} — ${label} — ${who}`,
+    emailHtml: `<p><strong>${who}</strong> ${req.attempt ? "vient de lancer un paiement" : "demande l'activation"} du <strong>${label}</strong>.</p>
+      <p>Numéro : ${req.phone || "—"}<br/>Référence : ${req.reference || "—"}</p>
+      <p>Dès réception de l'e-mail SasPay confirmant le paiement, validez :</p>
+      <p><a href="${siteUrl()}/admin/paiements" style="display:inline-block;background:#E10600;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Valider le paiement</a></p>`,
+  });
 }
 
 /** Rattache un paiement reçu à un membre */

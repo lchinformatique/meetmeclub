@@ -84,6 +84,9 @@ export async function GET() {
       null;
     const resolvedAvatar = validPhoto && !validPhoto.includes("dicebear.com/7.x/initials") ? validPhoto : null;
     const resolvedPlan = local?.plan || "FREE";
+    // Seul l'administrateur voit l'espace de gestion (menu « Admin »)
+    const { isAdminSession } = await import("@/lib/admin-auth");
+    const isAdmin = await isAdminSession(session);
 
     return NextResponse.json({
       authenticated: true,
@@ -96,6 +99,7 @@ export async function GET() {
         city: resolvedCity,
         avatarUrl: resolvedAvatar,
         subscriptionTier: resolvedPlan,
+        isAdmin,
       },
     });
   } catch (error) {

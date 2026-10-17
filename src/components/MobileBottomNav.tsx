@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, MessageSquare, Calendar, User, Gem } from "lucide-react";
+import { Home, Compass, MessageSquare, Calendar, User, Gem, LayoutDashboard } from "lucide-react";
 import { getLanguage, t, SupportedLanguage } from "@/lib/i18n";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
@@ -46,7 +46,7 @@ export default function MobileBottomNav() {
   }, [pathname]);
 
   // Messages non lus en temps réel (RealtimeProvider)
-  const { unreadTotal: unreadCount } = useRealtime();
+  const { unreadTotal: unreadCount, me, adminPending } = useRealtime();
 
   // Hide bottom nav on auth flow, onboarding & messaging for clean full-screen WhatsApp UX
   if (
@@ -61,7 +61,10 @@ export default function MobileBottomNav() {
   const navItems = [
     { href: "/", label: t("appTitle", lang) === "Meet Me Club" ? (lang === "en" ? "Home" : lang === "de" ? "Start" : lang === "es" ? "Inicio" : lang === "zh" ? "首页" : lang === "pt" ? "Início" : lang === "ar" ? "الرئيسية" : "Accueil") : "Accueil", Icon: Home },
     { href: "/decouverte", label: lang === "en" ? "Explore" : "Découvrir", Icon: Compass },
-    { href: "/tarifs", label: lang === "en" ? "Plans" : "Plans", Icon: Gem },
+    // L'administrateur voit « Admin » à la place de « Plans » (invisible pour les membres)
+    me?.isAdmin
+      ? { href: "/admin", activeHref: "/admin", label: "Admin", Icon: LayoutDashboard, badge: adminPending > 0 ? adminPending : undefined }
+      : { href: "/tarifs", label: lang === "en" ? "Plans" : "Plans", Icon: Gem },
     { href: "/rendez-vous", label: lang === "en" ? "Dates" : "Sorties", Icon: Calendar },
     {
       href: "/messages",

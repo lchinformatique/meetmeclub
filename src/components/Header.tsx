@@ -21,6 +21,7 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
+  LayoutDashboard,
 } from "lucide-react";
 import LanguageSelector from "./LanguageSelector";
 import { getLanguage, t, SupportedLanguage } from "@/lib/i18n";
@@ -71,7 +72,7 @@ export default function Header() {
   const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   // Messages non lus en temps réel (RealtimeProvider)
-  const { unreadTotal: unreadCount } = useRealtime();
+  const { unreadTotal: unreadCount, me: rtMe, adminPending } = useRealtime();
 
   // Listen to profile updates from ProfileInteractiveCard or Edit page
   useEffect(() => {
@@ -118,9 +119,15 @@ export default function Header() {
     return () => { isMounted = false; };
   }, [pathname]);
 
-  const dynamicNavLinks = navLinks.map((item) =>
-    item.href === "/messages" ? { ...item, badge: unreadCount > 0 ? unreadCount : undefined } : item
-  );
+  const dynamicNavLinks = [
+    ...navLinks.map((item) =>
+      item.href === "/messages" ? { ...item, badge: unreadCount > 0 ? unreadCount : undefined } : item
+    ),
+    // Espace de gestion : visible uniquement par l'administrateur
+    ...(rtMe?.isAdmin
+      ? [{ href: "/admin", label: "Admin", Icon: LayoutDashboard, badge: adminPending > 0 ? adminPending : undefined }]
+      : []),
+  ];
 
   // Close mobile menu on route change
   useEffect(() => {
