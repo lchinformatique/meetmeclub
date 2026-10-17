@@ -45,7 +45,7 @@ const faqs: FAQItem[] = [
   {
     category: "Sécurité & Lieux",
     q: "Comment contacter l'assistance en cas de besoin ?",
-    a: "Un bouton WhatsApp direct et notre assistant interactif 24/7 sont disponibles en permanence en bas à droite de votre écran pour répondre instantanément à toutes vos interrogations.",
+    a: "Un accès direct à la messagerie de l'équipe et notre assistant interactif 24/7 sont disponibles en permanence en bas à droite de votre écran pour répondre instantanément à toutes vos interrogations.",
   },
 ];
 
@@ -151,12 +151,11 @@ export default function FAQPage() {
               Page de contact
             </Link>
             <a
-              href="https://wa.me/22890283580?text=Bonjour%20Meet%20Me%20Club%2C%20je%20souhaite%20continuer%20la%20discussion."
-              target="_blank"
+              href="/support"
               rel="noopener noreferrer"
               className="btn btn-primary"
             >
-              Écrire sur WhatsApp (+228 90 28 35 80)
+              Écrire à l'équipe (messagerie)
             </a>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { getSession } from "@/lib/session";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { ACTIVITIES, CATEGORIES, KIND_LABEL, formatPrice, getListing, timeAgo } from "@/lib/market";
 import ReportButton from "../../_components/ReportButton";
+import ProContacts from "../../_components/ProContacts";
 import CategoryIcon from "../../_components/CategoryIcon";
 import { countryName } from "@/lib/countries";
 import Gallery from "./Gallery";
@@ -115,16 +116,7 @@ export default async function AnnoncePage({ params }: Props) {
               </Link>
 
               {loggedIn ? (
-                <div className={s.contactBtns}>
-                  {isMine ? (
-                    <p style={{ fontSize: 14, color: "var(--ink-soft)", margin: 0 }}>C&apos;est votre annonce : les membres vous écrivent dans votre messagerie.</p>
-                  ) : (
-                    <Link href={chatHref} className={s.btnNavy} style={{ width: "100%" }}>
-                      <MessageCircle size={18} /> Discuter sur Meet Me Club
-                    </Link>
-                  )}
-                  <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: 0, lineHeight: 1.5 }}>🔒 Pour votre sécurité, tous les échanges se font sur la messagerie privée de Meet Me Club.</p>
-                </div>
+                <ProContacts pro={pro} chatHref={chatHref} isMine={isMine} subject={`l'annonce « ${listing.title} »`} />
               ) : (
                 <div className={s.contactBtns}>
                   <p style={{ fontSize: 14, color: "#475569", margin: 0 }}>

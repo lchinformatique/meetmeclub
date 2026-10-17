@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { isAdminSession } from "@/lib/admin-auth";
 import { getEffectivePlan, isAccessExpired, getSubscriptionStatus } from "@/lib/db-store";
+// Statuts des photos d'album (la colonne n'accepte pas « COVER » : un filtre neq("COVER") échouait toujours)
+const GALLERY_STATUSES = ["PENDING", "APPROVED", "REJECTED"];
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +48,7 @@ export async function GET(req: NextRequest) {
       ? Promise.resolve({ data: [] as any[] })
       : // Identifiants seulement (jamais le contenu) : chaque photo se charge ensuite à part,
         // via /api/dashboard/photo, quand elle apparaît à l'écran → liste légère et rapide
-        admin.from("profile_photos").select("id, profileId, isMain, order").neq("status", "COVER").limit(10000),
+        admin.from("profile_photos").select("id, profileId, isMain, order").in("status", GALLERY_STATUSES).limit(10000),
   ]);
 
   const userById = new Map((users || []).map((u: any) => [u.id, u]));

@@ -8,6 +8,7 @@ import { ChevronLeft, MapPin, MessageCircle } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { ACTIVITIES, getProBySlug, listingsOfPro } from "@/lib/market";
 import ListingCard from "../../_components/ListingCard";
+import ProContacts from "../../_components/ProContacts";
 import { countryName } from "@/lib/countries";
 import s from "../../marche.module.css";
 
@@ -70,16 +71,7 @@ export default async function VitrinePage({ params }: Props) {
           <div className={s.panel}>
             <h2 style={{ margin: "0 0 4px", fontSize: 17, color: "#0B2559" }}>Contacter {pro.name}</h2>
             {loggedIn ? (
-              <div className={s.contactBtns}>
-                {isMine ? (
-                  <p style={{ fontSize: 14, color: "var(--ink-soft)", margin: 0 }}>C&apos;est votre vitrine : les membres vous écrivent dans votre messagerie.</p>
-                ) : (
-                  <Link href={chatHref} className={s.btnNavy} style={{ width: "100%" }}>
-                    <MessageCircle size={18} /> Discuter sur Meet Me Club
-                  </Link>
-                )}
-                <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: 0, lineHeight: 1.5 }}>🔒 Pour votre sécurité, tous les échanges se font sur la messagerie privée de Meet Me Club.</p>
-              </div>
+              <ProContacts pro={pro} chatHref={chatHref} isMine={isMine} subject={"ses services"} />
             ) : (
               <div className={s.contactBtns}>
                 <p style={{ fontSize: 14, color: "#475569", margin: 0 }}>Rejoignez le club pour écrire à ce membre : tous les échanges se font sur la messagerie privée.</p>

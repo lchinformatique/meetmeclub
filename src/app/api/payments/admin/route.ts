@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       await sendPushToUser(closed.userId, {
         kind: "message",
         title: "Paiement non retrouvé",
-        body: "Nous n'avons pas trouvé votre paiement. Contactez le support WhatsApp avec votre reçu SasPay.",
+        body: "Nous n'avons pas trouvé votre paiement. Écrivez à l'équipe dans la messagerie avec votre reçu SasPay.",
         url: "/paiement/activation",
         tag: "activation-request",
       }).catch(() => 0);

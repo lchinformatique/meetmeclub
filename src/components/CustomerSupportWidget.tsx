@@ -1,14 +1,13 @@
 "use client";
 // src/components/CustomerSupportWidget.tsx
-// Double Support : Assistant WhatsApp Direct (0022890283580) + Assistant Robot Virtuel Interactif 24/7
+// Double Support : messagerie interne avec l'équipe (/support) + Assistant Robot Virtuel Interactif 24/7
 
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 
-const WHATSAPP_PHONE = "22890283580";
-const WHATSAPP_MESSAGE = "Bonjour Meet Me Club, je souhaite continuer la discussion.";
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+// Plus de WhatsApp : l'assistance humaine passe par la messagerie interne de Meet Me Club
+const SUPPORT_URL = "/support";
 
 interface BotMessage {
   id: string;
@@ -51,9 +50,9 @@ const FAQ_KNOWLEDGE_BASE = [
   {
     keywords: ["contact", "humain", "conseiller", "numero", "telephone", "aide", "service", "whatsapp"],
     response:
-      "Notre équipe du service client est joignable en direct sur WhatsApp du Lundi au Dimanche pour vous assister.",
-    actionUrl: WHATSAPP_URL,
-    actionText: "Discuter sur WhatsApp (Opérationnel)",
+      "Notre équipe vous répond directement dans la messagerie de Meet Me Club, 7 jours sur 7.",
+    actionUrl: SUPPORT_URL,
+    actionText: "Écrire à l'équipe (messagerie)",
   },
 ];
 
@@ -113,9 +112,9 @@ export default function CustomerSupportWidget() {
       );
 
       let replyText =
-        "Je comprends votre question. Pour une assistance sur mesure ou un suivi direct, notre conseiller est disponible immédiatement sur WhatsApp.";
-      let actionUrl: string | undefined = WHATSAPP_URL;
-      let actionText: string | undefined = "Continuer sur WhatsApp (Opérationnel)";
+        "Je comprends votre question. Pour une assistance sur mesure ou un suivi direct, écrivez à notre équipe dans la messagerie Meet Me Club.";
+      let actionUrl: string | undefined = SUPPORT_URL;
+      let actionText: string | undefined = "Écrire à l'équipe (messagerie)";
 
       if (matched) {
         replyText = matched.response;
@@ -146,7 +145,7 @@ export default function CustomerSupportWidget() {
       }}
       aria-label="Service client et support Meet Me Club"
     >
-      {/* ── Bouton unique d'assistance (menu : conseiller WhatsApp / assistant 24h/24) ── */}
+      {/* ── Bouton unique d'assistance (menu : messagerie de l'équipe / assistant 24h/24) ── */}
       {!isOpen && (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "flex-end" }}>
           {menuOpen && (
@@ -167,20 +166,20 @@ export default function CustomerSupportWidget() {
               </div>
               <a
                 role="menuitem"
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={SUPPORT_URL}
+                
+                
                 onClick={() => setMenuOpen(false)}
                 style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "12px", textDecoration: "none", color: "#0F172A" }}
               >
-                <span style={{ width: 38, height: 38, borderRadius: 12, background: "#E8F8EF", color: "#128C7E", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ width: 38, height: 38, borderRadius: 12, background: "#EEF2FB", color: "#2F4A8A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M12.04 2a9.9 9.9 0 0 0-8.5 15l-1.4 5 5.2-1.4A9.9 9.9 0 1 0 12.04 2Zm5.8 14.1c-.25.7-1.45 1.33-2 1.38-.52.05-1.17.08-3.8-.97-3.2-1.27-5.24-4.53-5.4-4.74-.15-.21-1.29-1.72-1.29-3.28 0-1.56.82-2.33 1.11-2.65.29-.32.64-.4.85-.4h.62c.2 0 .46-.07.72.55.26.64.89 2.2.97 2.36.08.16.13.35.03.56-.1.21-.16.34-.31.53-.16.18-.33.41-.47.55-.16.16-.32.33-.14.65.18.32.81 1.33 1.74 2.16 1.2 1.07 2.2 1.4 2.52 1.56.32.16.5.13.69-.08.19-.21.79-.92 1-1.24.21-.32.42-.26.71-.16.29.11 1.83.86 2.14 1.02.32.16.53.24.6.37.08.13.08.75-.17 1.45Z" />
                   </svg>
                 </span>
                 <span style={{ display: "flex", flexDirection: "column" }}>
-                  <strong style={{ fontSize: "14px" }}>Conseiller WhatsApp</strong>
-                  <span style={{ fontSize: "12px", color: "#64748B" }}>Réponse humaine rapide</span>
+                  <strong style={{ fontSize: "14px" }}>Écrire à l'équipe</strong>
+                  <span style={{ fontSize: "12px", color: "#64748B" }}>Dans la messagerie Meet Me Club</span>
                 </span>
               </a>
               <button
@@ -341,7 +340,7 @@ export default function CustomerSupportWidget() {
             </button>
           </div>
 
-          {/* Lien direct WhatsApp en haut du Robot */}
+          {/* Lien vers la messagerie de l'équipe en haut du Robot */}
           <div
             style={{
               background: "#ECFDF5",
@@ -356,14 +355,14 @@ export default function CustomerSupportWidget() {
               Besoin d&apos;un humain ?
             </span>
             <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={SUPPORT_URL}
+              
+              
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "5px",
-                background: "#25D366",
+                background: "#2F4A8A",
                 color: "white",
                 padding: "3px 9px",
                 borderRadius: "9999px",
@@ -375,7 +374,7 @@ export default function CustomerSupportWidget() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
               </svg>
-              WhatsApp Direct
+              Écrire à l'équipe
             </a>
           </div>
 

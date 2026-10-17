@@ -14,7 +14,6 @@ export function Flag({ iso, size = 22 }: { iso: string; size?: number }) {
       alt=""
       width={size}
       height={Math.round(size * 0.75)}
-      loading="lazy"
       style={{ width: size, height: Math.round(size * 0.75), objectFit: "cover", borderRadius: 3, boxShadow: "0 0 0 1px rgba(15,23,42,0.12)", flexShrink: 0 }}
     />
   );

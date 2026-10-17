@@ -876,24 +876,24 @@ export default function ProfilEditPage() {
                     style={{
                       aspectRatio: "1/1",
                       borderRadius: "12px",
-                      border: "2px dashed #CBD5E1",
+                      border: "2px dashed #9FB1DC",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
                       cursor: "pointer",
-                      background: "white",
+                      background: "#F6F8FC",
                       color: "#64748B",
                       gap: "4px",
                       transition: "all 0.2s ease",
                     }}
                     title="Cliquez pour ajouter une photo dans ce slot"
                   >
-                    <UploadCloud size={20} color="#94A3B8" />
-                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#64748B" }}>
-                      Slot {slotIdx + 1}/8
+                    <UploadCloud size={24} color="#2F4A8A" />
+                    <span style={{ fontSize: "13px", fontWeight: 800, color: "#2F4A8A" }}>
+                      Photo {slotIdx + 1}
                     </span>
-                    <span style={{ fontSize: "10px", color: "#94A3B8" }}>+ Ajouter</span>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#475569" }}>+ Ajouter une photo</span>
                   </div>
                 );
               })}

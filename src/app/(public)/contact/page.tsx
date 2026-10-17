@@ -40,7 +40,7 @@ export default function ContactPage() {
             Une question ? Notre équipe vous répond
           </h1>
           <p style={{ fontSize: "17px", color: "#E2E8F0", lineHeight: 1.6 }}>
-            Assistance 7j/7 disponible via WhatsApp, email ou directement sur la plateforme.
+            Assistance 7j/7 directement dans la messagerie de la plateforme, ou par email.
           </p>
         </div>
       </section>
@@ -50,20 +50,19 @@ export default function ContactPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "32px" }}>
           {/* Quick Contact Cards */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {/* WhatsApp Card */}
-            <div style={{ background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)", color: "white", padding: "30px", borderRadius: "20px", boxShadow: "0 8px 24px rgba(37, 211, 102, 0.25)" }}>
+            {/* Carte : messagerie de l'équipe */}
+            <div style={{ background: "linear-gradient(135deg, #2F4A8A 0%, #1E2A44 100%)", color: "white", padding: "30px", borderRadius: "20px", boxShadow: "0 8px 24px rgba(47, 74, 138, 0.25)" }}>
               <div style={{ marginBottom: "12px" }}>
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                 </svg>
               </div>
-              <h3 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "8px" }}>Assistance Directe WhatsApp</h3>
+              <h3 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "8px" }}>Écrire à l'équipe</h3>
               <p style={{ fontSize: "14px", opacity: 0.95, lineHeight: 1.6, marginBottom: "20px" }}>
                 Réponse instantanée par notre service client pour toute assistance sur votre compte ou vos réservations.
               </p>
               <a
-                href="https://wa.me/22890283580?text=Bonjour%20Meet%20Me%20Club%2C%20je%20souhaite%20continuer%20la%20discussion."
-                target="_blank"
+                href="/support"
                 rel="noopener noreferrer"
                 style={{
                   display: "inline-flex",
@@ -78,7 +77,7 @@ export default function ContactPage() {
                   textDecoration: "none",
                 }}
               >
-                <span>Ouvrir WhatsApp (+228 90 28 35 80)</span>
+                <span>Ouvrir la messagerie</span>
                 <span>➔</span>
               </a>
             </div>
@@ -112,7 +111,7 @@ export default function ContactPage() {
               <div style={{ padding: "30px", textAlign: "center", background: "#F0FDF4", borderRadius: "16px", border: "1px solid #86EFAC" }}>
                 <div style={{ fontSize: "42px", marginBottom: "12px" }}>✅</div>
                 <h4 style={{ fontSize: "18px", fontWeight: 800, color: "#166534", marginBottom: "8px" }}>Message bien reçu !</h4>
-                <p style={{ fontSize: "14px", color: "#15803D" }}>Notre équipe Meet Me Club reviendra vers vous très vite par WhatsApp ou email.</p>
+                <p style={{ fontSize: "14px", color: "#15803D" }}>Notre équipe Meet Me Club reviendra vers vous très vite dans votre messagerie ou par email.</p>
                 <button onClick={() => setSubmitted(false)} className="btn btn-outline-blue btn-sm" style={{ marginTop: "16px" }}>
                   Envoyer un autre message
                 </button>

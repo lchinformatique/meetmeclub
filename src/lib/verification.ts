@@ -10,6 +10,8 @@
 import { getSupabaseAdmin } from "./supabase-server";
 import { getAdminUserIds } from "./admin-auth";
 import { VICTOIRE_USER_ID } from "./victoire-bot";
+// Statuts des photos d'album (la colonne n'accepte pas « COVER » : un filtre neq("COVER") échouait toujours)
+const GALLERY_STATUSES = ["PENDING", "APPROVED", "REJECTED"];
 
 export type VerificationStatus = "NONE" | "PENDING" | "APPROVED" | "REJECTED";
 export type VerificationKind = "selfie" | "document" | "video";
@@ -112,7 +114,7 @@ export async function getVerificationState(userId: string): Promise<Verification
       .select('"idDocStatus", "idDocType", "idDocNote", "idDocReviewedBy", "videoStatus", "videoCode", "videoNote"')
       .eq("id", data.id)
       .maybeSingle(),
-    admin.from("profile_photos").select("id", { count: "exact", head: true }).eq("profileId", data.id).neq("status", "COVER"),
+    admin.from("profile_photos").select("id", { count: "exact", head: true }).eq("profileId", data.id).in("status", GALLERY_STATUSES),
   ]);
   state.hasProfilePhoto = (count || 0) > 0;
 

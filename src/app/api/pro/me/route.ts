@@ -67,11 +67,17 @@ export async function PUT(req: NextRequest) {
     const name = clean(body.name, 60);
     if (!name || name.length < 2) return NextResponse.json({ error: "Indiquez le nom de votre marque ou activité." }, { status: 400 });
     const activity = typeof body.activity === "string" && ACTIVITIES[body.activity] ? body.activity : "OTHER";
-    // Téléphone : obligatoire mais PRIVÉ (vu uniquement par l'équipe). Les membres échangent
-    // exclusivement par la messagerie de Meet Me Club : aucun WhatsApp / Facebook / site affiché.
+    // Contacts de l'annonceur : téléphone obligatoire, WhatsApp / Facebook / site au choix.
+    // Affichés aux membres connectés ; la messagerie Meet Me Club reste le contact principal.
     const phone = clean(body.phone, 25);
     if (!phone || phone.replace(/\D/g, "").length < 8) {
-      return NextResponse.json({ error: "Indiquez le numéro de téléphone de votre activité (visible uniquement par l'équipe)." }, { status: 400 });
+      return NextResponse.json({ error: "Indiquez le numéro de téléphone de votre activité." }, { status: 400 });
+    }
+    const whatsapp = clean(body.whatsapp, 25);
+    const facebook = clean(body.facebook, 200);
+    const website = clean(body.website, 200);
+    if (website && !/^https?:\/\//i.test(website)) {
+      return NextResponse.json({ error: "Le site web doit commencer par https://" }, { status: 400 });
     }
     const country = typeof body.country === "string" && COUNTRIES.some((c) => c.iso === body.country) ? body.country : null;
     const city = clean(body.city, 60);
@@ -89,10 +95,10 @@ export async function PUT(req: NextRequest) {
       city,
       country,
       address,
-      whatsapp: null,
-      facebook: null,
+      whatsapp,
+      facebook,
       phone,
-      website: null,
+      website,
       updatedAt: now,
     };
     // Images envoyées en JPEG (data URL) ; null = supprimer

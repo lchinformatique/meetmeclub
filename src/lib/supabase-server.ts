@@ -5,6 +5,8 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { uploadToSupabaseStorage } from "./supabase-storage";
 import { asAssistant } from "./victoire-bot";
+// Statuts des photos d'album (la colonne n'accepte pas « COVER » : un filtre neq("COVER") échouait toujours)
+const GALLERY_STATUSES = ["PENDING", "APPROVED", "REJECTED"];
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -739,7 +741,7 @@ export async function savePhotoInSupabase(
         .from("profile_photos")
         .update({ isMain: false })
         .eq("profileId", profile.id)
-        .neq("status", "COVER");
+        .in("status", GALLERY_STATUSES);
     }
 
     // Vérifier si cette photo existe déjà
@@ -812,7 +814,7 @@ export async function syncAlbumPhotosInSupabase(
       .from("profile_photos")
       .delete()
       .eq("profileId", profile.id)
-      .neq("status", "COVER");
+      .in("status", GALLERY_STATUSES);
 
     const savedPhotos: any[] = [];
     const limit = Math.min(photos.length, 8);
@@ -880,7 +882,7 @@ export async function setMainPhotoInSupabase(userId: string, photoIdOrUrl: strin
       .from("profile_photos")
       .update({ isMain: false })
       .eq("profileId", profile.id)
-      .neq("status", "COVER");
+      .in("status", GALLERY_STATUSES);
 
     await admin
       .from("profile_photos")
