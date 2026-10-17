@@ -48,6 +48,10 @@ export const PERMANENT_VIP_ACCOUNTS = [
   { userId: "user_vip_master", email: "vip@meetmeclub.net", pseudo: "vip_master", firstName: "VIP", lastName: "Master", gender: "OTHER" as const, role: "ADMIN" },
   { userId: "user_vip_tester", email: "tester@meetmeclub.net", pseudo: "vip_tester", firstName: "Sophie", lastName: "Tester", gender: "FEMALE" as const, role: "MEMBER" },
 ];
+/** Durée de l'essai gratuit : passé ce délai, chat et liste des membres demandent un pass payant */
+export const FREE_TRIAL_DAYS = 3;
+export const FREE_TRIAL_MS = FREE_TRIAL_DAYS * 24 * 3600 * 1000;
+
 export const PERMANENT_VIP_START = "2024-01-01T00:00:00.000Z";
 export const PERMANENT_VIP_EXPIRY = "2099-12-31T23:59:59.000Z";
 

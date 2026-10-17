@@ -23,7 +23,7 @@ const FAQ_KNOWLEDGE_BASE = [
   {
     keywords: ["gratuit", "free", "limite", "3 partenaire", "partenaire", "quota"],
     response:
-      "Le Plan Gratuit (0 FCFA) vous donne un accès opérationnel de 7 jours pour créer votre profil complet, être visible auprès des membres et échanger avec jusqu'à 3 partenaires, ainsi que commander des packs de rendez-vous réels. Pour un accès illimité, activez le Pass Essentiel à 3 000 FCFA/mois.",
+      "Le Plan Gratuit (0 FCFA) vous donne un accès opérationnel de 3 jours pour créer votre profil complet, être visible auprès des membres et échanger avec jusqu'à 3 partenaires, ainsi que commander des packs de rendez-vous réels. Pour un accès illimité, activez le Pass Essentiel à 3 000 FCFA/mois.",
     actionUrl: "/tarifs",
     actionText: "Voir les formules & tarifs",
   },

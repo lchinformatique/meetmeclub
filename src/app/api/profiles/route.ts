@@ -10,6 +10,7 @@ import {
   getAllProfiles,
   getEffectivePlan,
   getProfileByUserId,
+  isAccessExpired,
   sortProfilesByPriorityAndLikes,
 } from "@/lib/db-store";
 import { prisma } from "@/lib/prisma";
@@ -62,6 +63,11 @@ export async function GET(req: NextRequest) {
       if (supaMe) viewerSource = { ...viewerSource, ...supaMe, userId: session.userId, email: session.email || supaMe.email };
     } catch {}
     const viewerPlan = getEffectivePlan(viewerSource || { userId: session.userId, email: session.email });
+
+    // Essai de 3 jours terminé (ou pass expiré) : la liste des membres demande un pass payant
+    if (viewerSource && isAccessExpired({ ...viewerSource, userId: session.userId, email: session.email })) {
+      return NextResponse.json({ profiles: [], viewerPlan, accessExpired: true });
+    }
 
     // 2. Membres : Supabase REST d'abord
     let profiles: any[] = [];

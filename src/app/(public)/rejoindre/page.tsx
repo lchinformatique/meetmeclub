@@ -162,7 +162,7 @@ export default function RejoindrePage() {
       if (!res.ok) {
         setErrorMsg(data.error || "Impossible de finaliser l'inscription.");
       } else {
-        setSuccessMsg("Bienvenue ! Votre Plan Gratuit (7 jours offerts) est activé. Accès au club en cours...");
+        setSuccessMsg("Bienvenue ! Votre Plan Gratuit (3 jours offerts) est activé. Accès au club en cours...");
         setTimeout(() => {
           router.push("/profil?welcome=1");
           router.refresh();
@@ -337,7 +337,7 @@ export default function RejoindrePage() {
                     🎁 Premier accès au site : Plan Gratuit activé !
                   </div>
                   <p style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.9)", lineHeight: 1.5, margin: 0 }}>
-                    Chaque nouveau membre bénéficie automatiquement de <strong>7 jours d&apos;essai gratuit</strong> avec 3 contacts offerts pour échanger librement et découvrir nos rendez-vous partenaires.
+                    Chaque nouveau membre bénéficie automatiquement de <strong>3 jours d&apos;essai gratuit</strong> avec 3 contacts offerts pour échanger librement et découvrir nos rendez-vous partenaires.
                   </p>
                 </div>
               </div>
@@ -772,10 +772,10 @@ export default function RejoindrePage() {
                   badgeBg: "rgba(16, 185, 129, 0.12)",
                   badgeColor: "#059669",
                   price: "0",
-                  period: "Essai 7 jours offert",
+                  period: "Essai 3 jours offert",
                   desc: "Votre premier accès au club avec toutes les fonctionnalités essentielles pour tester.",
                   features: [
-                    "7 jours d'essai sans engagement",
+                    "3 jours d'essai sans engagement",
                     "Échanger avec jusqu'à 3 partenaires",
                     "Messages écrits, photos & vocaux",
                     "Visibilité dans l'espace Découverte",

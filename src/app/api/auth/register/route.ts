@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
 import { saveProfile } from "@/lib/db-store";
+import { FREE_TRIAL_MS } from "@/lib/subscription-constants";
 
 function isAdult(dateOfBirth: Date): boolean {
   const today = new Date();
@@ -111,14 +112,14 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Création de l'abonnement initial Plan Gratuit (7 jours)
+        // Création de l'abonnement initial Plan Gratuit (essai de 3 jours)
         await (prisma as any).subscription.create({
           data: {
             userId: user.id,
             plan: "FREE",
             status: "ACTIVE",
             startDate: new Date(),
-            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            endDate: new Date(Date.now() + FREE_TRIAL_MS),
             priceFcfa: 0,
             paymentRef: "FREE_REGISTRATION",
             paymentMethod: "FREE",
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
     try {
       const { upsertProfileInSupabase } = await import("@/lib/supabase-server");
       const nowIso = new Date().toISOString();
-      const expiresIso = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const expiresIso = new Date(Date.now() + FREE_TRIAL_MS).toISOString();
       await upsertProfileInSupabase(user.id, {
         firstName: resolvedName,
         lastName: lastName?.trim() || null,

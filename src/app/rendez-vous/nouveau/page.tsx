@@ -139,7 +139,7 @@ function NouveauRdvInner() {
   }, []);
 
   function handleSelectPack(pk: (typeof PACKS)[0]) {
-    // Tout client (abonnement dès 3 000 F ou Plan Gratuit 7 jours) a accès aux packs de rencontre et dîner.
+    // Tout client (abonnement dès 3 000 F ou Plan Gratuit 3 jours) a accès aux packs de rencontre et dîner.
     // Le paiement du pack choisi s'effectue directement via le modal Saspay.
     setPaymentModal({ open: true, pack: pk, paid: false, confirmed: false });
   }

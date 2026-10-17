@@ -104,7 +104,7 @@ export default function SubscriptionCountdown({ initialStatus, profile }: Subscr
       };
     }
     return {
-      label: "PLAN GRATUIT (7 JOURS D'ESSAI)",
+      label: "PLAN GRATUIT (3 JOURS D'ESSAI)",
       bg: "linear-gradient(135deg, #64748B 0%, #475569 100%)",
       color: "white",
       icon: Clock,
@@ -230,7 +230,7 @@ export default function SubscriptionCountdown({ initialStatus, profile }: Subscr
             <ShieldAlert size={28} color="#DC2626" style={{ flexShrink: 0, marginTop: "2px" }} />
             <div>
               <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#991B1B", margin: "0 0 4px" }}>
-                Période {isFree ? "d'essai de 7 jours" : "d'abonnement"} terminée
+                Période {isFree ? "d'essai de 3 jours" : "d'abonnement"} terminée
               </h3>
               <p style={{ fontSize: "13px", color: "#4B5563", lineHeight: 1.5, margin: 0 }}>
                 🔒 <strong>Toutes vos données sont préservées intactes</strong> (vos photos, votre biographie, vos correspondances et critères). Pour continuer à chatter et débloquer les profils, activez ou renouvelez votre abonnement ci-dessous :

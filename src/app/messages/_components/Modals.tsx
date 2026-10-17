@@ -189,7 +189,7 @@ export function ExpiredModal({ onClose, wasTrial }: { onClose: () => void; wasTr
       <div className={styles.modalIcon} style={{ background: "linear-gradient(135deg,#0B2559,#163B8A)" }}>
         <Zap size={26} />
       </div>
-      <h3 className={styles.modalTitle}>{wasTrial ? "Votre essai gratuit de 7 jours est terminé" : "Votre pass est arrivé à échéance"}</h3>
+      <h3 className={styles.modalTitle}>{wasTrial ? "Votre essai gratuit de 3 jours est terminé" : "Votre pass est arrivé à échéance"}</h3>
       <p className={styles.modalText}>
         Continuez à discuter avec tous les membres grâce au <strong>Pass Essentiel</strong> : discussions illimitées
         pendant 30 jours.

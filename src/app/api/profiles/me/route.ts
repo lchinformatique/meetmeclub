@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { getProfileByUserId, saveProfile, PLAN_LIMITS } from '@/lib/db-store';
+import { FREE_TRIAL_DAYS } from '@/lib/subscription-constants';
 
 export async function GET() {
   const session = await getSession();
@@ -21,7 +22,7 @@ export async function GET() {
       // Première fois : on fige les dates du plan dans Supabase pour un décompte définitif
       if (!supa.subscriptionExpiresAt && supa.createdAt) {
         const start = supa.subscriptionStartedAt || supa.createdAt;
-        const days = (supa.plan || 'FREE') === 'FREE' ? 7 : 30;
+        const days = (supa.plan || 'FREE') === 'FREE' ? FREE_TRIAL_DAYS : 30;
         const { upsertProfileInSupabase } = await import('@/lib/supabase-server');
         await upsertProfileInSupabase(session.userId, {
           email: session.email || undefined,
@@ -63,7 +64,7 @@ export async function GET() {
         subscriptionExpiresAt:
           supa.subscriptionExpiresAt ||
           ((supa.plan || 'FREE') === 'FREE' && supa.createdAt
-            ? new Date(new Date(supa.createdAt).getTime() + 7 * 24 * 3600 * 1000).toISOString()
+            ? new Date(new Date(supa.createdAt).getTime() + FREE_TRIAL_DAYS * 24 * 3600 * 1000).toISOString()
             : profile?.subscriptionExpiresAt || undefined),
         partnersContacted: profile?.partnersContacted || [],
         photos: mergedPhotos,

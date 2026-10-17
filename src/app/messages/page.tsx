@@ -85,7 +85,7 @@ function MessagesApp() {
   const plan: string = (myProfile?.effectivePlan || myProfile?.plan || rt.me?.plan || "FREE").toUpperCase();
   const isVip = plan === "VIP";
   const isFree = plan === "FREE";
-  // Période d'accès terminée (essai 7 jours ou pass expiré)
+  // Période d'accès terminée (essai 3 jours ou pass expiré)
   const accessExpired = Boolean(myProfile?.subscriptionStatus?.isExpired);
 
   const activeConv = useMemo(
@@ -593,6 +593,12 @@ function MessagesApp() {
           {rt.push.supported && rt.push.permission === "default" && (
             <button type="button" className={styles.pushStrip} onClick={() => rt.push.enable()}>
               <BellRing size={16} /> Activer les notifications sur ce téléphone
+            </button>
+          )}
+
+          {accessExpired && (
+            <button type="button" className={styles.expiredBar} onClick={() => setExpiredOpen(true)}>
+              Essai gratuit de 3 jours terminé · <strong>Pass Essentiel (3 000 F) pour continuer</strong>
             </button>
           )}
 

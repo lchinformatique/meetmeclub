@@ -312,7 +312,7 @@ export default function InscriptionPage() {
             <ShieldCheck size={14} /> Réservé aux 18 ans et plus
           </span>
           <span>
-            <Sparkles size={14} /> Plan Gratuit 7 jours inclus
+            <Sparkles size={14} /> Plan Gratuit 3 jours inclus
           </span>
         </div>
       </main>

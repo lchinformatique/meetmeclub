@@ -15,13 +15,13 @@ const PLANS = [
   {
     id: "FREE",
     name: "Plan Gratuit",
-    badge: "Essai 7 jours",
+    badge: "Essai 3 jours",
     price: "0",
-    period: "valable 7 jours",
+    period: "valable 3 jours",
     subtitle: "Découvrez le club en toute simplicité",
-    description: "Accès opérationnel de 7 jours dès votre inscription. Profil, photos et critères conservés à 100% après expiration pour votre réactivation.",
+    description: "Accès opérationnel de 3 jours dès votre inscription. Profil, photos et critères conservés à 100% après expiration pour votre réactivation.",
     features: [
-      { text: "Accès complet pendant 7 jours d'essai", ok: true, highlight: true },
+      { text: "Accès complet pendant 3 jours d'essai", ok: true, highlight: true },
       { text: "Profil, bio et jusqu'à 8 photos sauvegardés", ok: true },
       { text: "Visibilité auprès des membres de même rang", ok: true },
       { text: "Messages écrits, photos & notes vocales", ok: true },
@@ -243,10 +243,10 @@ export default function TarifsPage() {
             }}
           >
             <h4 style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A", marginBottom: "12px" }}>
-              Règle du Plan Gratuit (7 jours) :
+              Règle du Plan Gratuit (3 jours) :
             </h4>
             <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "14px" }}>
-              Tout nouvel utilisateur bénéficie de <strong>7 jours d&apos;accès opérationnel gratuit</strong> pour créer son profil complet, être visible de tous les membres et échanger avec
+              Tout nouvel utilisateur bénéficie de <strong>3 jours d&apos;accès opérationnel gratuit</strong> pour créer son profil complet, être visible de tous les membres et échanger avec
               jusqu&apos;à <strong style={{ color: "#0F172A" }}>3 partenaires</strong>. L&apos;achat de packs de rendez-vous réels est également accessible dès cette période d&apos;essai.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#0B2E6B", fontWeight: 700, fontSize: "14px" }}>

@@ -17,17 +17,17 @@ export const UNIFIED_PLANS = [
   {
     id: "FREE",
     name: "Plan Gratuit",
-    badge: "Essai 7 jours",
+    badge: "Essai 3 jours",
     badgeBg: "#F1F5F9",
     badgeColor: "#475569",
     price: "0",
-    period: "FCFA · 7 jours",
+    period: "FCFA · 3 jours",
     subtitle: "Découvrez le club et complétez votre profil",
-    description: "Accès opérationnel de 7 jours. Vos photos, critères et bio sont préservés à 100% même après expiration.",
+    description: "Accès opérationnel de 3 jours. Vos photos, critères et bio sont préservés à 100% même après expiration.",
     isVip: false,
     isPopular: false,
     features: [
-      { text: "Accès complet pendant 7 jours d'essai", ok: true, highlight: true },
+      { text: "Accès complet pendant 3 jours d'essai", ok: true, highlight: true },
       { text: "Profil, bio & jusqu'à 8 photos sauvegardées", ok: true },
       { text: "Messages écrits, photos & notes vocales", ok: true },
       { text: "Données 100% conservées à l'expiration", ok: true, highlight: true },
@@ -188,7 +188,7 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
               lineHeight: 1.5,
             }}
           >
-            Commencez gratuitement pendant 7 jours, puis profitez de nos formules mensuelles pour débloquer toutes les fonctionnalités.
+            Commencez gratuitement pendant 3 jours, puis profitez de nos formules mensuelles pour débloquer toutes les fonctionnalités.
           </p>
         </div>
       )}

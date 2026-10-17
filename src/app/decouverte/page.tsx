@@ -59,6 +59,8 @@ export default function DecouvertePage() {
   // Fiche complète d'un membre (toutes ses photos, bio, infos)
   const [sheetProfile, setSheetProfile] = useState<ProfileItem | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  // Essai gratuit de 3 jours terminé : la liste des membres demande un pass
+  const [accessExpired, setAccessExpired] = useState(false);
   const rt = useRealtime();
 
   // User subscription & quota state
@@ -108,6 +110,7 @@ export default function DecouvertePage() {
         }
         setIsAuthenticated(true);
         const data = await res.json();
+        if (data.accessExpired) setAccessExpired(true);
         if (data.profiles && data.profiles.length > 0) {
           setProfiles(data.profiles);
         } else {
@@ -424,13 +427,13 @@ export default function DecouvertePage() {
                 </h2>
 
                 <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.9)", lineHeight: 1.6, marginBottom: "24px", maxWidth: "520px", margin: "0 auto 24px" }}>
-                  Rejoignez dès maintenant notre communauté de célibataires à Lomé. Dès votre premier accès, bénéficiez de <strong>7 jours d&apos;essai offert</strong> avec 3 contacts inclus pour démarrer vos premières discussions !
+                  Rejoignez dès maintenant notre communauté de célibataires à Lomé. Dès votre premier accès, bénéficiez de <strong>3 jours d&apos;essai offert</strong> avec 3 contacts inclus pour démarrer vos premières discussions !
                 </p>
 
                 {/* Avantages Inclus */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px", marginBottom: "28px", textAlign: "left" }}>
                   {[
-                    "✓ 7 jours d'essai 100% gratuit",
+                    "✓ 3 jours d'essai 100% gratuit",
                     "✓ 3 contacts débloqués au choix",
                     "✓ Messagerie privée sécurisée",
                     "✓ Réservation de RDV disponible",
@@ -722,6 +725,54 @@ export default function DecouvertePage() {
         {loading ? (
           <div style={{ textAlign: "center", paddingBlock: "60px" }}>
             <p style={{ color: "#0F172A", fontWeight: 700, fontSize: "16px" }}>Chargement des profils du club...</p>
+          </div>
+        ) : accessExpired ? (
+          <div
+            style={{
+              background: "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+              borderRadius: "24px",
+              padding: "36px 22px",
+              textAlign: "center",
+              color: "white",
+              boxShadow: "0 16px 40px rgba(11,37,89,0.25)",
+            }}
+          >
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#E10600", margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Crown size={30} />
+            </div>
+            <h2 style={{ margin: "0 0 8px", fontSize: "22px", color: "white" }}>Votre essai gratuit de 3 jours est terminé</h2>
+            <p style={{ margin: "0 auto 22px", maxWidth: 440, fontSize: "15px", lineHeight: 1.6, color: "rgba(255,255,255,0.88)" }}>
+              Vos photos, votre profil et vos conversations sont conservés. Activez un pass pour revoir tous les membres et
+              continuer à discuter.
+            </p>
+            <a
+              href="https://link.saspay.me/dtpycov9i-k"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                width: "100%",
+                maxWidth: 360,
+                height: 54,
+                borderRadius: 999,
+                background: "linear-gradient(135deg, #E10600 0%, #B30500 100%)",
+                color: "white",
+                fontWeight: 800,
+                fontSize: 16,
+                textDecoration: "none",
+                boxShadow: "0 10px 24px rgba(225,6,0,0.4)",
+              }}
+            >
+              Continuer avec le Pass Essentiel · 3 000 F
+            </a>
+            <div style={{ marginTop: 14 }}>
+              <Link href="/tarifs" style={{ color: "white", fontWeight: 700, fontSize: 14 }}>
+                Voir les pass Complice et VIP
+              </Link>
+            </div>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ background: "white", borderRadius: "16px", padding: "48px 24px", textAlign: "center", border: "1px solid #E2E8F0" }}>

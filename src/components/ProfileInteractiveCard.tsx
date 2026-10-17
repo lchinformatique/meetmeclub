@@ -535,7 +535,7 @@ export default function ProfileInteractiveCard({
             <Sparkles size={13} />
             <span>
               {profile.plan === "FREE"
-                ? "⚡ Plan Gratuit (Essai 7 jours)"
+                ? "⚡ Plan Gratuit (Essai 3 jours)"
                 : `Plan ${profile.plan} Actif`}
             </span>
           </div>

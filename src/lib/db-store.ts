@@ -5,7 +5,7 @@
 import fs from "fs";
 import path from "path";
 export { SASPAY_LINKS, type SubscriptionStatusInfo, type VipPost } from "./subscription-constants";
-import { SASPAY_LINKS, type SubscriptionStatusInfo, type VipPost, findPermanentVipAccount, PERMANENT_VIP_START, PERMANENT_VIP_EXPIRY } from "./subscription-constants";
+import { SASPAY_LINKS, type SubscriptionStatusInfo, type VipPost, findPermanentVipAccount, PERMANENT_VIP_START, PERMANENT_VIP_EXPIRY, FREE_TRIAL_DAYS, FREE_TRIAL_MS } from "./subscription-constants";
 
 // Force le plan VIP illimité sur les comptes de test permanents (vip_master, vip_tester)
 function applyPermanentVip<T extends Partial<StoredProfile>>(profile: T): T {
@@ -203,13 +203,13 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
 
     if (planChanged && !profileData.subscriptionExpiresAt) {
       subStarted = new Date().toISOString();
-      const durationDays = plan === "FREE" ? 7 : 30;
+      const durationDays = plan === "FREE" ? FREE_TRIAL_DAYS : 30;
       subExpires = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
     } else if (!subExpires) {
       const isTrial = plan === "FREE";
       subStarted = old.createdAt || new Date().toISOString();
       const baseMs = new Date(subStarted).getTime();
-      subExpires = new Date(baseMs + (isTrial ? 7 : 30) * 24 * 60 * 60 * 1000).toISOString();
+      subExpires = new Date(baseMs + (isTrial ? FREE_TRIAL_DAYS : 30) * 24 * 60 * 60 * 1000).toISOString();
     }
 
     const likes = profileData.likesCount !== undefined ? profileData.likesCount : (old.likesCount ?? 12);
@@ -244,7 +244,7 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
     const plan = profileData.plan || "FREE";
     const isTrial = plan === "FREE";
     const subStarted = profileData.subscriptionStartedAt || nowIso;
-    const subExpires = profileData.subscriptionExpiresAt || new Date(Date.now() + (isTrial ? 7 : 30) * 24 * 60 * 60 * 1000).toISOString();
+    const subExpires = profileData.subscriptionExpiresAt || new Date(Date.now() + (isTrial ? FREE_TRIAL_DAYS : 30) * 24 * 60 * 60 * 1000).toISOString();
     const likes = profileData.likesCount !== undefined ? profileData.likesCount : 8;
 
     updatedProfile = {
@@ -305,13 +305,13 @@ export function saveProfile(profileData: Partial<StoredProfile> & { userId: stri
 export const PLAN_LIMITS = {
   FREE: {
     maxPartners: 3,
-    label: "Plan Gratuit (Essai 7 jours)",
+    label: "Plan Gratuit (Essai 3 jours)",
     price: 0,
     paymentUrl: null,
     canBookVenues: true,
     canViewLikes: false,
     features: [
-      "Accès complet opérationnel pendant 7 jours d'essai",
+      "Accès complet opérationnel pendant 3 jours d'essai",
       "Création complète du profil & visibilité",
       "Échanger avec jusqu'à 3 partenaires",
       "Possibilité d'acheter des packs de rendez-vous réels",
@@ -611,15 +611,17 @@ export function getSubscriptionStatus(profile?: StoredProfile | any): Subscripti
   if (profile?.subscriptionExpiresAt) {
     expiresAtMs = new Date(profile.subscriptionExpiresAt).getTime();
   } else {
-    const durationDays = isTrial ? 7 : 30;
+    const durationDays = isTrial ? FREE_TRIAL_DAYS : 30;
     expiresAtMs = startedAtMs + durationDays * 24 * 60 * 60 * 1000;
   }
+  // Essai gratuit : jamais plus de 3 jours après son début (s'applique aussi aux anciens comptes)
+  if (isTrial) expiresAtMs = Math.min(expiresAtMs, startedAtMs + FREE_TRIAL_MS);
 
   const now = Date.now();
   const diffMs = expiresAtMs - now;
   const isExpired = diffMs <= 0;
 
-  const totalDurationDays = isTrial ? 7 : 30;
+  const totalDurationDays = isTrial ? FREE_TRIAL_DAYS : 30;
   const totalDurationMs = totalDurationDays * 24 * 60 * 60 * 1000;
   const elapsedMs = Math.max(0, now - startedAtMs);
   const progressPercent = Math.min(100, Math.max(0, Math.round((elapsedMs / totalDurationMs) * 100)));
@@ -649,6 +651,16 @@ export function getSubscriptionStatus(profile?: StoredProfile | any): Subscripti
 }
 
 /**
+ * Accès terminé ? (essai gratuit de 3 jours écoulé, ou pass payant expiré sans renouvellement)
+ * → le chat et la liste des membres demandent un pass payant.
+ */
+export function isAccessExpired(profile?: Partial<StoredProfile> | null): boolean {
+  if (!profile) return false;
+  if (findPermanentVipAccount(profile)) return false;
+  return getSubscriptionStatus(profile).isExpired;
+}
+
+/**
  * Plan réellement actif : un pass payant expiré redevient « FREE ».
  * Les comptes VIP permanents (tests) restent toujours VIP.
  */
@@ -666,7 +678,7 @@ export function getEffectivePlan(profile?: Partial<StoredProfile> | null): "FREE
  * - VIP (15 000) : voit TOUS les membres sans exception.
  * - Complice (6 000) : voit Complice (6000), Essentiel (3000) et Free (essai).
  * - Essentiel (3 000) : voit Essentiel (3000) et Free (essai).
- * - Gratuit : période d'essai 7 jours (voit Free et Essentiel).
+ * - Gratuit : période d'essai 3 jours (voit Free et Essentiel).
  */
 export function canViewMember(viewerPlan: string = "FREE", targetPlan: string = "FREE"): boolean {
   const v = (viewerPlan || "FREE").toUpperCase();

@@ -585,7 +585,7 @@ export default function HomePage() {
                 textShadow: "0 1px 6px rgba(0, 0, 0, 0.25)",
               }}
             >
-              Du Plan Gratuit d&apos;essai 7 jours au Club VIP Prestige d&apos;exception
+              Du Plan Gratuit d&apos;essai 3 jours au Club VIP Prestige d&apos;exception
             </p>
           </div>
 

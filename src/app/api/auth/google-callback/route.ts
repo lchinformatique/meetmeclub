@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/session";
 import { saveProfile } from "@/lib/db-store";
+import { FREE_TRIAL_DAYS, FREE_TRIAL_MS } from "@/lib/subscription-constants";
 
 interface SignupData {
   firstName?: string;
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
         age: dob ? ageFrom(dob) : null,
         plan: "FREE",
         subscriptionStartedAt: now.toISOString(),
-        subscriptionExpiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString(),
+        subscriptionExpiresAt: new Date(now.getTime() + FREE_TRIAL_MS).toISOString(),
       });
       if (googleAvatar) await savePhotoInSupabase(user.id, googleAvatar, true).catch(() => null);
       existingProfile = (await getProfileFromSupabase(user.id, cleanEmail)) || existingProfile;
