@@ -59,6 +59,9 @@ export default function AdminMembres() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // Affichage par lots de 30 membres : la page reste rapide même avec beaucoup de membres
+  const [visible, setVisible] = useState(30);
+  useEffect(() => setVisible(30), [q, filter]);
 
   const load = () =>
     fetch("/api/dashboard", { cache: "no-store" })
@@ -168,7 +171,7 @@ export default function AdminMembres() {
 
         {!members && !error && <div style={{ textAlign: "center", color: "#64748B", padding: 30 }}>Chargement des membres…</div>}
 
-        {list.map((m) => {
+        {list.slice(0, visible).map((m) => {
           const online = rt.isOnline(m.userId);
           const plan = PLAN_STYLE[m.plan] || PLAN_STYLE.FREE;
           const open = openId === m.userId;
@@ -182,7 +185,7 @@ export default function AdminMembres() {
                 <span style={{ position: "relative", flexShrink: 0 }}>
                   {m.photos[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.photos[0]} alt="" width={52} height={52} style={{ borderRadius: "50%", objectFit: "cover" }} />
+                    <img src={m.photos[0]} alt="" width={52} height={52} loading="lazy" decoding="async" style={{ borderRadius: "50%", objectFit: "cover" }} />
                   ) : (
                     <span style={{ width: 52, height: 52, borderRadius: "50%", background: "#0B2559", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 20 }}>
                       {(m.firstName || "M").charAt(0).toUpperCase()}
@@ -212,7 +215,7 @@ export default function AdminMembres() {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
                       {m.photos.map((url, i) => (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img key={i} src={url} alt="" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 10 }} />
+                        <img key={i} src={url} alt="" loading="lazy" decoding="async" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 10 }} />
                       ))}
                     </div>
                   )}
@@ -259,7 +262,17 @@ export default function AdminMembres() {
           );
         })}
 
-        {members && list.length === 0 && <div style={{ textAlign: "center", color: "#64748B", padding: 30 }}>Aucun membre pour ce filtre.</div>}
+        {list.length > visible && (
+          <button
+            type="button"
+            onClick={() => setVisible((v) => v + 30)}
+            style={{ height: 48, borderRadius: 14, border: "1.5px solid #0B2559", background: "#fff", color: "#0B2559", fontWeight: 800, cursor: "pointer" }}
+          >
+            Voir plus ({list.length - visible} restants)
+          </button>
+        )}
+
+        {members && list.length === 0 &&<div style={{ textAlign: "center", color: "#64748B", padding: 30 }}>Aucun membre pour ce filtre.</div>}
       </div>
     </div>
   );

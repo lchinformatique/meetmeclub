@@ -26,16 +26,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ pendingPayments: pendingPayments || 0 });
   }
 
+  // Chiffres seuls (accueil de l'espace de gestion) : requête légère
+  const statsOnly = Boolean(new URL(req.url).searchParams.get("stats"));
+
   const [{ data: profiles }, { data: users }, { data: photos }] = await Promise.all([
     admin
       .from("profiles")
       .select(
-        "id, userId, firstName, lastName, pseudo, gender, city, neighborhood, profession, bio, relationshipGoal, plan, subscriptionStartedAt, subscriptionExpiresAt, likesCount, isVisible, createdAt, updatedAt"
+        statsOnly
+          ? "id, userId, pseudo, plan, subscriptionStartedAt, subscriptionExpiresAt, createdAt"
+          : "id, userId, firstName, lastName, pseudo, gender, city, neighborhood, profession, bio, relationshipGoal, plan, subscriptionStartedAt, subscriptionExpiresAt, likesCount, isVisible, createdAt, updatedAt"
       )
       .order("createdAt", { ascending: false })
       .limit(2000),
-    admin.from("users").select("id, email, phone, status, role, dateOfBirth, createdAt").limit(5000),
-    admin.from("profile_photos").select("profileId, url, isMain, status").neq("status", "COVER").limit(10000),
+    statsOnly
+      ? Promise.resolve({ data: [] as any[] })
+      : admin.from("users").select("id, email, phone, status, role, dateOfBirth, createdAt").limit(5000),
+    statsOnly
+      ? Promise.resolve({ data: [] as any[] })
+      : // Uniquement les photos hébergées (http) : les anciennes photos stockées en texte
+        // brut pèsent plusieurs Mo chacune et rendaient la page très lente
+        admin.from("profile_photos").select("profileId, url, isMain").neq("status", "COVER").like("url", "http%").limit(8000),
   ]);
 
   const userById = new Map((users || []).map((u: any) => [u.id, u]));
@@ -97,5 +108,5 @@ export async function GET(req: NextRequest) {
     pendingPayments: pendingPayments || 0,
   };
 
-  return NextResponse.json({ stats, members });
+  return NextResponse.json(statsOnly ? { stats } : { stats, members });
 }

@@ -24,18 +24,19 @@ export default function AdminHome() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
 
+  // Chiffres seuls (requête légère) — chargés une fois à l'ouverture
   useEffect(() => {
-    fetch("/api/dashboard", { cache: "no-store" })
+    fetch("/api/dashboard?stats=1", { cache: "no-store" })
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d.error || "Accès refusé");
         setStats(d.stats);
       })
       .catch((e) => setError(e.message));
-  }, [rt.adminPending]);
+  }, []);
 
   const onlineCount = Object.keys(rt.online).length;
-  const pending = stats?.pendingPayments ?? rt.adminPending;
+  const pending = Math.max(rt.adminPending, stats?.pendingPayments ?? 0);
 
   const tile = (bg: string): React.CSSProperties => ({
     display: "flex",

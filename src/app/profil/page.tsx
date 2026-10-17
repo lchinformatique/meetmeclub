@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { getProfileByUserId, saveProfile, PLAN_LIMITS, getSubscriptionStatus } from "@/lib/db-store";
+import { findPermanentVipAccount } from "@/lib/subscription-constants";
 import Header from "@/components/Header";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileInteractiveCard from "@/components/ProfileInteractiveCard";
@@ -342,7 +343,10 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         )}
 
         {/* Membres VIP : vérification d'identité requise pour le badge VIP vérifié */}
-        {profile.plan === "VIP" && !(profile.idDocumentVerified && profile.selfieVerified) && (
+        {profile.plan === "VIP" &&
+          !isAdmin &&
+          !findPermanentVipAccount({ userId: profile.userId, email: profile.email, pseudo: profile.pseudo }) &&
+          !(profile.idDocumentVerified && profile.selfieVerified) && (
           <Link
             href="/profil/securite"
             style={{

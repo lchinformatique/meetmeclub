@@ -119,7 +119,13 @@ export async function POST(req: NextRequest) {
       (userProfile?.selfieSubmitted || userProfile?.selfieVerified)
     );
 
-    if (!isVerified) {
+    // L'administrateur et les comptes de test ne sont pas soumis à la vérification d'identité
+    const { isAdminSession } = await import("@/lib/admin-auth");
+    const { findPermanentVipAccount } = await import("@/lib/subscription-constants");
+    const exempt =
+      Boolean(findPermanentVipAccount({ userId: session.userId, email: session.email })) || (await isAdminSession(session));
+
+    if (!isVerified && !exempt) {
       return NextResponse.json(
         {
           error: "Vérification requise",

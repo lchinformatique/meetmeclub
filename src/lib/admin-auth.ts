@@ -5,10 +5,21 @@
 import type { SessionPayload } from "./session";
 import { findPermanentVipAccount, PERMANENT_VIP_ACCOUNTS } from "./subscription-constants";
 
+// Résultat mémorisé 5 minutes par membre : évite 2 requêtes Supabase à chaque page/appel
+const adminCache = new Map<string, { value: boolean; at: number }>();
+
 export async function isAdminSession(session: SessionPayload | null): Promise<boolean> {
   if (!session?.userId) return false;
   if (session.role === "ADMIN" || session.role === "SUPER_ADMIN") return true;
   if (findPermanentVipAccount({ userId: session.userId, email: session.email })?.role === "ADMIN") return true;
+  const cached = adminCache.get(session.userId);
+  if (cached && Date.now() - cached.at < 5 * 60 * 1000) return cached.value;
+  const value = await lookupAdmin(session);
+  adminCache.set(session.userId, { value, at: Date.now() });
+  return value;
+}
+
+async function lookupAdmin(session: SessionPayload): Promise<boolean> {
   try {
     const { getSupabaseAdmin } = await import("./supabase-server");
     const admin = getSupabaseAdmin();

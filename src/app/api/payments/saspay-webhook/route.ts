@@ -9,6 +9,9 @@ import {
   claimPayment,
   findMemberByIntent,
   findMemberByPhone,
+  notifyAdminsOfRequest,
+  planFromAmount,
+  recordActivationRequest,
   recordPayment,
   verifySaspaySignature,
 } from "@/lib/payments-server";
@@ -36,6 +39,34 @@ export async function POST(req: NextRequest) {
 
   if (event === "webhook.test") return NextResponse.json({ received: true, test: true });
 
+  // Paiement réellement lancé (le client a rempli ses informations et validé sur SasPay)
+  // → alerte à l'administrateur + demande à valider
+  if (event === "transaction.created" && data?.id) {
+    try {
+      const plan = planFromAmount(data.amount, data.net_amount, data.charged);
+      if (!plan) return NextResponse.json({ received: true, ignored: "montant hors pass" });
+      const userId = (await findMemberByPhone(data.msisdn)) || (await findMemberByIntent(plan));
+      if (userId) {
+        const isNew = await recordActivationRequest(userId, plan, data.msisdn || undefined, data.reference || data.id);
+        if (isNew) await notifyAdminsOfRequest({ userId, plan, phone: data.msisdn || undefined, reference: data.reference || data.id, attempt: true });
+      } else {
+        const { sendAdminAlert, siteUrl } = await import("@/lib/admin-notify");
+        await sendAdminAlert({
+          title: "💳 Paiement lancé (membre non identifié)",
+          body: `${Number(data.amount).toLocaleString("fr-FR")} F depuis ${data.msisdn || "un numéro inconnu"}. À attribuer après confirmation.`,
+          url: "/admin/paiements",
+          tag: "activation-request",
+          emailSubject: `Paiement lancé — ${Number(data.amount).toLocaleString("fr-FR")} F — membre non identifié`,
+          emailHtml: `<p>Un paiement de <strong>${Number(data.amount).toLocaleString("fr-FR")} F</strong> vient d'être lancé depuis le numéro <strong>${data.msisdn || "—"}</strong> (réf. ${data.reference || data.id}).</p><p>Le membre n'a pas pu être identifié automatiquement : attribuez-le après confirmation SasPay.</p><p><a href="${siteUrl()}/admin/paiements" style="display:inline-block;background:#E10600;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Ouvrir les paiements</a></p>`,
+        });
+      }
+      return NextResponse.json({ received: true, attempt: plan, userId: userId || null });
+    } catch (err) {
+      console.error("[saspay-webhook created]", err);
+      return NextResponse.json({ error: "Traitement impossible" }, { status: 500 });
+    }
+  }
+
   // Seuls les paiements réussis débloquent un pass
   if (event !== "transaction.success" || !data?.id) return NextResponse.json({ received: true, ignored: event });
 
@@ -51,6 +82,21 @@ export async function POST(req: NextRequest) {
     if (userId) {
       await claimPayment(payment.id, userId);
       await activatePlan(userId, payment.plan, { paymentRef: payment.reference || payment.id });
+      // Information de l'administrateur : paiement confirmé par SasPay, pass activé
+      try {
+        const { sendAdminAlert, siteUrl } = await import("@/lib/admin-notify");
+        const { getProfileFromSupabase } = await import("@/lib/supabase-server");
+        const m = await getProfileFromSupabase(userId).catch(() => null);
+        const who = m?.pseudo ? `${m.firstName || ""} (@${m.pseudo})` : m?.firstName || "Un membre";
+        await sendAdminAlert({
+          title: `✅ Paiement confirmé : ${who}`,
+          body: `${Number(payment.amount).toLocaleString("fr-FR")} F reçus · pass activé automatiquement.`,
+          url: "/admin/paiements",
+          tag: "payment-confirmed",
+          emailSubject: `Paiement confirmé — ${Number(payment.amount).toLocaleString("fr-FR")} F — ${who}`,
+          emailHtml: `<p>SasPay a confirmé le paiement de <strong>${who}</strong> (${Number(payment.amount).toLocaleString("fr-FR")} F). Le pass a été activé automatiquement.</p><p><a href="${siteUrl()}/admin/paiements">Voir les paiements</a></p>`,
+        });
+      } catch {}
       return NextResponse.json({ received: true, activated: payment.plan, userId });
     }
 
