@@ -240,7 +240,8 @@ export async function POST(req: NextRequest) {
       // ── 4. Création de la session JWT ──────────────────────────────────
       await setSessionCookie({
         userId: user.id,
-        role: user.role || "MEMBER",
+        // vip_master est administrateur du club, quel que soit son identifiant en base
+        role: permanentVip?.role === "ADMIN" ? "ADMIN" : user.role || "MEMBER",
         status: user.status || "ACTIVE",
         email: user.email || `${cleanLower}@meetmeclub.net`,
         phone: user.profile?.phone || undefined,

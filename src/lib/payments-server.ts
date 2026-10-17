@@ -290,9 +290,9 @@ export async function notifyAdminsOfRequest(req: { userId: string; plan: PaidPla
   const who = member?.pseudo ? `${member.firstName || ""} (@${member.pseudo})` : member?.firstName || "Un membre";
   const label = PLAN_LABEL[req.plan];
 
-  // Administrateurs : rôle ADMIN + compte vip_master
-  const { data: admins } = await admin.from("users").select("id").in("role", ["ADMIN", "SUPER_ADMIN"]).limit(20);
-  const adminIds = Array.from(new Set([...(admins || []).map((a: any) => a.id), "user_vip_master"]));
+  // Administrateurs : rôle ADMIN + compte vip_master (retrouvé par pseudo/e-mail)
+  const { getAdminUserIds } = await import("./admin-auth");
+  const adminIds = await getAdminUserIds();
   await Promise.allSettled(
     adminIds.map((id) =>
       sendPushToUser(id, {

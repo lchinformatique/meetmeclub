@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { findPermanentVipAccount } from "@/lib/subscription-constants";
+import { isAdminSession } from "@/lib/admin-auth";
 import {
   activatePlan,
   claimPayment,
@@ -18,12 +18,7 @@ export const dynamic = "force-dynamic";
 
 async function requireAdmin() {
   const session = await getSession();
-  const ok =
-    session &&
-    (session.role === "ADMIN" ||
-      session.role === "SUPER_ADMIN" ||
-      findPermanentVipAccount({ userId: session.userId, email: session.email })?.role === "ADMIN");
-  return ok ? session : null;
+  return (await isAdminSession(session)) ? session : null;
 }
 
 export async function GET() {

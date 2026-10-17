@@ -6,19 +6,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { getSession } from "@/lib/session";
-import { findPermanentVipAccount } from "@/lib/subscription-constants";
+import { isAdminSession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  const isAdmin =
-    session &&
-    (session.role === "ADMIN" ||
-      session.role === "SUPER_ADMIN" ||
-      findPermanentVipAccount({ userId: session.userId, email: session.email })?.role === "ADMIN");
-  if (!isAdmin) return NextResponse.json({ error: "Réservé aux administrateurs" }, { status: 403 });
+  if (!(await isAdminSession(session))) return NextResponse.json({ error: "Réservé aux administrateurs" }, { status: 403 });
 
   const { title, body, url } = await req.json().catch(() => ({}));
   if (!title?.trim() || !body?.trim()) {
