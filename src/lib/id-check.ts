@@ -55,7 +55,7 @@ export async function checkIdentityDocument(input: {
   profile: { firstName?: string | null; lastName?: string | null };
 }): Promise<IdCheckDecision> {
   if (!isAiCheckConfigured()) {
-    return { approved: false, reasons: ["Contrôle automatique indisponible : vérification par l'équipe."], reading: null };
+    return { approved: false, reasons: [], reading: null };
   }
 
   const client = new Anthropic();

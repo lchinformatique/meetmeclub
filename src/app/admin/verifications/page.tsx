@@ -176,7 +176,7 @@ function AdminVerificationsInner() {
             <ShieldCheck size={24} /> Vérification des membres
           </h1>
           <p style={{ margin: "4px 0 0", fontSize: 14, color: "#64748B", lineHeight: 1.5 }}>
-            Essai gratuit : selfie · Packs 3 000 et 6 000 : pièce d&apos;identité (validée automatiquement quand tout concorde) ·
+            Essai gratuit : selfie · Packs 3 000 et 6 000 : pièce d&apos;identité ·
             VIP : vidéo. Un membre n&apos;apparaît qu&apos;une fois vérifié.
           </p>
         </div>
