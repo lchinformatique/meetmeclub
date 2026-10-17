@@ -61,7 +61,7 @@ export default function AdminHome() {
         <Icon size={17} />
       </span>
       <strong style={{ fontSize: 24, color: "#0F172A" }}>{value}</strong>
-      <span style={{ fontSize: 12, color: "#64748B", fontWeight: 600 }}>{label}</span>
+      <span style={{ fontSize: 12, color: "#505D70", fontWeight: 600 }}>{label}</span>
     </div>
   );
 
@@ -74,7 +74,7 @@ export default function AdminHome() {
 
         <div>
           <h1 style={{ margin: 0, fontSize: 24, color: "#0B2559" }}>Espace de gestion</h1>
-          <p style={{ margin: "2px 0 0", fontSize: 14, color: "#64748B" }}>Visible uniquement par vous · Meet Me Club</p>
+          <p style={{ margin: "2px 0 0", fontSize: 14, color: "#505D70" }}>Visible uniquement par vous · Meet Me Club</p>
         </div>
 
         {error && <div style={{ background: "#FEF2F2", color: "#B42318", padding: 14, borderRadius: 14, fontWeight: 700 }}>{error}</div>}
@@ -141,7 +141,7 @@ export default function AdminHome() {
             {stat("Pass VIP", stats.vip, Crown, "#D97706")}
             {stat("Pass Complice", stats.complice, Sparkles, "#2563EB")}
             {stat("Pass Essentiel", stats.essential, Zap, "#059669")}
-            {stat("Essai gratuit en cours", stats.freeActive, Clock, "#64748B")}
+            {stat("Essai gratuit en cours", stats.freeActive, Clock, "#505D70")}
             {stat("Accès expiré", stats.expired, CircleOff, "#B42318")}
           </div>
         )}

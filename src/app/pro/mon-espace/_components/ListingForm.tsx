@@ -148,7 +148,7 @@ export default function ListingForm({
             </div>
           ))}
           {photos.length < MAX_PHOTOS && (
-            <label style={{ aspectRatio: "1", borderRadius: 12, border: "2px dashed #94A3B8", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "#F8FAFC" }}>
+            <label style={{ aspectRatio: "1", borderRadius: 12, border: "2px dashed #78859A", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "#F8FAFC" }}>
               <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => { addPhotos(e.target.files); e.target.value = ""; }} />
               <ImagePlus size={24} color={NAVY} />
             </label>
@@ -160,7 +160,7 @@ export default function ListingForm({
       <button type="button" onClick={publish} disabled={sending || saleBlocked} style={{ ...primaryBtn, opacity: sending || saleBlocked ? 0.6 : 1 }}>
         <Send size={18} /> {sending ? "Publication…" : "Publier dans le Marché"}
       </button>
-      <p style={{ margin: 0, fontSize: 12, color: "#64748B", lineHeight: 1.5 }}>
+      <p style={{ margin: 0, fontSize: 12, color: "#505D70", lineHeight: 1.5 }}>
         Interdit : produits illégaux, contenus pour adultes, armes, médicaments, arnaques. Les annonces signalées peuvent être retirées.
       </p>
     </div>

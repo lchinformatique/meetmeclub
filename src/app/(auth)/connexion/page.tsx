@@ -256,7 +256,7 @@ function ConnexionForm() {
                 <span style={{ fontWeight: 800, fontSize: "20px", color: "#0B2559", letterSpacing: "-0.3px" }}>
                   meet <span style={{ color: "#E10600" }}>me</span> club
                 </span>
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "#8B99B5", letterSpacing: "0.9px", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "#6E7C98", letterSpacing: "0.9px", textTransform: "uppercase" }}>
                   Club Privé International · Rencontres & Sorties
                 </span>
               </div>
@@ -455,7 +455,7 @@ function ConnexionForm() {
               style={{
                 fontSize: "12px",
                 fontWeight: 600,
-                color: "#8B99B5",
+                color: "#6E7C98",
                 whiteSpace: "nowrap",
                 letterSpacing: "0.3px",
               }}
@@ -482,7 +482,7 @@ function ConnexionForm() {
 
           {/* ── Lien Créer un Compte Simple et Élégant ── */}
           <div style={{ marginTop: "22px", textAlign: "center" }}>
-            <span style={{ fontSize: "14px", color: "#64748B", fontWeight: 500 }}>
+            <span style={{ fontSize: "14px", color: "#505D70", fontWeight: 500 }}>
               Pas encore de compte ?{" "}
             </span>
             <Link
@@ -517,11 +517,11 @@ function ConnexionForm() {
           }}
           className="connexion-footer-pad"
         >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "#8B99B5", fontWeight: 600 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "#6E7C98", fontWeight: 600 }}>
             <CheckCircle2 size={12} style={{ color: "#059669" }} />
             Connexion sécurisée et chiffrée
           </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "#8B99B5", fontWeight: 600 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11px", color: "#6E7C98", fontWeight: 600 }}>
             <LogIn size={12} style={{ color: "#0B2559" }} />
             Meet Me Club · International
           </span>

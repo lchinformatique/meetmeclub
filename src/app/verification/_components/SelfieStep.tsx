@@ -115,7 +115,7 @@ export default function SelfieStep({ data, onDone }: { data: VerificationData; o
         <div style={{ marginBottom: 16 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={shot} alt="Votre selfie" style={{ width: "100%", maxWidth: 340, borderRadius: 22, display: "block", margin: "0 auto 14px", transform: "scaleX(-1)" }} />
-          <p style={{ fontSize: 13, color: "#475569", margin: "0 0 14px" }}>Votre visage est-il bien visible, avec le geste demandé ?</p>
+          <p style={{ fontSize: 13, color: "#3B4658", margin: "0 0 14px" }}>Votre visage est-il bien visible, avec le geste demandé ?</p>
           <div style={{ display: "grid", gap: 10 }}>
             <button type="button" onClick={send} disabled={sending} style={{ ...primaryBtn, opacity: sending ? 0.7 : 1 }}>
               {sending ? <Spinner /> : <CheckCircle2 size={20} />} {sending ? "Envoi en cours…" : "Envoyer pour vérification"}

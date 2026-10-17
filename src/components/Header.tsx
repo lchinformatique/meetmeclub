@@ -295,7 +295,7 @@ export default function Header() {
                 style={{
                   fontSize: "10px",
                   fontWeight: 700,
-                  color: "#8B99B5",
+                  color: "#6E7C98",
                   letterSpacing: "0.9px",
                   textTransform: "uppercase",
                 }}
@@ -634,7 +634,7 @@ export default function Header() {
               <span style={{ fontWeight: 800, fontSize: "16px", color: "#0B2559" }}>
                 meet <span style={{ color: "#E10600" }}>me</span> club
               </span>
-              <span style={{ fontSize: "9px", color: "#8B99B5", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+              <span style={{ fontSize: "9px", color: "#6E7C98", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" }}>
                 Club Privé International
               </span>
             </div>
@@ -666,7 +666,7 @@ export default function Header() {
         <div style={{ padding: "16px 14px 12px", borderBottom: "1px solid #EEF2FB", background: "#FAFBFD" }}>
           {/* Mobile Language Selector */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid #E2E8F0" }}>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "#64748B" }}>Langue / Language :</span>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "#505D70" }}>Langue / Language :</span>
             <LanguageSelector variant="compact" />
           </div>
           {!loadingUser && sessionUser ? (
@@ -712,7 +712,7 @@ export default function Header() {
                   <div style={{ fontWeight: 700, fontSize: "14px", color: "#0B2559", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {sessionUser.firstName}
                   </div>
-                  <div style={{ fontSize: "11px", color: "#8B99B5", fontWeight: 500 }}>Mon profil · Tableau de bord</div>
+                  <div style={{ fontSize: "11px", color: "#6E7C98", fontWeight: 500 }}>Mon profil · Tableau de bord</div>
                 </div>
               </Link>
 
@@ -804,7 +804,7 @@ export default function Header() {
 
         {/* Drawer Nav Links */}
         <div style={{ padding: "12px 14px 4px" }}>
-          <span style={{ fontSize: "11px", fontWeight: 700, color: "#8B99B5", textTransform: "uppercase", letterSpacing: "0.8px" }}>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#6E7C98", textTransform: "uppercase", letterSpacing: "0.8px" }}>
             Navigation
           </span>
         </div>

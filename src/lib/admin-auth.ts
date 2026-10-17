@@ -23,12 +23,8 @@ async function lookupAdmin(session: SessionPayload): Promise<boolean> {
   try {
     const { getSupabaseAdmin } = await import("./supabase-server");
     const admin = getSupabaseAdmin();
-    const [{ data: user }, { data: profile }] = await Promise.all([
-      admin.from("users").select("role, email").eq("id", session.userId).maybeSingle(),
-      admin.from("profiles").select("pseudo").eq("userId", session.userId).maybeSingle(),
-    ]);
-    if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") return true;
-    return findPermanentVipAccount({ email: user?.email, pseudo: profile?.pseudo })?.role === "ADMIN";
+    const { data: user } = await admin.from("users").select("role").eq("id", session.userId).maybeSingle();
+    return user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   } catch {
     return false;
   }
@@ -40,16 +36,8 @@ export async function getAdminUserIds(): Promise<string[]> {
   try {
     const { getSupabaseAdmin } = await import("./supabase-server");
     const admin = getSupabaseAdmin();
-    const adminPseudos = PERMANENT_VIP_ACCOUNTS.filter((a) => a.role === "ADMIN").map((a) => a.pseudo);
-    const adminEmails = PERMANENT_VIP_ACCOUNTS.filter((a) => a.role === "ADMIN").map((a) => a.email);
-    const [{ data: byRole }, { data: byPseudo }, { data: byEmail }] = await Promise.all([
-      admin.from("users").select("id").in("role", ["ADMIN", "SUPER_ADMIN"]).limit(20),
-      admin.from("profiles").select("userId").in("pseudo", adminPseudos),
-      admin.from("users").select("id").in("email", adminEmails),
-    ]);
+    const { data: byRole } = await admin.from("users").select("id").in("role", ["ADMIN", "SUPER_ADMIN"]).limit(20);
     (byRole || []).forEach((u: any) => ids.add(u.id));
-    (byPseudo || []).forEach((p: any) => ids.add(p.userId));
-    (byEmail || []).forEach((u: any) => ids.add(u.id));
   } catch {}
   PERMANENT_VIP_ACCOUNTS.filter((a) => a.role === "ADMIN").forEach((a) => ids.add(a.userId));
   return Array.from(ids);

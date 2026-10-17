@@ -114,44 +114,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── 2.b Comptes VIP permanents de test (vip_master / vip_tester) ───────
-    // Toujours disponibles, même si la base n'a pas encore été seedée.
-    const permanentVip = findPermanentVipAccount({
-      userId: user?.id,
-      email: user?.email || (isEmail ? cleanLower : undefined),
-      pseudo: user?.profile?.pseudo || (isEmail ? undefined : cleanLower),
-    });
-    if (!user && permanentVip && password === "123456") {
-      user = {
-        id: permanentVip.userId,
-        email: permanentVip.email,
-        role: permanentVip.role,
-        status: "ACTIVE",
-        passwordHash: null,
-        profile: {
-          firstName: permanentVip.firstName,
-          lastName: permanentVip.lastName,
-          pseudo: permanentVip.pseudo,
-          gender: permanentVip.gender,
-        },
-        _isLocalOnly: true,
-      };
-    }
+    // ── 2.b Comptes permanents (VIP illimité / administrateurs) : reconnus par identifiant ──
+    // Ils se connectent avec leur VRAI mot de passe (aucun mot de passe universel).
+    const permanentVip = findPermanentVipAccount({ userId: user?.id });
 
     // ── 3. Vérification du mot de passe ────────────────────────────────────
     if (user) {
-      // Les deux comptes de test (vip_master / vip_tester) restent accessibles avec 123456
-      const testAccountOk = Boolean(permanentVip) && password === "123456";
-
       if (user.passwordHash && !user._isLocalOnly) {
         const isMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!isMatch && !testAccountOk) {
+        if (!isMatch) {
           return NextResponse.json(
             { error: "Mot de passe incorrect. Veuillez réessayer." },
             { status: 401 }
           );
         }
-      } else if (!testAccountOk) {
+      } else {
         // Compte sans mot de passe (créé avec Google) : JAMAIS de mot de passe « au premier essai »,
         // sinon n'importe qui connaissant le pseudo prendrait le compte.
         return NextResponse.json(

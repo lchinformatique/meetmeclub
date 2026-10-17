@@ -250,7 +250,7 @@ export default function ProfilSecuritePage() {
                     <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>Requis pour échanger</span>
                   )}
                 </div>
-                <p style={{ fontSize: "13px", color: "#64748B", margin: "6px 0 0", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "13px", color: "#505D70", margin: "6px 0 0", lineHeight: 1.5 }}>
                   Essai gratuit : selfie en direct · Packs 3 000 et 6 000 : pièce d&apos;identité (carte d&apos;identité,
                   passeport, permis, carte d&apos;électeur, carte d&apos;étudiant…) · VIP : courte vidéo. Tout reste privé et
                   n&apos;est jamais montré aux autres membres.
@@ -287,7 +287,7 @@ export default function ProfilSecuritePage() {
                   <span
                     style={{
                       background: isVisible ? "#DCFCE7" : "#F1F5F9",
-                      color: isVisible ? "#166534" : "#475569",
+                      color: isVisible ? "#166534" : "#3B4658",
                       fontSize: "12px",
                       fontWeight: 800,
                       padding: "4px 12px",
@@ -297,7 +297,7 @@ export default function ProfilSecuritePage() {
                     {isVisible ? "Profil Visible aux membres" : "Mode Discret (Masqué)"}
                   </span>
                 </div>
-                <p style={{ fontSize: "13px", color: "#64748B", margin: "6px 0 0", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "13px", color: "#505D70", margin: "6px 0 0", lineHeight: 1.5 }}>
                   Vous contrôlez entièrement votre présence. Vous pouvez choisir d&apos;apparaître dans la liste Découverte ou passer en mode discret à tout moment.
                 </p>
               </div>
@@ -318,7 +318,7 @@ export default function ProfilSecuritePage() {
                 <strong style={{ fontSize: "14px", color: "#0F172A", display: "block" }}>
                   {isVisible ? "Actif : Visibilité activée" : "Discret : Présence masquée"}
                 </strong>
-                <span style={{ fontSize: "12px", color: "#64748B" }}>
+                <span style={{ fontSize: "12px", color: "#505D70" }}>
                   {isVisible
                     ? "Les partenaires compatibles peuvent découvrir votre profil."
                     : "Votre profil est masqué de la recherche. Seuls vos contacts actuels peuvent vous écrire."}
@@ -363,7 +363,7 @@ export default function ProfilSecuritePage() {
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#DC2626", margin: "0 0 4px" }}>
                   Déconnexion de mon compte
                 </h3>
-                <p style={{ fontSize: "13px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
+                <p style={{ fontSize: "13px", color: "#505D70", margin: 0, lineHeight: 1.5 }}>
                   Mettez fin à votre session active sur cet appareil en toute sécurité. Vous pourrez vous reconnecter à tout moment avec votre pseudo ou e-mail.
                 </p>
               </div>

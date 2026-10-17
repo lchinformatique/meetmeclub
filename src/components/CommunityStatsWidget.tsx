@@ -3,6 +3,37 @@
 // Real-time Community Statistics Widget — Shows live data from Supabase
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { MessageCircle, Store } from "lucide-react";
+
+/** Boutons d'action du panneau : discuter sur la plateforme et visiter le Marché */
+function StatsActions({ online }: { online: number }) {
+  const base: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    flex: "1 1 220px",
+    padding: "11px 16px",
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: 800,
+    textDecoration: "none",
+    minHeight: 44,
+  };
+  return (
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", width: "100%", marginTop: 4 }}>
+      <Link href="/messages?tab=online" style={{ ...base, background: "#2F4A8A", color: "#fff" }}>
+        <MessageCircle size={18} />
+        {online > 0 ? `Discuter avec les ${online} membre${online > 1 ? "s" : ""} en ligne` : "Discuter avec les membres"}
+      </Link>
+      <Link href="/marche" style={{ ...base, background: "#EEF2FB", color: "#2F4A8A", border: "1.5px solid #C9D3EA" }}>
+        <Store size={18} />
+        Visitez le Marché Meet Me Club
+      </Link>
+    </div>
+  );
+}
 
 interface StatsData {
   totalMembers: number;
@@ -82,12 +113,12 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
       >
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{ fontSize: "16px" }}>👥</span>
-          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Membres :</span>
+          <span style={{ fontSize: "13px", color: "#505D70", fontWeight: 600 }}>Membres :</span>
           <strong style={{ fontSize: "14px", color: "#0B2E6B", fontWeight: 800 }}>
             {stats.totalMembers.toLocaleString("fr-FR")}
           </strong>
           {(stats.maleMembers != null && stats.femaleMembers != null) && (
-            <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>
+            <span style={{ fontSize: "11px", color: "#78859A", fontWeight: 600 }}>
               (♂ {stats.maleMembers} · ♀ {stats.femaleMembers})
             </span>
           )}
@@ -95,7 +126,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
         <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{ fontSize: "16px" }}>🤳</span>
-          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Vérifiés :</span>
+          <span style={{ fontSize: "13px", color: "#505D70", fontWeight: 600 }}>Vérifiés :</span>
           <strong style={{ fontSize: "14px", color: "#059669", fontWeight: 800 }}>
             {stats.verifiedSelfieMembers.toLocaleString("fr-FR")}
           </strong>
@@ -103,7 +134,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
         <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{ fontSize: "16px" }}>📸</span>
-          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Photos :</span>
+          <span style={{ fontSize: "13px", color: "#505D70", fontWeight: 600 }}>Photos :</span>
           <strong style={{ fontSize: "14px", color: "#7C3AED", fontWeight: 800 }}>
             {(stats.totalPhotos ?? 0).toLocaleString("fr-FR")}
           </strong>
@@ -111,7 +142,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
         <div style={{ width: "1px", height: "18px", background: "#E2E8F0" }} />
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{ fontSize: "16px" }}>🌴</span>
-          <span style={{ fontSize: "13px", color: "#64748B", fontWeight: 600 }}>Lieux Partenaires :</span>
+          <span style={{ fontSize: "13px", color: "#505D70", fontWeight: 600 }}>Lieux Partenaires :</span>
           <strong style={{ fontSize: "14px", color: "#B45309", fontWeight: 800 }}>
             {stats.totalPartners ?? 3}
           </strong>
@@ -131,6 +162,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
             {stats.onlineNow} en ligne
           </span>
         </div>
+        <StatsActions online={stats.onlineNow} />
       </div>
     );
   }
@@ -177,7 +209,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>
+          <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600 }}>
             🟢 {stats.onlineNow} membres connectés
           </span>
           <span
@@ -235,7 +267,7 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
             <div style={{ fontSize: "22px", fontWeight: 900, color: "#0B2E6B", lineHeight: 1 }}>
               {stats.totalMembers.toLocaleString("fr-FR")}
             </div>
-            <div style={{ fontSize: "12px", fontWeight: 700, color: "#64748B", marginTop: "3px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#505D70", marginTop: "3px" }}>
               Membres Inscrits {stats.maleMembers != null && stats.femaleMembers != null ? `(♂ ${stats.maleMembers} · ♀ ${stats.femaleMembers})` : ""}
             </div>
           </div>
@@ -354,6 +386,9 @@ export default function CommunityStatsWidget({ compact = false }: CommunityStats
             </div>
           </div>
         </div>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        <StatsActions online={stats.onlineNow} />
       </div>
     </div>
   );

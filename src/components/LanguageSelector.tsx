@@ -181,7 +181,7 @@ export default function LanguageSelector({ variant = "dropdown", theme = "dark",
         <Globe size={14} color="#1D4ED8" />
         <span>{activeOption.flag}</span>
         <span>{activeOption.name}</span>
-        <ChevronDown size={13} color="#64748B" />
+        <ChevronDown size={13} color="#505D70" />
       </button>
 
       {isOpen && (

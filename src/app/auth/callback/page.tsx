@@ -261,7 +261,7 @@ function AuthCallbackHandler() {
         <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
           Connexion en cours...
         </h2>
-        <p style={{ fontSize: "13px", color: "#8B99B5", fontWeight: 500 }}>
+        <p style={{ fontSize: "13px", color: "#6E7C98", fontWeight: 500 }}>
           Vérification de votre compte Google. Veuillez patienter.
         </p>
       </div>

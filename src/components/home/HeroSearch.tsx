@@ -23,7 +23,7 @@ export default function HeroSearch() {
       <label htmlFor="hero-search" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
         Rechercher dans le Marché
       </label>
-      <span style={{ display: "flex", alignItems: "center", paddingLeft: 8, color: "#64748B" }}>
+      <span style={{ display: "flex", alignItems: "center", paddingLeft: 8, color: "#505D70" }}>
         <Search size={20} />
       </span>
       <input

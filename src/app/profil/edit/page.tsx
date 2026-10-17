@@ -427,7 +427,7 @@ export default function ProfilEditPage() {
       <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8FAFC" }}>
         <div style={{ textAlign: "center" }}>
           <Loader2 size={36} color="#0B2559" style={{ animation: "spin 1s linear infinite", margin: "0 auto 12px" }} />
-          <p style={{ color: "#64748B", fontWeight: 600 }}>Chargement de vos informations...</p>
+          <p style={{ color: "#505D70", fontWeight: 600 }}>Chargement de vos informations...</p>
         </div>
       </div>
     );
@@ -556,7 +556,7 @@ export default function ProfilEditPage() {
               <h1 style={{ fontSize: "24px", fontWeight: 800, color: "#0B2559", margin: "0 0 6px" }}>
                 Modifier mon profil
               </h1>
-              <p style={{ color: "#64748B", fontSize: "14px", margin: 0 }}>
+              <p style={{ color: "#505D70", fontSize: "14px", margin: 0 }}>
                 Vos informations personnelles, photos d'album et coordonnées vérifiées.
               </p>
             </div>
@@ -604,7 +604,7 @@ export default function ProfilEditPage() {
           <div style={{ marginBottom: "32px" }}>
             <div style={{ fontSize: "14px", fontWeight: 700, color: "#0B2559", marginBottom: "8px", display: "flex", justifyContent: "space-between" }}>
               <span>Photo de couverture & Avatar</span>
-              <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 500 }}>Visible par tous les membres</span>
+              <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 500 }}>Visible par tous les membres</span>
             </div>
 
             {/* Rectangle de Couverture */}
@@ -713,7 +713,7 @@ export default function ProfilEditPage() {
                 >
                   Modifier ma photo principale
                 </button>
-                <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>
+                <div style={{ fontSize: "11px", color: "#505D70", marginTop: "2px" }}>
                   PNG, JPG ou WebP (optimisé pour mobile & desktop)
                 </div>
               </div>
@@ -735,7 +735,7 @@ export default function ProfilEditPage() {
                 <span style={{ fontSize: "15px", fontWeight: 800, color: "#0B2559" }}>
                   Photos de profil & Bio ({photos.length}/4)
                 </span>
-                <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748B" }}>
+                <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#505D70" }}>
                   Ajoutez jusqu'à 4 photos pour enrichir votre bio et votre fiche membre.
                 </p>
               </div>
@@ -883,7 +883,7 @@ export default function ProfilEditPage() {
                       justifyContent: "center",
                       cursor: "pointer",
                       background: "#F6F8FC",
-                      color: "#64748B",
+                      color: "#505D70",
                       gap: "4px",
                       transition: "all 0.2s ease",
                     }}
@@ -893,7 +893,7 @@ export default function ProfilEditPage() {
                     <span style={{ fontSize: "13px", fontWeight: 800, color: "#2F4A8A" }}>
                       Photo {slotIdx + 1}
                     </span>
-                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#475569" }}>+ Ajouter une photo</span>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#3B4658" }}>+ Ajouter une photo</span>
                   </div>
                 );
               })}
@@ -1037,7 +1037,7 @@ export default function ProfilEditPage() {
               </label>
 
               <PhoneField id="phone-input-field" value={form.phone} defaultCountry={form.country || null} onChange={(phone) => setForm((prev) => ({ ...prev, phone }))} />
-              <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#64748B" }}>
+              <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#505D70" }}>
                 Utilisez le numéro mobile money avec lequel vous payez : vos pass s&apos;activeront automatiquement.
               </p>
             </div>
@@ -1124,7 +1124,7 @@ export default function ProfilEditPage() {
                 />
               </div>
             </div>
-            <p style={{ margin: "-6px 0 0", fontSize: "12px", color: "#64748B", lineHeight: 1.5 }}>
+            <p style={{ margin: "-6px 0 0", fontSize: "12px", color: "#505D70", lineHeight: 1.5 }}>
               🔒 Votre adresse est demandée pour la transparence et la sécurité du club. Elle reste privée : seuls votre pays et
               votre ville sont visibles des autres membres.
             </p>
@@ -1281,7 +1281,7 @@ export default function ProfilEditPage() {
         .edit-field { width: 100%; height: 50px; padding: 0 14px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #fff; font-size: 16px; font-weight: 600; color: #0F172A; outline: none; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
         .edit-field:focus { border-color: #0B2559; box-shadow: 0 0 0 3px rgba(11,37,89,0.1); }
         .edit-field-error { border: 2px solid #EF4444; }
-        select.edit-field { background-image: linear-gradient(45deg, transparent 50%, #64748B 50%), linear-gradient(135deg, #64748B 50%, transparent 50%); background-position: calc(100% - 20px) 22px, calc(100% - 15px) 22px; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 36px; }
+        select.edit-field { background-image: linear-gradient(45deg, transparent 50%, #505D70 50%), linear-gradient(135deg, #505D70 50%, transparent 50%); background-position: calc(100% - 20px) 22px, calc(100% - 15px) 22px; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 36px; }
         .edit-phone { display: flex; align-items: stretch; height: 54px; border: 2px solid #0B2559; border-radius: 14px; overflow: hidden; background: #fff; }
         .edit-phone:focus-within { box-shadow: 0 0 0 3px rgba(11,37,89,0.12); }
         .edit-phone-dial { display: flex; align-items: center; gap: 6px; padding: 0 14px; background: #EEF2F6; border-right: 1.5px solid #CBD5E1; font-weight: 800; font-size: 16px; color: #0B2559; white-space: nowrap; flex-shrink: 0; }
@@ -1290,7 +1290,7 @@ export default function ProfilEditPage() {
         .edit-btn { height: 52px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 800; text-decoration: none; cursor: pointer; box-sizing: border-box; }
         .edit-btn-cancel { flex: 0 0 34%; border: 1.5px solid #CBD5E1; background: #fff; color: #0B2559; }
         .edit-btn-save { flex: 1; border: none; background: linear-gradient(135deg, #0B2559 0%, #163B8A 100%); color: #fff; box-shadow: 0 8px 20px rgba(11,37,89,0.28); }
-        .edit-btn-save:disabled { background: #94A3B8; box-shadow: none; cursor: not-allowed; }
+        .edit-btn-save:disabled { background: #78859A; box-shadow: none; cursor: not-allowed; }
         .edit-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 5000; display: flex; align-items: center; gap: 10px; max-width: min(92vw, 440px); padding: 14px 18px; border-radius: 16px; font-size: 15px; font-weight: 700; box-shadow: 0 16px 40px rgba(7,21,48,0.3); }
         .edit-toast-ok { background: #067647; color: #fff; }
         .edit-toast-err { background: #B42318; color: #fff; }

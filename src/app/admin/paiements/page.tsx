@@ -112,7 +112,7 @@ export default function AdminPaiementsPage() {
           </span>
           <div style={{ flex: 1 }}>
             <h1 style={{ margin: 0, fontSize: 20, color: "#0B2559" }}>Paiements SasPay</h1>
-            <p style={{ margin: 0, fontSize: 13, color: "#64748B" }}>Paiements reçus et activation des pass</p>
+            <p style={{ margin: 0, fontSize: 13, color: "#505D70" }}>Paiements reçus et activation des pass</p>
           </div>
           <button type="button" onClick={load} aria-label="Actualiser" style={{ border: "none", background: "#fff", borderRadius: 12, width: 44, height: 44, cursor: "pointer" }}>
             <RefreshCw size={18} />
@@ -132,7 +132,7 @@ export default function AdminPaiementsPage() {
               {data.tableReady ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}
               Table des paiements {data.tableReady ? "prête" : "ABSENTE : exécutez migration_v3 dans Supabase"}
             </span>
-            <span style={{ color: "#475569" }}>
+            <span style={{ color: "#3B4658" }}>
               {data.payments.length === 0
                 ? "Aucun paiement reçu de SasPay pour l'instant : si un membre a payé, le webhook n'arrive pas (vérifiez le journal des webhooks SasPay)."
                 : `${data.payments.length} paiement(s) reçu(s).`}
@@ -146,13 +146,13 @@ export default function AdminPaiementsPage() {
             <strong style={{ color: "#0B2559" }}>
               Demandes à valider {data.requests.length > 0 && <span style={{ color: "#E10600" }}>({data.requests.length})</span>}
             </strong>
-            {data.requests.length === 0 && <span style={{ fontSize: 14, color: "#64748B" }}>Aucune demande en attente.</span>}
+            {data.requests.length === 0 && <span style={{ fontSize: 14, color: "#505D70" }}>Aucune demande en attente.</span>}
             {data.requests.map((r) => (
               <div key={r.id} style={{ border: "1.5px solid #E2E8F0", borderRadius: 14, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ fontWeight: 800, color: "#0F172A" }}>
                   {r.member} · Pass {PLAN_LABEL[r.plan] || r.plan}
                 </div>
-                <div style={{ fontSize: 13, color: "#475569" }}>
+                <div style={{ fontSize: 13, color: "#3B4658" }}>
                   Numéro : <strong>{r.phone || "—"}</strong> · Réf. : <strong>{r.reference || "—"}</strong>
                   <br />
                   Demandé le {new Date(r.createdAt).toLocaleString("fr-FR")}
@@ -162,7 +162,7 @@ export default function AdminPaiementsPage() {
                     type="button"
                     disabled={requestBusy === r.id}
                     onClick={() => decide(r.id, "reject", r.member || "ce membre")}
-                    style={{ flex: "0 0 35%", height: 44, borderRadius: 12, border: "1.5px solid #CBD5E1", background: "#fff", color: "#475569", fontWeight: 800, cursor: "pointer" }}
+                    style={{ flex: "0 0 35%", height: 44, borderRadius: 12, border: "1.5px solid #CBD5E1", background: "#fff", color: "#3B4658", fontWeight: 800, cursor: "pointer" }}
                   >
                     Refuser
                   </button>
@@ -189,7 +189,7 @@ export default function AdminPaiementsPage() {
             <option value="COMPLICE">Pass Complice · 6 000 F</option>
             <option value="VIP">Pass VIP · 15 000 F</option>
           </select>
-          {paymentId && <span style={{ fontSize: 13, color: "#475569" }}>Paiement rattaché : {paymentId}</span>}
+          {paymentId && <span style={{ fontSize: 13, color: "#3B4658" }}>Paiement rattaché : {paymentId}</span>}
           {result && (
             <div style={{ padding: "10px 12px", borderRadius: 10, background: result.ok ? "#ECFDF5" : "#FEF2F2", color: result.ok ? "#067647" : "#B42318", fontWeight: 600, fontSize: 14 }}>
               {result.text}
@@ -207,7 +207,7 @@ export default function AdminPaiementsPage() {
               <div style={{ fontWeight: 800, color: "#0F172A" }}>
                 {p.amount?.toLocaleString("fr-FR")} F · {p.plan ? `Pass ${PLAN_LABEL[p.plan]}` : "montant non reconnu"}
               </div>
-              <div style={{ fontSize: 13, color: "#64748B" }}>
+              <div style={{ fontSize: 13, color: "#505D70" }}>
                 {new Date(p.createdAt).toLocaleString("fr-FR")} · {p.msisdn || "numéro inconnu"} · réf. {p.reference || p.id}
               </div>
             </div>

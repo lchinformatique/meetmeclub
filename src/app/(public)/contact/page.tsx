@@ -85,7 +85,7 @@ export default function ContactPage() {
             {/* General Info */}
             <div style={{ background: "white", padding: "30px", borderRadius: "20px", border: "1px solid #E2E8F0" }}>
               <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#0F172A", marginBottom: "16px" }}>Coordonnées du Club</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px", fontSize: "14px", color: "#475569" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px", fontSize: "14px", color: "#3B4658" }}>
                 <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                   <span style={{ fontSize: "20px" }}>📍</span>
                   <span><strong>Assistance :</strong> en ligne, 7 jours sur 7</span>
@@ -105,7 +105,7 @@ export default function ContactPage() {
           {/* Form Card */}
           <div style={{ background: "white", padding: "36px 30px", borderRadius: "20px", border: "1px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
             <h2 style={{ fontSize: "22px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>Envoyez-nous un message</h2>
-            <p style={{ fontSize: "14px", color: "#64748B", marginBottom: "24px" }}>Nous vous répondons en moins de 2 heures ouvrées.</p>
+            <p style={{ fontSize: "14px", color: "#505D70", marginBottom: "24px" }}>Nous vous répondons en moins de 2 heures ouvrées.</p>
 
             {submitted ? (
               <div style={{ padding: "30px", textAlign: "center", background: "#F0FDF4", borderRadius: "16px", border: "1px solid #86EFAC" }}>

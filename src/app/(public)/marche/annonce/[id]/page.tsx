@@ -67,7 +67,7 @@ export default async function AnnoncePage({ params }: Props) {
           </Link>
           {cat && (
             <>
-              <span style={{ color: "#94A3B8" }}>/</span>
+              <span style={{ color: "#78859A" }}>/</span>
               <Link href={`/marche?categorie=${listing.category}`} style={{ color: "#0B2559", fontWeight: 600, textDecoration: "none" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CategoryIcon category={listing.category} size={15} boxed={false} /> {cat.label}</span>
               </Link>
@@ -83,13 +83,13 @@ export default async function AnnoncePage({ params }: Props) {
                 {KIND_LABEL[listing.kind]}
               </span>
               {listing.status === "SOLD" && (
-                <span style={{ marginLeft: 8, display: "inline-block", padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 800, color: "#fff", background: "#64748B" }}>
+                <span style={{ marginLeft: 8, display: "inline-block", padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 800, color: "#fff", background: "#505D70" }}>
                   Vendu
                 </span>
               )}
               <h1 className={s.h1}>{listing.title}</h1>
               <div className={s.price} style={{ fontSize: 22 }}>{formatPrice(listing)}</div>
-              <p style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748B", fontSize: 14, margin: "8px 0 14px" }}>
+              <p style={{ display: "flex", alignItems: "center", gap: 6, color: "#505D70", fontSize: 14, margin: "8px 0 14px" }}>
                 <MapPin size={15} /> {[listing.city, countryName(listing.country || pro.country)].filter(Boolean).join(", ") || "Lieu non précisé"} · publiée {timeAgo(listing.createdAt)} · {listing.views || 0} vue{(listing.views || 0) > 1 ? "s" : ""}
               </p>
               <p className={s.desc}>{listing.description}</p>
@@ -107,7 +107,7 @@ export default async function AnnoncePage({ params }: Props) {
                 )}
                 <span>
                   <strong style={{ display: "block", fontSize: 16 }}>{pro.name}</strong>
-                  <span style={{ fontSize: 13, color: "#64748B" }}>
+                  <span style={{ fontSize: 13, color: "#505D70" }}>
                     {ACTIVITIES[pro.activity] || "Professionnel"}
                     {pro.city ? ` · ${pro.city}` : ""}
                   </span>
@@ -119,7 +119,7 @@ export default async function AnnoncePage({ params }: Props) {
                 <ProContacts pro={pro} chatHref={chatHref} isMine={isMine} subject={`l'annonce « ${listing.title} »`} />
               ) : (
                 <div className={s.contactBtns}>
-                  <p style={{ fontSize: 14, color: "#475569", margin: 0 }}>
+                  <p style={{ fontSize: 14, color: "#3B4658", margin: 0 }}>
                     Pour contacter ce membre, rejoignez le club : tous les échanges se font sur la messagerie privée de Meet Me Club.
                   </p>
                   <Link href={`/inscription?callbackUrl=/marche/annonce/${listing.id}`} className={s.btn} style={{ width: "100%" }}>
@@ -132,7 +132,7 @@ export default async function AnnoncePage({ params }: Props) {
               )}
             </div>
 
-            <div className={s.panel} style={{ fontSize: 13, color: "#475569", lineHeight: 1.6 }}>
+            <div className={s.panel} style={{ fontSize: 13, color: "#3B4658", lineHeight: 1.6 }}>
               <strong style={{ color: "#0F172A" }}>🛡️ Conseils de sécurité</strong>
               <br />
               Ne payez jamais d&apos;avance un vendeur que vous ne connaissez pas. Rencontrez-vous dans un lieu public et vérifiez

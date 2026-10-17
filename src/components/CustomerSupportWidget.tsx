@@ -161,7 +161,7 @@ export default function CustomerSupportWidget() {
                 animation: "fadeInUp 0.18s ease",
               }}
             >
-              <div style={{ padding: "8px 10px 6px", fontSize: "12px", fontWeight: 800, color: "#64748B", letterSpacing: "0.4px", textTransform: "uppercase" }}>
+              <div style={{ padding: "8px 10px 6px", fontSize: "12px", fontWeight: 800, color: "#505D70", letterSpacing: "0.4px", textTransform: "uppercase" }}>
                 Besoin d&apos;aide ?
               </div>
               <a
@@ -179,7 +179,7 @@ export default function CustomerSupportWidget() {
                 </span>
                 <span style={{ display: "flex", flexDirection: "column" }}>
                   <strong style={{ fontSize: "14px" }}>Écrire à l'équipe</strong>
-                  <span style={{ fontSize: "12px", color: "#64748B" }}>Dans la messagerie Meet Me Club</span>
+                  <span style={{ fontSize: "12px", color: "#505D70" }}>Dans la messagerie Meet Me Club</span>
                 </span>
               </a>
               <button
@@ -200,7 +200,7 @@ export default function CustomerSupportWidget() {
                 </span>
                 <span style={{ display: "flex", flexDirection: "column" }}>
                   <strong style={{ fontSize: "14px" }}>Assistant 24h/24</strong>
-                  <span style={{ fontSize: "12px", color: "#64748B" }}>Réponses instantanées</span>
+                  <span style={{ fontSize: "12px", color: "#505D70" }}>Réponses instantanées</span>
                 </span>
               </button>
             </div>
@@ -436,7 +436,7 @@ export default function CustomerSupportWidget() {
                     <div
                       style={{
                         fontSize: "9.5px",
-                        color: isUser ? "rgba(255,255,255,0.7)" : "#94A3B8",
+                        color: isUser ? "rgba(255,255,255,0.7)" : "#78859A",
                         marginTop: "4px",
                         textAlign: isUser ? "right" : "left",
                       }}
@@ -449,7 +449,7 @@ export default function CustomerSupportWidget() {
             })}
 
             {isTyping && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#64748B", fontSize: "11.5px", padding: "4px 8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#505D70", fontSize: "11.5px", padding: "4px 8px" }}>
                 <span>Le robot prépare sa réponse...</span>
               </div>
             )}

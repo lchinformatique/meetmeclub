@@ -58,7 +58,7 @@ export const secondaryBtn: CSSProperties = {
 };
 
 export const title: CSSProperties = { fontSize: 22, fontWeight: 800, color: NAVY, margin: "0 0 6px" };
-export const lead: CSSProperties = { color: "#475569", fontSize: 14, lineHeight: 1.6, margin: "0 0 16px" };
+export const lead: CSSProperties = { color: "#3B4658", fontSize: 14, lineHeight: 1.6, margin: "0 0 16px" };
 
 export function Spinner({ size = 20 }: { size?: number }) {
   return (
@@ -113,7 +113,7 @@ export function Pending({ heading, children }: { heading: string; children: Reac
 }
 
 export function Privacy({ children }: { children: ReactNode }) {
-  return <p style={{ fontSize: 12, color: "#64748B", lineHeight: 1.5, marginTop: 18, marginBottom: 0 }}>🔒 {children}</p>;
+  return <p style={{ fontSize: 12, color: "#505D70", lineHeight: 1.5, marginTop: 18, marginBottom: 0 }}>🔒 {children}</p>;
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {

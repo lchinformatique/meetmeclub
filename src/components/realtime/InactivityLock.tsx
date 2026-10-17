@@ -148,7 +148,7 @@ export default function InactivityLock({ active, paused }: { active: boolean; pa
             </span>
           </div>
           <h2 style={{ margin: 0, fontSize: 20, color: "#0B2559" }}>Session verrouillée</h2>
-          <p style={{ margin: "6px 0 0", fontSize: 14, color: "#64748B", lineHeight: 1.5 }}>
+          <p style={{ margin: "6px 0 0", fontSize: 14, color: "#505D70", lineHeight: 1.5 }}>
             Pour protéger votre compte, Meet Me Club se verrouille après 30 minutes d&apos;inactivité.
           </p>
         </div>
@@ -165,7 +165,7 @@ export default function InactivityLock({ active, paused }: { active: boolean; pa
           }}
         />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0", color: "#94A3B8", fontSize: 12, fontWeight: 700 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0", color: "#78859A", fontSize: 12, fontWeight: 700 }}>
           <span style={{ flex: 1, height: 1, background: "#E2E8F0" }} /> OU <span style={{ flex: 1, height: 1, background: "#E2E8F0" }} />
         </div>
 
@@ -188,7 +188,7 @@ export default function InactivityLock({ active, paused }: { active: boolean; pa
               autoFocus
               style={{ width: "100%", boxSizing: "border-box", height: 50, padding: "0 44px 0 14px", borderRadius: 12, border: "1.5px solid #CBD5E1", fontSize: 16 }}
             />
-            <button type="button" onClick={() => setShow((v) => !v)} aria-label="Afficher le mot de passe" style={{ position: "absolute", right: 10, top: 13, border: "none", background: "none", color: "#94A3B8" }}>
+            <button type="button" onClick={() => setShow((v) => !v)} aria-label="Afficher le mot de passe" style={{ position: "absolute", right: 10, top: 13, border: "none", background: "none", color: "#78859A" }}>
               {show ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
@@ -209,7 +209,7 @@ export default function InactivityLock({ active, paused }: { active: boolean; pa
             await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
             window.location.href = "/connexion";
           }}
-          style={{ width: "100%", marginTop: 14, border: "none", background: "none", color: "#64748B", fontSize: 13, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}
+          style={{ width: "100%", marginTop: 14, border: "none", background: "none", color: "#505D70", fontSize: 13, fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}
         >
           Ce n&apos;est pas mon compte
         </button>

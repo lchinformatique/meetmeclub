@@ -63,7 +63,7 @@ export default function AnnoncePage() {
             </span>
             <div>
               <h1 style={{ margin: 0, fontSize: 20, color: "#0B2559" }}>Annonce à tous les membres</h1>
-              <p style={{ margin: 0, fontSize: 13, color: "#64748B" }}>Notification en haut du téléphone de chaque membre abonné</p>
+              <p style={{ margin: 0, fontSize: 13, color: "#505D70" }}>Notification en haut du téléphone de chaque membre abonné</p>
             </div>
           </div>
 

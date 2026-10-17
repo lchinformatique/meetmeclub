@@ -94,7 +94,7 @@ export default function LogoutButton({
     outline: {
       background: "white",
       border: "1.5px solid #E2E8F0",
-      color: "#475569",
+      color: "#3B4658",
     },
     ghost: {
       background: "transparent",

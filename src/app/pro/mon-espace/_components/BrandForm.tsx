@@ -88,13 +88,13 @@ export default function BrandForm({
           </label>
           <div style={{ minWidth: 0, paddingTop: 46 }}>
             <strong style={{ display: "block", fontSize: 17, color: "#1E2A44", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{form.name || "Nom de votre marque"}</strong>
-            <span style={{ fontSize: 13, color: "#64748B" }}>
+            <span style={{ fontSize: 13, color: "#505D70" }}>
               {activities[form.activity]} {form.city ? `· ${form.city}` : ""}
             </span>
           </div>
         </div>
       </div>
-      <p style={{ margin: 0, fontSize: 12, color: "#64748B" }}>Touchez la bannière ou le logo pour ajouter vos images.</p>
+      <p style={{ margin: 0, fontSize: 12, color: "#505D70" }}>Touchez la bannière ou le logo pour ajouter vos images.</p>
 
       <div>
         <label style={label}>Nom de la marque / de l&apos;activité *</label>
@@ -128,11 +128,11 @@ export default function BrandForm({
           <input style={field} value={form.address} onChange={set("address")} maxLength={160} placeholder="N°, rue, code postal" />
         </div>
       </div>
-      <p style={{ margin: 0, fontSize: 12, color: "#64748B" }}>L&apos;adresse de votre activité est affichée sur votre vitrine : transparence et confiance pour les membres.</p>
+      <p style={{ margin: 0, fontSize: 12, color: "#505D70" }}>L&apos;adresse de votre activité est affichée sur votre vitrine : transparence et confiance pour les membres.</p>
 
       <div style={{ background: "#F3FAF7", border: "1px solid #CDE9DF", borderRadius: 14, padding: 12, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
         <strong style={{ fontSize: 14, color: "#2E6B5D" }}>Vos contacts</strong>
-        <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
+        <p style={{ margin: 0, fontSize: 13, color: "#3B4658", lineHeight: 1.5 }}>
           Affichés aux membres connectés sous vos annonces et sur votre vitrine. Les membres peuvent aussi vous écrire
           directement dans la messagerie Meet Me Club.
         </p>

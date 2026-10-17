@@ -96,12 +96,12 @@ export default function CountryPicker({
       >
         {selected ? <Flag iso={selected.iso} /> : null}
         {variant !== "flag" && (
-          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", color: selected ? "#0F172A" : "#94A3B8" }}>
+          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", color: selected ? "#0F172A" : "#78859A" }}>
             {selected ? (variant === "dial" ? selected.dial : selected.name) : variant === "dial" ? "+" : placeholder}
           </span>
         )}
-        {variant === "flag" && !selected && <span style={{ color: "#94A3B8" }}>Pays</span>}
-        <ChevronDown size={16} color="#64748B" />
+        {variant === "flag" && !selected && <span style={{ color: "#78859A" }}>Pays</span>}
+        <ChevronDown size={16} color="#505D70" />
       </button>
 
       {open && (
@@ -121,7 +121,7 @@ export default function CountryPicker({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderBottom: "1px solid #E2E8F0" }}>
-            <Search size={16} color="#64748B" />
+            <Search size={16} color="#505D70" />
             <input
               ref={searchRef}
               value={q}
@@ -131,7 +131,7 @@ export default function CountryPicker({
             />
           </div>
           <div style={{ maxHeight: 280, overflowY: "auto", overscrollBehavior: "contain" }}>
-            {list.length === 0 && <div style={{ padding: 14, fontSize: 14, color: "#64748B" }}>Aucun pays trouvé</div>}
+            {list.length === 0 && <div style={{ padding: 14, fontSize: 14, color: "#505D70" }}>Aucun pays trouvé</div>}
             {list.map((c) => (
               <button
                 key={c.iso}
@@ -158,7 +158,7 @@ export default function CountryPicker({
               >
                 <Flag iso={c.iso} />
                 <span style={{ flex: 1 }}>{c.name}</span>
-                <span style={{ color: "#64748B", fontSize: 13 }}>{c.dial}</span>
+                <span style={{ color: "#505D70", fontSize: 13 }}>{c.dial}</span>
               </button>
             ))}
           </div>

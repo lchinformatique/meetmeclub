@@ -105,7 +105,7 @@ export default function SubscriptionCountdown({ initialStatus, profile }: Subscr
     }
     return {
       label: "PLAN GRATUIT (3 JOURS D'ESSAI)",
-      bg: "linear-gradient(135deg, #64748B 0%, #475569 100%)",
+      bg: "linear-gradient(135deg, #505D70 0%, #3B4658 100%)",
       color: "white",
       icon: Clock,
     };

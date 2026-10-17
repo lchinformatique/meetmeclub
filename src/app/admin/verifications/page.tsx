@@ -90,7 +90,7 @@ const imgBox: React.CSSProperties = {
 };
 
 function Empty({ label }: { label: string }) {
-  return <div style={{ ...imgBox, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B", fontSize: 13, cursor: "default" }}>{label}</div>;
+  return <div style={{ ...imgBox, display: "flex", alignItems: "center", justifyContent: "center", color: "#505D70", fontSize: 13, cursor: "default" }}>{label}</div>;
 }
 
 function AdminVerificationsInner() {
@@ -175,7 +175,7 @@ function AdminVerificationsInner() {
           <h1 style={{ margin: 0, fontSize: 24, color: "#0B2559", display: "flex", alignItems: "center", gap: 8 }}>
             <ShieldCheck size={24} /> Vérification des membres
           </h1>
-          <p style={{ margin: "4px 0 0", fontSize: 14, color: "#64748B", lineHeight: 1.5 }}>
+          <p style={{ margin: "4px 0 0", fontSize: 14, color: "#505D70", lineHeight: 1.5 }}>
             Essai gratuit : selfie · Packs 3 000 et 6 000 : pièce d&apos;identité ·
             VIP : vidéo. Un membre n&apos;apparaît qu&apos;une fois vérifié.
           </p>
@@ -204,16 +204,16 @@ function AdminVerificationsInner() {
         </div>
         <div style={{ display: "flex", gap: 8, overflowX: "auto" }}>
           {TABS.map(([t, label]) => (
-            <button key={t} type="button" onClick={() => setTab(t)} style={{ ...pill(tab === t), padding: "7px 12px", fontSize: 13, background: tab === t ? "#E10600" : "#fff", color: tab === t ? "#fff" : "#475569" }}>
+            <button key={t} type="button" onClick={() => setTab(t)} style={{ ...pill(tab === t), padding: "7px 12px", fontSize: 13, background: tab === t ? "#E10600" : "#fff", color: tab === t ? "#fff" : "#3B4658" }}>
               {label} {counts[t] ? `(${counts[t]})` : ""}
             </button>
           ))}
         </div>
 
         {error && <div style={{ background: "#FEF2F2", color: "#B42318", padding: 14, borderRadius: 14, fontWeight: 700 }}>{error}</div>}
-        {items === null && <p style={{ color: "#64748B" }}>Chargement…</p>}
+        {items === null && <p style={{ color: "#505D70" }}>Chargement…</p>}
         {items?.length === 0 && !error && (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", color: "#64748B", fontWeight: 600 }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", color: "#505D70", fontWeight: 600 }}>
             {tab === "PENDING" ? "Rien à vérifier pour le moment. 🎉" : "Aucun membre dans cette liste."}
           </div>
         )}
@@ -225,13 +225,13 @@ function AdminVerificationsInner() {
                 <strong style={{ fontSize: 17, color: "#0F172A" }}>
                   {m.firstName} {m.lastName || ""}
                 </strong>
-                <div style={{ fontSize: 13, color: "#64748B" }}>
+                <div style={{ fontSize: 13, color: "#505D70" }}>
                   {[m.pseudo && `@${m.pseudo}`, m.age && `${m.age} ans`, m.gender === "FEMALE" ? "Femme" : m.gender === "MALE" ? "Homme" : null, m.city]
                     .filter(Boolean)
                     .join(" · ")}
                 </div>
               </div>
-              <span style={{ fontSize: 12, color: "#64748B", textAlign: "right" }}>
+              <span style={{ fontSize: 12, color: "#505D70", textAlign: "right" }}>
                 {tab === "PENDING" ? `Envoyé ${when(m.submittedAt)}` : `Décidé ${when(m.reviewedAt)}`}
                 {kind === "document" && m.reviewedBy === "AI" && (
                   <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#2563EB", fontWeight: 800, justifyContent: "flex-end" }}>
@@ -331,7 +331,7 @@ function AdminVerificationsInner() {
                     {r}
                   </button>
                 ))}
-                <button type="button" onClick={() => setRejecting(null)} style={{ padding: 10, borderRadius: 12, border: "none", background: "#F1F5F9", color: "#475569", fontWeight: 700, cursor: "pointer" }}>
+                <button type="button" onClick={() => setRejecting(null)} style={{ padding: 10, borderRadius: 12, border: "none", background: "#F1F5F9", color: "#3B4658", fontWeight: 700, cursor: "pointer" }}>
                   Annuler
                 </button>
               </div>

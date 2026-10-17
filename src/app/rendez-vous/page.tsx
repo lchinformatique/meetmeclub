@@ -27,9 +27,9 @@ const STATUS_STYLE: Record<Sortie["status"], { bg: string; color: string }> = {
   WAITING_GUEST: { bg: "#FEF3C7", color: "#92400E" },
   WAITING_TEAM: { bg: "#DBEAFE", color: "#1E40AF" },
   CONFIRMED: { bg: "#DCFCE7", color: "#166534" },
-  DECLINED_GUEST: { bg: "#F1F5F9", color: "#475569" },
+  DECLINED_GUEST: { bg: "#F1F5F9", color: "#3B4658" },
   DECLINED_TEAM: { bg: "#FEE2E2", color: "#991B1B" },
-  CANCELLED: { bg: "#F1F5F9", color: "#475569" },
+  CANCELLED: { bg: "#F1F5F9", color: "#3B4658" },
 };
 
 const ACTIVE = ["WAITING_GUEST", "WAITING_TEAM", "CONFIRMED"];
@@ -88,7 +88,7 @@ export default function MesSortiesPage() {
             <h1 style={{ fontSize: "clamp(1.4rem, 4vw, 1.9rem)", fontWeight: 800, color: "#0B2559", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
               <Calendar size={26} /> Mes sorties
             </h1>
-            <p style={{ margin: "4px 0 0", color: "#475569", fontSize: 14 }}>
+            <p style={{ margin: "4px 0 0", color: "#3B4658", fontSize: 14 }}>
               Invitez un membre dans un hôtel ou un logement du Marché. L&apos;équipe confirme chaque sortie avec le lieu.
             </p>
           </div>
@@ -120,10 +120,10 @@ export default function MesSortiesPage() {
         </div>
 
         {error && <div style={{ background: "#FEF2F2", color: "#B42318", padding: 14, borderRadius: 14, fontWeight: 700, marginBottom: 12 }}>{error}</div>}
-        {sorties === null && <p style={{ color: "#64748B" }}>Chargement…</p>}
+        {sorties === null && <p style={{ color: "#505D70" }}>Chargement…</p>}
 
         {sorties !== null && list.length === 0 && (
-          <div style={{ background: "#fff", borderRadius: 18, padding: "28px 20px", textAlign: "center", color: "#475569" }}>
+          <div style={{ background: "#fff", borderRadius: 18, padding: "28px 20px", textAlign: "center", color: "#3B4658" }}>
             <p style={{ fontSize: 40, margin: 0 }}>🥂</p>
             <p style={{ fontWeight: 700, margin: "8px 0 14px" }}>
               {tab === "active" ? "Aucune sortie prévue pour le moment." : "Aucune sortie passée."}
@@ -156,7 +156,7 @@ export default function MesSortiesPage() {
                     <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "#334155", fontWeight: 600 }}>
                       <Clock size={14} /> {when}
                     </span>
-                    <span style={{ display: "flex", alignItems: "flex-start", gap: 5, fontSize: 13, color: "#64748B", marginTop: 2 }}>
+                    <span style={{ display: "flex", alignItems: "flex-start", gap: 5, fontSize: 13, color: "#505D70", marginTop: 2 }}>
                       <MapPin size={14} style={{ marginTop: 2, flexShrink: 0 }} />
                       <span style={{ minWidth: 0 }}>
                         <strong style={{ color: "#0B2559" }}>{s.venue?.proName}</strong>
@@ -164,11 +164,11 @@ export default function MesSortiesPage() {
                         {place ? <span style={{ display: "block" }}>{place}</span> : null}
                       </span>
                     </span>
-                    <span style={{ display: "block", fontSize: 13, color: "#475569", marginTop: 2 }}>
+                    <span style={{ display: "block", fontSize: 13, color: "#3B4658", marginTop: 2 }}>
                       Pack {s.packName}
                       {s.price ? ` · ${s.price.toLocaleString("fr-FR")} FCFA` : ""}
                     </span>
-                    {s.note && <span style={{ display: "block", fontSize: 13, color: "#475569", fontStyle: "italic", marginTop: 4 }}>« {s.note} »</span>}
+                    {s.note && <span style={{ display: "block", fontSize: 13, color: "#3B4658", fontStyle: "italic", marginTop: 4 }}>« {s.note} »</span>}
                     {s.teamNote && <span style={{ display: "block", fontSize: 13, color: "#1E40AF", marginTop: 4 }}>Équipe Meet Me Club : {s.teamNote}</span>}
                   </div>
                 </div>
@@ -186,7 +186,7 @@ export default function MesSortiesPage() {
                       </>
                     )}
                     {(s.role === "proposer" || s.status === "WAITING_TEAM") && (
-                      <button type="button" disabled={busy === s.id} onClick={() => act(s.id, "CANCEL")} style={{ flex: 1, minWidth: 120, padding: 11, borderRadius: 12, border: "1.5px solid #CBD5E1", background: "#fff", color: "#475569", fontWeight: 800, cursor: "pointer" }}>
+                      <button type="button" disabled={busy === s.id} onClick={() => act(s.id, "CANCEL")} style={{ flex: 1, minWidth: 120, padding: 11, borderRadius: 12, border: "1.5px solid #CBD5E1", background: "#fff", color: "#3B4658", fontWeight: 800, cursor: "pointer" }}>
                         Annuler la sortie
                       </button>
                     )}

@@ -27,9 +27,9 @@
   --color-gray-100:    #F3F4F6;
   --color-gray-200:    #E5E7EB;
   --color-gray-300:    #D1D5DB;
-  --color-gray-400:    #9CA3AF;
-  --color-gray-500:    #6B7280;
-  --color-gray-600:    #4B5563;
+  --color-gray-400:    #7D8594;
+  --color-gray-500:    #565E6C;
+  --color-gray-600:    #3D4553;
   --color-gray-700:    #374151;
   --color-gray-800:    #1F2937;
   --color-gray-900:    #111827;
@@ -1373,7 +1373,7 @@ select,
   text-align: center;
   gap: 2px;
   text-decoration: none;
-  color: #94A3B8;
+  color: #78859A;
   font-size: 10.5px;
   font-weight: 600;
   padding: 5px 2px 4px;
@@ -1420,7 +1420,7 @@ select,
 }
 
 .mobile-nav-item:not(.active) .mobile-nav-icon {
-  color: #94A3B8;
+  color: #78859A;
 }
 
 .mobile-nav-badge {

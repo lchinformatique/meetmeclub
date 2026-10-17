@@ -57,7 +57,7 @@ export default function LanguagePicker({ value, onChange }: { value: string[]; o
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, border: "1.5px solid #CBD5E1", borderRadius: 12, padding: "0 12px", minHeight: 44, background: "#fff", marginBottom: 10 }}>
-        <Search size={16} color="#64748B" />
+        <Search size={16} color="#505D70" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -96,7 +96,7 @@ export default function LanguagePicker({ value, onChange }: { value: string[]; o
           );
         })}
       </div>
-      <p style={{ margin: "8px 0 0", fontSize: 12, color: "#64748B" }}>
+      <p style={{ margin: "8px 0 0", fontSize: 12, color: "#505D70" }}>
         {value.length ? `${value.length} langue${value.length > 1 ? "s" : ""} choisie${value.length > 1 ? "s" : ""}` : "Touchez les langues que vous parlez."}
       </p>
     </div>

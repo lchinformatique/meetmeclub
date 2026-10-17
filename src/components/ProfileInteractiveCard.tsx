@@ -452,7 +452,7 @@ export default function ProfileInteractiveCard({
 
           <p
             style={{
-              color: "#64748B",
+              color: "#505D70",
               fontSize: "13px",
               margin: "0 0 14px",
               display: "flex",

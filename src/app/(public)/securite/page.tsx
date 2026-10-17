@@ -46,7 +46,7 @@ export default function SecuritePage() {
           <div className="card" style={{ background: "white", padding: "32px 24px", borderRadius: "20px", border: "1px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
             <div style={{ fontSize: "36px", marginBottom: "14px" }}>📹</div>
             <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Appel Vidéo de Vérification</h3>
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.6 }}>
               Vérifiez directement l'identité de votre interlocuteur avant toute rencontre physique. Aucun risque de mauvaises surprises ou de profils usurpés.
             </p>
           </div>
@@ -54,7 +54,7 @@ export default function SecuritePage() {
           <div className="card" style={{ background: "white", padding: "32px 24px", borderRadius: "20px", border: "1px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
             <div style={{ fontSize: "36px", marginBottom: "14px" }}>📍</div>
             <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Partage GPS Sécurisé</h3>
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.6 }}>
               Partagez facilement votre position géographique sur WhatsApp ou Google Maps avec vos proches lorsque vous partez à un rendez-vous.
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function SecuritePage() {
           <div className="card" style={{ background: "white", padding: "32px 24px", borderRadius: "20px", border: "1px solid #E2E8F0", boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
             <div style={{ fontSize: "36px", marginBottom: "14px" }}>☕</div>
             <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Lieux Partenaires Sélectionnés</h3>
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.6 }}>
               Tous nos établissements partenaires (hôtels, salons de thé, lounges) sont des espaces publics sécurisés et de grande renommée.
             </p>
           </div>
@@ -87,7 +87,7 @@ export default function SecuritePage() {
                 </span>
                 <div>
                   <h4 style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A", marginBottom: "4px" }}>{rule.title}</h4>
-                  <p style={{ fontSize: "14px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>{rule.desc}</p>
+                  <p style={{ fontSize: "14px", color: "#505D70", margin: 0, lineHeight: 1.5 }}>{rule.desc}</p>
                 </div>
               </div>
             ))}

@@ -235,7 +235,7 @@ export default function RejoindrePage() {
               Rejoindre <span style={{ color: "#E10600" }}>Meet Me Club</span>
             </h1>
 
-            <p style={{ fontSize: "14px", color: "#64748B", lineHeight: 1.6, maxWidth: "460px", margin: "0 auto" }}>
+            <p style={{ fontSize: "14px", color: "#505D70", lineHeight: 1.6, maxWidth: "460px", margin: "0 auto" }}>
               L&apos;accès à la communauté et aux réservations de rendez-vous est réservé aux membres identifiés.
             </p>
           </div>
@@ -271,7 +271,7 @@ export default function RejoindrePage() {
               <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
                 Vous êtes déjà connecté(e) !
               </h2>
-              <p style={{ fontSize: "14px", color: "#64748B", marginBottom: "24px" }}>
+              <p style={{ fontSize: "14px", color: "#505D70", marginBottom: "24px" }}>
                 Ravi de vous revoir, <strong>{sessionUser.firstName || "Membre"}</strong>. Votre espace et vos avantages membres sont prêts.
               </p>
 
@@ -373,7 +373,7 @@ export default function RejoindrePage() {
                     justifyContent: "center",
                     gap: "8px",
                     background: activeTab === "login" ? "white" : "transparent",
-                    color: activeTab === "login" ? "#0B2559" : "#64748B",
+                    color: activeTab === "login" ? "#0B2559" : "#505D70",
                     boxShadow: activeTab === "login" ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
                   }}
                 >
@@ -400,7 +400,7 @@ export default function RejoindrePage() {
                     justifyContent: "center",
                     gap: "8px",
                     background: activeTab === "register" ? "white" : "transparent",
-                    color: activeTab === "register" ? "#E10600" : "#64748B",
+                    color: activeTab === "register" ? "#E10600" : "#505D70",
                     boxShadow: activeTab === "register" ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
                   }}
                 >
@@ -466,7 +466,7 @@ export default function RejoindrePage() {
                   alignItems: "center",
                   gap: "12px",
                   margin: "18px 0",
-                  color: "#94A3B8",
+                  color: "#78859A",
                   fontSize: "12px",
                   fontWeight: 600,
                   textTransform: "uppercase",
@@ -537,7 +537,7 @@ export default function RejoindrePage() {
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          color: "#94A3B8",
+                          color: "#78859A",
                         }}
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -565,7 +565,7 @@ export default function RejoindrePage() {
                   {/* Séparateur Google */}
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "14px 0 10px" }}>
                     <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
-                    <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>OU</span>
+                    <span style={{ fontSize: "11px", color: "#78859A", fontWeight: 600 }}>OU</span>
                     <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
                   </div>
 
@@ -655,7 +655,7 @@ export default function RejoindrePage() {
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          color: "#94A3B8",
+                          color: "#78859A",
                         }}
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -710,7 +710,7 @@ export default function RejoindrePage() {
                       onChange={(e) => setRegAdultConsent(e.target.checked)}
                       style={{ marginTop: "3px", width: "16px", height: "16px", accentColor: "#E10600" }}
                     />
-                    <span style={{ fontSize: "12px", color: "#475569", lineHeight: 1.4 }}>
+                    <span style={{ fontSize: "12px", color: "#3B4658", lineHeight: 1.4 }}>
                       Je certifie être majeur(e) (18 ans ou plus) et j&apos;accepte les conditions de discrétion et respect du club. 🔞
                     </span>
                   </label>
@@ -735,7 +735,7 @@ export default function RejoindrePage() {
                   {/* Séparateur Google */}
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "14px 0 10px" }}>
                     <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
-                    <span style={{ fontSize: "11px", color: "#94A3B8", fontWeight: 600 }}>OU</span>
+                    <span style={{ fontSize: "11px", color: "#78859A", fontWeight: 600 }}>OU</span>
                     <div style={{ flex: 1, height: "1px", background: "#E2E8F0" }} />
                   </div>
 
@@ -758,7 +758,7 @@ export default function RejoindrePage() {
               <h3 style={{ fontSize: "clamp(1.4rem, 4vw, 1.9rem)", fontWeight: 800, color: "#0B2559", marginTop: "6px" }}>
                 Les 4 Plans disponibles sur Meet Me Club
               </h3>
-              <p style={{ fontSize: "13px", color: "#64748B", maxWidth: "480px", margin: "8px auto 0" }}>
+              <p style={{ fontSize: "13px", color: "#505D70", maxWidth: "480px", margin: "8px auto 0" }}>
                 Chaque nouvel inscrit commence automatiquement avec le <strong>Plan Gratuit</strong>, puis peut évoluer librement vers un pass illimité avec paiement sécurisé.
               </p>
             </div>
@@ -886,14 +886,14 @@ export default function RejoindrePage() {
                   <div style={{ fontSize: "18px", fontWeight: 800, color: "#0B2559" }}>{plan.name}</div>
 
                   <div style={{ fontSize: "24px", fontWeight: 800, color: "#E10600", margin: "6px 0 2px" }}>
-                    {plan.price} <span style={{ fontSize: "13px", fontWeight: 700, color: "#64748B" }}>{plan.id === "FREE" ? "FCFA" : "FCFA / mois"}</span>
+                    {plan.price} <span style={{ fontSize: "13px", fontWeight: 700, color: "#505D70" }}>{plan.id === "FREE" ? "FCFA" : "FCFA / mois"}</span>
                   </div>
 
-                  <div style={{ fontSize: "11px", color: "#64748B", marginBottom: "12px", fontStyle: "italic" }}>
+                  <div style={{ fontSize: "11px", color: "#505D70", marginBottom: "12px", fontStyle: "italic" }}>
                     {plan.period}
                   </div>
 
-                  <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.45, marginBottom: "14px", minHeight: "34px" }}>
+                  <p style={{ fontSize: "12px", color: "#3B4658", lineHeight: 1.45, marginBottom: "14px", minHeight: "34px" }}>
                     {plan.desc}
                   </p>
 
@@ -964,7 +964,7 @@ export default function RejoindrePage() {
               ))}
             </div>
 
-            <div style={{ marginTop: "24px", fontSize: "12px", color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+            <div style={{ marginTop: "24px", fontSize: "12px", color: "#505D70", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
               <span>🔒 Paiement sécurisé par Saspay</span>
               <span>•</span>
               <span>📱 T-Money, Moov Money, Mixx by yas</span>

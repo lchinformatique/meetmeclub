@@ -19,7 +19,7 @@ export const UNIFIED_PLANS = [
     name: "Plan Gratuit",
     badge: "Essai 3 jours",
     badgeBg: "#F1F5F9",
-    badgeColor: "#475569",
+    badgeColor: "#3B4658",
     price: "0",
     period: "FCFA · 3 jours",
     subtitle: "Découvrez le club et complétez votre profil",
@@ -182,7 +182,7 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
           <p
             style={{
               fontSize: "clamp(14px, 3vw, 17px)",
-              color: "#64748B",
+              color: "#505D70",
               maxWidth: "640px",
               margin: "0 auto",
               lineHeight: 1.5,
@@ -316,7 +316,7 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
               <p
                 style={{
                   fontSize: "13px",
-                  color: isVip ? "#CBD5E1" : "#475569",
+                  color: isVip ? "#CBD5E1" : "#3B4658",
                   lineHeight: 1.5,
                   minHeight: "40px",
                   marginBottom: "16px",
@@ -352,7 +352,7 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
                   style={{
                     fontSize: "13px",
                     fontWeight: 700,
-                    color: isVip ? "#FDE68A" : "#64748B",
+                    color: isVip ? "#FDE68A" : "#505D70",
                   }}
                 >
                   {plan.period}
@@ -388,7 +388,7 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
                           : "#334155"
                         : isVip
                         ? "rgba(255,255,255,0.4)"
-                        : "#94A3B8",
+                        : "#78859A",
                       fontWeight: feat.highlight ? 700 : 500,
                     }}
                   >
@@ -411,7 +411,7 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
                           : isVip
                           ? "rgba(255,255,255,0.1)"
                           : "#E2E8F0",
-                        color: feat.ok ? "white" : "#94A3B8",
+                        color: feat.ok ? "white" : "#78859A",
                         fontSize: "11px",
                         fontWeight: 900,
                       }}
@@ -479,7 +479,7 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
                     textAlign: "center",
                     fontSize: "11px",
                     fontWeight: 600,
-                    color: "#64748B",
+                    color: "#505D70",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -507,7 +507,7 @@ export default function UnifiedPricingCards({ currentPlan, showTitle = false }: 
                       fontWeight: 800,
                       letterSpacing: "0.5px",
                       textTransform: "uppercase",
-                      color: isVip ? "#FDE68A" : "#64748B",
+                      color: isVip ? "#FDE68A" : "#505D70",
                     }}
                   >
                     Paiements acceptés :

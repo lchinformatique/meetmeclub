@@ -280,7 +280,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                 </span>
               )}
             </div>
-            <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
+            <p style={{ fontSize: "13px", color: "#505D70", margin: 0 }}>
               Connecté en toute sécurité · Plan {isFree ? "Gratuit" : profile.plan}
             </p>
           </div>
@@ -473,7 +473,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   >
                     <item.Icon size={16} style={{ color: "#0B2559", flexShrink: 0 }} />
                     <span>{item.label}</span>
-                    <ChevronRight size={14} style={{ marginLeft: "auto", color: "#94A3B8" }} />
+                    <ChevronRight size={14} style={{ marginLeft: "auto", color: "#78859A" }} />
                   </Link>
                 ))}
               </div>
@@ -493,7 +493,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   <p style={{ fontSize: "11px", color: "#16A34A", margin: 0, fontWeight: 700 }}>✓ Accès Actif · 3 discussions offertes</p>
                 </div>
               </div>
-              <p style={{ fontSize: "12px", color: "#475569", lineHeight: 1.5, margin: "0 0 12px" }}>
+              <p style={{ fontSize: "12px", color: "#3B4658", lineHeight: 1.5, margin: "0 0 12px" }}>
                 Votre salon membre est prêt. Vous pouvez explorer les profils connectés et commencer à discuter dès maintenant.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -573,7 +573,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                     <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#1E3A8A", margin: "0 0 3px" }}>
                       Ajoutez votre photo de profil
                     </h3>
-                    <p style={{ fontSize: "13px", color: "#475569", margin: 0, fontWeight: 500 }}>
+                    <p style={{ fontSize: "13px", color: "#3B4658", margin: 0, fontWeight: 500 }}>
                       Aucune fausse image par défaut : importez votre vraie photo pour être visible des membres du club.
                     </p>
                   </div>
@@ -733,32 +733,32 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", padding: "16px", background: "#F8FAFC", borderRadius: "var(--radius-lg)", border: "1px solid #E2E8F0" }}>
                 <div>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Profession</span>
+                  <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Profession</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.profession || "Non spécifiée"}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Statut relationnel</span>
+                  <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Statut relationnel</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.relationshipStatus || "Célibataire"}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Lieu de résidence</span>
+                  <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Lieu de résidence</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{[profile.city, countryName(profile.country)].filter(Boolean).join(", ") || "À compléter"}</strong>
                   {!profile.address && <span style={{ display: "block", fontSize: "12px", color: "#B45309", fontWeight: 700 }}>Adresse à compléter</span>}
                 </div>
                 <div>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Téléphone</span>
+                  <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Téléphone</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.phone || "À compléter"}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Taille</span>
+                  <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Taille</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.height ? `${profile.height} cm` : "Non précisée"}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Enfants</span>
+                  <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Enfants</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.hasChildren ? "A des enfants" : "Sans enfant"}</strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Langues</span>
+                  <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Langues</span>
                   <strong style={{ fontSize: "14px", color: "#0F172A" }}>
                     {Array.isArray(profile.languages) && profile.languages.length > 0
                       ? profile.languages.join(", ")
@@ -767,13 +767,13 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                 </div>
                 {profile.placeOfBirth && (
                   <div>
-                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Lieu de naissance</span>
+                    <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Lieu de naissance</span>
                     <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.placeOfBirth}</strong>
                   </div>
                 )}
                 {profile.dateOfBirth && (
                   <div>
-                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Date de naissance</span>
+                    <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Date de naissance</span>
                     <strong style={{ fontSize: "14px", color: "#0F172A" }}>
                       {String(profile.dateOfBirth).split("T")[0]} ({profile.age || 25} ans)
                     </strong>
@@ -781,7 +781,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                 )}
                 {profile.religion && (
                   <div>
-                    <span style={{ fontSize: "12px", color: "#64748B", fontWeight: 600, display: "block" }}>Religion</span>
+                    <span style={{ fontSize: "12px", color: "#505D70", fontWeight: 600, display: "block" }}>Religion</span>
                     <strong style={{ fontSize: "14px", color: "#0F172A" }}>{profile.religion}</strong>
                   </div>
                 )}
@@ -795,7 +795,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                   <h2 style={{ fontSize: "20px", fontWeight: 800, color: "var(--color-blue)", margin: "0 0 4px" }}>
                     Photos de Bio & Profil ({Math.min(profile.photos?.length || 0, 4)}/4)
                   </h2>
-                  <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
+                  <p style={{ fontSize: "13px", color: "#505D70", margin: 0 }}>
                     Consultable et visualisable par les membres en ligne lors du chat.
                   </p>
                 </div>
@@ -829,7 +829,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                 </div>
               ) : (
                 <div style={{ textAlign: "center", padding: "24px", background: "#F8FAFC", borderRadius: "12px", border: "1.5px dashed #CBD5E1" }}>
-                  <p style={{ color: "#64748B", fontSize: "14px", margin: "0 0 10px" }}>Aucune photo dans votre album pour le moment.</p>
+                  <p style={{ color: "#505D70", fontSize: "14px", margin: "0 0 10px" }}>Aucune photo dans votre album pour le moment.</p>
                   <Link href="/profil/edit" className="btn btn-primary btn-sm" style={{ fontWeight: 800 }}>
                     + Ajouter des photos à mon album
                   </Link>
@@ -851,7 +851,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
               <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#FEF2F2", color: "var(--color-red)", padding: "8px 18px", borderRadius: "var(--radius-full)", fontWeight: 800, fontSize: "15px", border: "1px solid #FECACA", marginBottom: "12px" }}>
                 {GOAL_LABELS[profile.relationshipGoal] || profile.relationshipGoal}
               </div>
-              <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
+              <p style={{ color: "#3B4658", fontSize: "14px", lineHeight: 1.6, margin: 0 }}>
                 Sur Meet Me Club, vous pouvez vous faire de nouveaux amis, discuter librement, partager des passions ou faire une belle rencontre amoureuse dans les meilleurs lieux de Lomé.
               </p>
             </div>
@@ -886,7 +886,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                     </span>
                   ))
                 ) : (
-                  <p style={{ color: "#64748B", fontSize: "14px" }}>Aucun centre d&apos;intérêt sélectionné.</p>
+                  <p style={{ color: "#505D70", fontSize: "14px" }}>Aucun centre d&apos;intérêt sélectionné.</p>
                 )}
               </div>
             </div>
@@ -913,7 +913,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
                         padding: "12px 6px",
                         borderRadius: "var(--radius-md)",
                         background: isActive ? "var(--color-blue)" : "#F1F5F9",
-                        color: isActive ? "white" : "#64748B",
+                        color: isActive ? "white" : "#505D70",
                         fontWeight: 800,
                         fontSize: "13px",
                       }}
@@ -1002,7 +1002,7 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
         <div style={{ fontSize: "15px", fontWeight: 800, color: "var(--color-blue)" }}>
           meet <span style={{ color: "var(--color-red)" }}>me</span> club · International
         </div>
-        <p style={{ fontSize: "12px", color: "#64748B", margin: 0 }}>
+        <p style={{ fontSize: "12px", color: "#505D70", margin: 0 }}>
           « Plus qu&apos;une rencontre, un rendez-vous ! » · Réservé aux 18 ans et plus
         </p>
       </footer>

@@ -1114,7 +1114,7 @@ function NouveauRdvInner() {
                 marginBottom: "20px",
               }}
             >
-              <div style={{ fontSize: "13px", color: "#475569", marginBottom: "10px", fontWeight: 600, lineHeight: 1.5 }}>
+              <div style={{ fontSize: "13px", color: "#3B4658", marginBottom: "10px", fontWeight: 600, lineHeight: 1.5 }}>
                 💳 Réglez le pack <strong style={{ color: selectedPack.color }}>{selectedPack.icon} {selectedPack.name}</strong> maintenant pour confirmer votre réservation.
               </div>
               <a
@@ -1134,7 +1134,7 @@ function NouveauRdvInner() {
                     ? "linear-gradient(135deg, #9B1C1C 0%, #E10600 100%)"
                     : selectedPack.id === "COMPLICE"
                     ? "linear-gradient(135deg, #0B2559 0%, #17428E 100%)"
-                    : "linear-gradient(135deg, #334155 0%, #475569 100%)",
+                    : "linear-gradient(135deg, #334155 0%, #3B4658 100%)",
                   color: "white",
                   borderRadius: "12px",
                   fontWeight: 800,
@@ -1155,11 +1155,11 @@ function NouveauRdvInner() {
                 gap: "6px",
                 marginTop: "8px",
               }}>
-                <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Paiement via</span>
+                <span style={{ fontSize: "11px", color: "#505D70", fontWeight: 600 }}>Paiement via</span>
                 <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={24} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
-                <span style={{ fontSize: "10px", color: "#94A3B8" }}>·</span>
+                <span style={{ fontSize: "10px", color: "#78859A" }}>·</span>
                 <Image src="/moov-money.png" alt="Moov Money" width={16} height={16} style={{ objectFit: "contain", borderRadius: "3px" }} />
-                <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Mixx &amp; Moov</span>
+                <span style={{ fontSize: "11px", color: "#505D70", fontWeight: 600 }}>Mixx &amp; Moov</span>
               </div>
             </div>
 
@@ -1221,7 +1221,7 @@ function NouveauRdvInner() {
                   <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0B2559", marginBottom: "6px" }}>
                     Pack {paymentModal.pack.name}
                   </h3>
-                  <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.5, marginBottom: "18px" }}>
+                  <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.5, marginBottom: "18px" }}>
                     {paymentModal.pack.description}
                   </p>
 
@@ -1233,12 +1233,12 @@ function NouveauRdvInner() {
                     padding: "16px",
                     marginBottom: "20px",
                   }}>
-                    <div style={{ fontSize: "11px", color: "#64748B", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>Montant à payer</div>
+                    <div style={{ fontSize: "11px", color: "#505D70", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>Montant à payer</div>
                     <div style={{ fontSize: "32px", fontWeight: 900, color: "#0B2559", lineHeight: 1 }}>
                       {paymentModal.pack.price.toLocaleString("fr-FR")}
-                      <span style={{ fontSize: "14px", fontWeight: 600, color: "#64748B", marginLeft: "4px" }}>FCFA</span>
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: "#505D70", marginLeft: "4px" }}>FCFA</span>
                     </div>
-                    <div style={{ fontSize: "12px", color: "#64748B", marginTop: "6px" }}>Réglé 1 seule fois pour ce rendez-vous</div>
+                    <div style={{ fontSize: "12px", color: "#505D70", marginTop: "6px" }}>Réglé 1 seule fois pour ce rendez-vous</div>
                   </div>
 
                   {/* Bouton Payer Saspay */}
@@ -1260,7 +1260,7 @@ function NouveauRdvInner() {
                         ? "linear-gradient(135deg, #9B1C1C 0%, #E10600 100%)"
                         : paymentModal.pack.id === "COMPLICE"
                         ? "linear-gradient(135deg, #0B2559 0%, #17428E 100%)"
-                        : "linear-gradient(135deg, #334155 0%, #475569 100%)",
+                        : "linear-gradient(135deg, #334155 0%, #3B4658 100%)",
                       color: "white",
                       borderRadius: "14px",
                       fontWeight: 900,
@@ -1276,18 +1276,18 @@ function NouveauRdvInner() {
 
                   {/* Mixx & Moov icons */}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginBottom: "16px" }}>
-                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Via</span>
+                    <span style={{ fontSize: "11px", color: "#505D70", fontWeight: 600 }}>Via</span>
                     <Image src="/mixx-by-yas.jpg" alt="Mixx by yas" width={26} height={17} style={{ objectFit: "contain", borderRadius: "3px" }} />
-                    <span style={{ fontSize: "10px", color: "#94A3B8" }}>·</span>
+                    <span style={{ fontSize: "10px", color: "#78859A" }}>·</span>
                     <Image src="/moov-money.png" alt="Moov Money" width={17} height={17} style={{ objectFit: "contain", borderRadius: "3px" }} />
-                    <span style={{ fontSize: "11px", color: "#64748B", fontWeight: 600 }}>Mixx by yas &amp; Moov Money</span>
+                    <span style={{ fontSize: "11px", color: "#505D70", fontWeight: 600 }}>Mixx by yas &amp; Moov Money</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setPaymentModal({ open: false, pack: null, paid: false, confirmed: false })}
                     className="btn btn-ghost"
-                    style={{ width: "100%", justifyContent: "center", color: "#64748B", fontSize: "13px" }}
+                    style={{ width: "100%", justifyContent: "center", color: "#505D70", fontSize: "13px" }}
                   >
                     Annuler
                   </button>
@@ -1299,7 +1299,7 @@ function NouveauRdvInner() {
                   <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#15803D", marginBottom: "8px" }}>
                     Avez-vous effectué le paiement ?
                   </h3>
-                  <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.5, marginBottom: "20px" }}>
+                  <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.5, marginBottom: "20px" }}>
                     Vérifiez votre SMS de confirmation <strong>Mixx by yas</strong> ou <strong>Moov Money</strong> avant de continuer.
                   </p>
 
@@ -1347,7 +1347,7 @@ function NouveauRdvInner() {
                       type="button"
                       onClick={() => setPaymentModal({ open: false, pack: null, paid: false, confirmed: false })}
                       className="btn btn-ghost"
-                      style={{ width: "100%", justifyContent: "center", color: "#64748B", fontSize: "13px" }}
+                      style={{ width: "100%", justifyContent: "center", color: "#505D70", fontSize: "13px" }}
                     >
                       Annuler
                     </button>
@@ -1390,12 +1390,12 @@ function NouveauRdvInner() {
               <h3 style={{ fontSize: "22px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
                 Abonnement Requis pour ce Pack
               </h3>
-              <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "20px" }}>
+              <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.6, marginBottom: "20px" }}>
                 {lockedModal.desc}
               </p>
 
               <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "16px", marginBottom: "20px", textAlign: "left" }}>
-                <div style={{ fontSize: "12px", color: "#64748B", textTransform: "uppercase", fontWeight: 800 }}>Pack sélectionné :</div>
+                <div style={{ fontSize: "12px", color: "#505D70", textTransform: "uppercase", fontWeight: 800 }}>Pack sélectionné :</div>
                 <div style={{ fontSize: "17px", fontWeight: 800, color: "#0F172A", marginTop: "2px" }}>{lockedModal.packName}</div>
                 <div style={{ fontSize: "14px", color: "#E10600", fontWeight: 700, marginTop: "4px" }}>Prix formule : {lockedModal.price}</div>
               </div>
@@ -1423,7 +1423,7 @@ function NouveauRdvInner() {
                 >
                   <span>💳 Payer via Mixx by yas ou Moov Money (Saspay)</span>
                 </a>
-                <div style={{ fontSize: "12px", color: "#64748B" }}>
+                <div style={{ fontSize: "12px", color: "#505D70" }}>
                   Paiement sécurisé et instantané
                 </div>
 
@@ -1439,7 +1439,7 @@ function NouveauRdvInner() {
                   type="button"
                   onClick={() => setLockedModal(null)}
                   className="btn btn-ghost"
-                  style={{ width: "100%", justifyContent: "center", color: "#64748B" }}
+                  style={{ width: "100%", justifyContent: "center", color: "#505D70" }}
                 >
                   Choisir le pack Découverte (Simple lieu public)
                 </button>

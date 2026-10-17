@@ -74,7 +74,7 @@ export default async function VitrinePage({ params }: Props) {
               <ProContacts pro={pro} chatHref={chatHref} isMine={isMine} subject={"ses services"} />
             ) : (
               <div className={s.contactBtns}>
-                <p style={{ fontSize: 14, color: "#475569", margin: 0 }}>Rejoignez le club pour écrire à ce membre : tous les échanges se font sur la messagerie privée.</p>
+                <p style={{ fontSize: 14, color: "#3B4658", margin: 0 }}>Rejoignez le club pour écrire à ce membre : tous les échanges se font sur la messagerie privée.</p>
                 <Link href={`/inscription?callbackUrl=/marche/pro/${pro.slug}`} className={s.btn} style={{ width: "100%" }}>
                   Rejoindre gratuitement
                 </Link>
@@ -85,7 +85,7 @@ export default async function VitrinePage({ params }: Props) {
 
         <div className={s.toolbar}>
           <h2 className={s.sectionTitle}>
-            Annonces <span style={{ fontWeight: 600, fontSize: 14, color: "#64748B" }}>· {listings.length}</span>
+            Annonces <span style={{ fontWeight: 600, fontSize: 14, color: "#505D70" }}>· {listings.length}</span>
           </h2>
           <Link href="/marche" className={s.chip}>
             <ChevronLeft size={14} /> Tout le Marché

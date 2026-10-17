@@ -187,7 +187,7 @@ export default function SecurityProtectionProvider({
           <h2 style={{ fontSize: "24px", fontWeight: 800, marginBottom: "8px" }}>
             Protection Anti-Capture Meet Me Club
           </h2>
-          <p style={{ fontSize: "15px", color: "#94A3B8", maxWidth: "460px" }}>
+          <p style={{ fontSize: "15px", color: "#78859A", maxWidth: "460px" }}>
             Les images et profils des membres sont protégés par la politique de stricte confidentialité du club.
           </p>
         </div>

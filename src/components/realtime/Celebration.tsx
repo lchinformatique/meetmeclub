@@ -143,7 +143,7 @@ export default function Celebration({ plan, onClose }: { plan: string; onClose: 
           Paiement confirmé
         </div>
         <h2 style={{ margin: "6px 0 4px", fontSize: 24, color: "#0B2559" }}>Félicitations ! 🎉</h2>
-        <p style={{ margin: "0 0 16px", fontSize: 15, color: "#475569", lineHeight: 1.5 }}>
+        <p style={{ margin: "0 0 16px", fontSize: 15, color: "#3B4658", lineHeight: 1.5 }}>
           Votre <strong style={{ color: info.color }}>{info.name}</strong> est activé. Bienvenue dans votre nouveau niveau du club !
         </p>
         <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", textAlign: "left", display: "flex", flexDirection: "column", gap: 8 }}>

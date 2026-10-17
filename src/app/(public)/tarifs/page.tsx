@@ -34,7 +34,7 @@ const PLANS = [
     paymentUrl: null,
     highlight: false,
     borderColor: "#E2E8F0",
-    badgeColor: "#475569",
+    badgeColor: "#3B4658",
     btnClass: "btn-outline-blue",
   },
   {
@@ -245,7 +245,7 @@ export default function TarifsPage() {
             <h4 style={{ fontSize: "16px", fontWeight: 700, color: "#0F172A", marginBottom: "12px" }}>
               Règle du Plan Gratuit (3 jours) :
             </h4>
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6, marginBottom: "14px" }}>
+            <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.6, marginBottom: "14px" }}>
               Tout nouvel utilisateur bénéficie de <strong>3 jours d&apos;accès opérationnel gratuit</strong> pour créer son profil complet, être visible de tous les membres et échanger avec
               jusqu&apos;à <strong style={{ color: "#0F172A" }}>3 partenaires</strong>. L&apos;achat de packs de rendez-vous réels est également accessible dès cette période d&apos;essai.
             </p>
@@ -265,7 +265,7 @@ export default function TarifsPage() {
           <h3 style={{ fontSize: "22px", fontWeight: 800, color: "#0F172A", marginBottom: "10px" }}>
             Paiements sécurisés : Mobile Money & Carte Bancaire 💳 🌍
           </h3>
-          <p style={{ color: "#64748B", fontSize: "15px", marginBottom: "28px" }}>
+          <p style={{ color: "#505D70", fontSize: "15px", marginBottom: "28px" }}>
             Réglez instantanément par Mobile Money (T-Money, Moov) ou par Carte Bancaire internationale (Visa, Mastercard) depuis n&apos;importe quel pays.
           </p>
 
@@ -311,7 +311,7 @@ export default function TarifsPage() {
               </div>
               <div>
                 <div style={{ fontSize: "16px", fontWeight: 800, color: "#002D72" }}>Mixx by yas</div>
-                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>T-Money · Mobile Money</div>
+                <div style={{ fontSize: "12px", color: "#505D70", fontWeight: 600 }}>T-Money · Mobile Money</div>
               </div>
             </div>
 
@@ -348,7 +348,7 @@ export default function TarifsPage() {
               </div>
               <div>
                 <div style={{ fontSize: "16px", fontWeight: 800, color: "#E85E12" }}>Moov Money</div>
-                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Flooz · Moov Africa</div>
+                <div style={{ fontSize: "12px", color: "#505D70", fontWeight: 600 }}>Flooz · Moov Africa</div>
               </div>
             </div>
 
@@ -385,7 +385,7 @@ export default function TarifsPage() {
               </div>
               <div>
                 <div style={{ fontSize: "16px", fontWeight: 800, color: "#0B2559" }}>Carte Bancaire</div>
-                <div style={{ fontSize: "12px", color: "#64748B", fontWeight: 600 }}>Visa · Mastercard · CB</div>
+                <div style={{ fontSize: "12px", color: "#505D70", fontWeight: 600 }}>Visa · Mastercard · CB</div>
               </div>
             </div>
           </div>
@@ -424,7 +424,7 @@ export default function TarifsPage() {
             </Link>
           </div>
 
-          <p style={{ marginTop: "24px", fontSize: "13px", color: "#64748B" }}>
+          <p style={{ marginTop: "24px", fontSize: "13px", color: "#505D70" }}>
             Transactions sécurisées et chiffrées. Annulation de l'abonnement à tout moment en 1 clic dans votre profil.
           </p>
         </div>

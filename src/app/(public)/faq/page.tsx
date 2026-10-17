@@ -133,7 +133,7 @@ export default function FAQPage() {
                   </span>
                 </button>
                 {isOpen && (
-                  <div style={{ padding: "0 24px 22px", color: "#475569", fontSize: "14px", lineHeight: 1.7, borderTop: "1px solid #F1F5F9", paddingTop: "14px" }}>
+                  <div style={{ padding: "0 24px 22px", color: "#3B4658", fontSize: "14px", lineHeight: 1.7, borderTop: "1px solid #F1F5F9", paddingTop: "14px" }}>
                     {item.a}
                   </div>
                 )}
@@ -145,7 +145,7 @@ export default function FAQPage() {
         {/* Still have questions */}
         <div style={{ marginTop: "50px", textAlign: "center", background: "white", padding: "32px", borderRadius: "20px", border: "1px solid #E2E8F0" }}>
           <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Vous avez encore une question ?</h3>
-          <p style={{ fontSize: "14px", color: "#64748B", marginBottom: "20px" }}>Notre équipe et notre assistant interactif sont là pour vous aider à tout moment.</p>
+          <p style={{ fontSize: "14px", color: "#505D70", marginBottom: "20px" }}>Notre équipe et notre assistant interactif sont là pour vous aider à tout moment.</p>
           <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/contact" className="btn btn-outline-blue">
               Page de contact

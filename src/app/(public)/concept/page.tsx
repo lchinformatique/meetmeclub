@@ -46,7 +46,7 @@ export default function ConceptPage() {
           <div className="card" style={{ background: "white", padding: "32px 24px", borderRadius: "20px", border: "1px solid #E2E8F0" }}>
             <div style={{ fontSize: "36px", marginBottom: "12px" }}>🤝</div>
             <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Liberté totale d'échange</h3>
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.6 }}>
               Aucune contrainte de rendez-vous obligatoire immédiat. Vous pouvez commencer par échanger par messages, partager des vocaux, photos et positions GPS, ou faire un appel vidéo en direct.
             </p>
           </div>
@@ -54,7 +54,7 @@ export default function ConceptPage() {
           <div className="card" style={{ background: "white", padding: "32px 24px", borderRadius: "20px", border: "1px solid #E2E8F0" }}>
             <div style={{ fontSize: "36px", marginBottom: "12px" }}>🛡️</div>
             <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Sécurité & Vérification 100%</h3>
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.6 }}>
               Finis les faux profils. Grâce à notre système d'appel vidéo et de vérification humaine, vous savez exactement à qui vous parlez avant même votre première sortie.
             </p>
           </div>
@@ -62,7 +62,7 @@ export default function ConceptPage() {
           <div className="card" style={{ background: "white", padding: "32px 24px", borderRadius: "20px", border: "1px solid #E2E8F0" }}>
             <div style={{ fontSize: "36px", marginBottom: "12px" }}>🍷</div>
             <h3 style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>Cadres prestigieux</h3>
-            <p style={{ fontSize: "14px", color: "#475569", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "14px", color: "#3B4658", lineHeight: 1.6 }}>
               Quand vous décidez de vous rencontrer, nous réservons votre table dans nos établissements partenaires réputés (hôtels, restaurants et lounges sélectionnés), avec boissons et repas inclus.
             </p>
           </div>

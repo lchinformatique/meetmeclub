@@ -27,7 +27,7 @@ const STATUS: Record<MyListing["status"], { label: string; bg: string; color: st
   ACTIVE: { label: "En ligne", bg: "#DCFCE7", color: "#166534" },
   SOLD: { label: "Vendu", bg: "#E2E8F0", color: "#334155" },
   REMOVED: { label: "Retirée par l'équipe", bg: "#FEE2E2", color: "#991B1B" },
-  DELETED: { label: "Supprimée", bg: "#F1F5F9", color: "#64748B" },
+  DELETED: { label: "Supprimée", bg: "#F1F5F9", color: "#505D70" },
 };
 
 export default function MonEspacePro() {
@@ -75,7 +75,7 @@ export default function MonEspacePro() {
         <div style={{ ...panel, textAlign: "center" }}>
           <ShieldCheck size={46} color={NAVY} style={{ margin: "0 auto 10px" }} />
           <h1 style={{ fontSize: 21, color: NAVY, margin: "0 0 6px" }}>Vérifiez d&apos;abord votre profil</h1>
-          <p style={{ color: "#475569", lineHeight: 1.6, margin: "0 0 16px" }}>
+          <p style={{ color: "#3B4658", lineHeight: 1.6, margin: "0 0 16px" }}>
             Pour protéger les membres contre les arnaques, seuls les comptes vérifiés peuvent créer un Espace Pro et publier.
           </p>
           <Link href="/verification" style={primaryBtn}>
@@ -170,7 +170,7 @@ export default function MonEspacePro() {
                 }}
               />
             ) : (
-              <p style={{ color: "#475569", margin: 0 }}>La publication est réservée aux packs Complice et VIP.</p>
+              <p style={{ color: "#3B4658", margin: 0 }}>La publication est réservée aux packs Complice et VIP.</p>
             )}
           </div>
         )}
@@ -178,7 +178,7 @@ export default function MonEspacePro() {
         {tab === "annonces" && data.pro && (
           <div style={{ display: "grid", gap: 10 }}>
             {data.listings.length === 0 && (
-              <div style={{ ...panel, textAlign: "center", color: "#475569" }}>
+              <div style={{ ...panel, textAlign: "center", color: "#3B4658" }}>
                 <Store size={34} color={NAVY} style={{ margin: "0 auto 8px" }} />
                 Aucune annonce pour le moment.
                 {data.canPublish && (
@@ -194,11 +194,11 @@ export default function MonEspacePro() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                     <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999, background: STATUS[l.status].bg, color: STATUS[l.status].color }}>{STATUS[l.status].label}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#64748B" }}>{l.kind === "SALE" ? "Vente" : "Service"}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#505D70" }}>{l.kind === "SALE" ? "Vente" : "Service"}</span>
                   </div>
                   <strong style={{ display: "block", fontSize: 15, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.title}</strong>
                   <span style={{ fontSize: 13, color: RED, fontWeight: 800 }}>{formatPrice(l)}</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#64748B" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#505D70" }}>
                     <Eye size={13} /> {l.views} · {timeAgo(l.createdAt)}
                   </span>
                   {l.status === "REMOVED" && l.removedReason && <span style={{ display: "block", fontSize: 12, color: "#991B1B" }}>Motif : {l.removedReason}</span>}

@@ -382,7 +382,7 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div>
               <h2 style={{ fontSize: "24px", fontWeight: 800, color: "#0F172A", marginBottom: "6px" }}>Présentez-vous 👋</h2>
-              <p style={{ color: "#475569", marginBottom: "24px", fontSize: "15px" }}>Renseignez vos informations pour enregistrer votre profil dans le club</p>
+              <p style={{ color: "#3B4658", marginBottom: "24px", fontSize: "15px" }}>Renseignez vos informations pour enregistrer votre profil dans le club</p>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
                 <div className="input-group">

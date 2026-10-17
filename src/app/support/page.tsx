@@ -14,7 +14,7 @@ function SupportInner() {
     openSupportChat(router, params.get("message") || "Bonjour l'équipe Meet Me Club, j'ai besoin d'aide.");
   }, [router, params]);
   return (
-    <div style={{ minHeight: "60dvh", display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontWeight: 600 }}>
+    <div style={{ minHeight: "60dvh", display: "flex", alignItems: "center", justifyContent: "center", color: "#3B4658", fontWeight: 600 }}>
       Ouverture de la messagerie de l&apos;équipe…
     </div>
   );

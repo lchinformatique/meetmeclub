@@ -20,7 +20,7 @@ export default function ReportButton({ listingId, loggedIn }: { listingId: strin
     setDone(r.ok ? "Merci, l'équipe Meet Me Club va examiner cette annonce." : d.error || "Signalement impossible.");
   }
 
-  if (done) return <p style={{ fontSize: 13, color: "#475569", margin: "10px 0 0" }}>{done}</p>;
+  if (done) return <p style={{ fontSize: 13, color: "#3B4658", margin: "10px 0 0" }}>{done}</p>;
   if (!loggedIn) return null;
 
   return (

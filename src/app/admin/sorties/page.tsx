@@ -90,7 +90,7 @@ export default function AdminSorties() {
           <h1 style={{ margin: 0, fontSize: 24, color: "#0B2559", display: "flex", alignItems: "center", gap: 8 }}>
             <CalendarCheck size={24} /> Sorties à confirmer
           </h1>
-          <p style={{ margin: "4px 0 0", fontSize: 14, color: "#64748B", lineHeight: 1.5 }}>
+          <p style={{ margin: "4px 0 0", fontSize: 14, color: "#505D70", lineHeight: 1.5 }}>
             Les deux membres ont accepté. Contactez le lieu, négociez la disponibilité et les conditions, puis confirmez :
             les membres sont prévenus automatiquement.
           </p>
@@ -110,9 +110,9 @@ export default function AdminSorties() {
         </div>
 
         {error && <div style={{ background: "#FEF2F2", color: "#B42318", padding: 14, borderRadius: 14, fontWeight: 700 }}>{error}</div>}
-        {items === null && <p style={{ color: "#64748B" }}>Chargement…</p>}
+        {items === null && <p style={{ color: "#505D70" }}>Chargement…</p>}
         {items?.length === 0 && !error && (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", color: "#64748B", fontWeight: 600 }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", color: "#505D70", fontWeight: 600 }}>
             {view === "todo" ? "Aucune sortie à confirmer. 🎉" : "Aucune sortie."}
           </div>
         )}
@@ -135,10 +135,10 @@ export default function AdminSorties() {
                 <div>
                   📍 <strong>{s.venue?.proName}</strong> — {s.venue?.title}
                   <br />
-                  <span style={{ color: "#64748B" }}>{[s.pro?.address || s.venue?.address, s.venue?.city, countryName(s.venue?.country)].filter(Boolean).join(", ")}</span>
+                  <span style={{ color: "#505D70" }}>{[s.pro?.address || s.venue?.address, s.venue?.city, countryName(s.venue?.country)].filter(Boolean).join(", ")}</span>
                 </div>
                 <div>🎟️ Pack {s.pack}{s.price ? ` · ${s.price.toLocaleString("fr-FR")} FCFA` : ""}</div>
-                {s.note && <div style={{ fontStyle: "italic", color: "#475569" }}>Message : « {s.note} »</div>}
+                {s.note && <div style={{ fontStyle: "italic", color: "#3B4658" }}>Message : « {s.note} »</div>}
                 {s.teamNote && <div style={{ color: "#1E40AF" }}>Note envoyée : {s.teamNote}</div>}
               </div>
 

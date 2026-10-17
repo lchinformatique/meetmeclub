@@ -142,12 +142,12 @@ export default function PwaInstallPrompt() {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#0B2559" }}>Installer Meet Me Club</div>
         {mode === "ios" ? (
-          <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.4, marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "#3B4658", lineHeight: 1.4, marginTop: 2 }}>
             Touchez <Share size={13} style={{ verticalAlign: "-2px", color: "#2563EB" }} /> puis{" "}
             <strong>« Sur l&apos;écran d&apos;accueil »</strong>
           </div>
         ) : (
-          <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>Accès direct depuis votre écran d&apos;accueil</div>
+          <div style={{ fontSize: 12, color: "#3B4658", marginTop: 2 }}>Accès direct depuis votre écran d&apos;accueil</div>
         )}
       </div>
       {mode === "android" && (
@@ -183,7 +183,7 @@ export default function PwaInstallPrompt() {
           border: "none",
           borderRadius: "50%",
           background: "#F1F5F9",
-          color: "#64748B",
+          color: "#505D70",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

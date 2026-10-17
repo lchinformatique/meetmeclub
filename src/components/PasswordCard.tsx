@@ -75,7 +75,7 @@ export default function PasswordCard() {
           <h3 style={{ margin: 0, fontSize: 16, color: "#0B2559" }}>
             {hasPassword ? "Changer mon mot de passe" : "Créer mon mot de passe"}
           </h3>
-          <p style={{ margin: 0, fontSize: 13, color: "#64748B" }}>
+          <p style={{ margin: 0, fontSize: 13, color: "#505D70" }}>
             Pour vous connecter avec votre pseudo, en plus de Google.
           </p>
         </div>
@@ -104,7 +104,7 @@ export default function PasswordCard() {
           type="button"
           onClick={() => setShow((v) => !v)}
           aria-label="Afficher le mot de passe"
-          style={{ position: "absolute", right: 10, top: 13, border: "none", background: "none", color: "#94A3B8", cursor: "pointer" }}
+          style={{ position: "absolute", right: 10, top: 13, border: "none", background: "none", color: "#78859A", cursor: "pointer" }}
         >
           {show ? <EyeOff size={20} /> : <Eye size={20} />}
         </button>

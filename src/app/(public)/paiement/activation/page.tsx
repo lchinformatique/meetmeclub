@@ -130,7 +130,7 @@ function ActivationContent() {
           <h1 style={{ fontSize: "28px", fontWeight: 800, color: "#0B2559", marginBottom: "8px" }}>
             Activation de votre Abonnement
           </h1>
-          <p style={{ color: "#64748B", fontSize: "15px" }}>
+          <p style={{ color: "#505D70", fontSize: "15px" }}>
             Vous venez de régler via <strong>Mixx by yas, Moov Money ou carte bancaire</strong> ? Si vous avez payé avec le
             numéro enregistré sur votre profil, votre pass est activé <strong>automatiquement</strong>. Sinon, indiquez
             ci-dessous le numéro utilisé ou la référence de votre reçu SasPay.
@@ -237,7 +237,7 @@ function ActivationContent() {
               </button>
 
               <div style={{ borderTop: "1px solid #E2E8F0", paddingTop: "20px", textAlign: "center" }}>
-                <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "12px" }}>
+                <p style={{ fontSize: "13px", color: "#505D70", marginBottom: "12px" }}>
                   Besoin d'aide immédiate pour votre transaction ?
                 </p>
                 <a

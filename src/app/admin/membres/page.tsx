@@ -38,7 +38,7 @@ const PLAN_STYLE: Record<string, { label: string; bg: string; color: string }> =
   VIP: { label: "VIP", bg: "#FEF3C7", color: "#92400E" },
   COMPLICE: { label: "Complice", bg: "#DBEAFE", color: "#1E40AF" },
   ESSENTIAL: { label: "Essentiel", bg: "#D1FAE5", color: "#065F46" },
-  FREE: { label: "Gratuit", bg: "#F1F5F9", color: "#475569" },
+  FREE: { label: "Gratuit", bg: "#F1F5F9", color: "#3B4658" },
 };
 
 const FILTERS = [
@@ -137,7 +137,7 @@ export default function AdminMembres() {
           </div>
         )}
 
-        <label style={{ display: "flex", alignItems: "center", gap: 8, height: 48, padding: "0 14px", background: "#fff", borderRadius: 14, color: "#64748B" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, height: 48, padding: "0 14px", background: "#fff", borderRadius: 14, color: "#505D70" }}>
           <Search size={18} />
           <input
             value={q}
@@ -171,7 +171,7 @@ export default function AdminMembres() {
           ))}
         </div>
 
-        {!members && !error && <div style={{ textAlign: "center", color: "#64748B", padding: 30 }}>Chargement des membres…</div>}
+        {!members && !error && <div style={{ textAlign: "center", color: "#505D70", padding: 30 }}>Chargement des membres…</div>}
 
         {list.slice(0, visible).map((m) => {
           const online = rt.isOnline(m.userId);
@@ -203,12 +203,12 @@ export default function AdminMembres() {
                     <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999, background: plan.bg, color: plan.color }}>{plan.label}</span>
                     {m.expired && <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999, background: "#FEE2E2", color: "#B42318" }}>Expiré</span>}
                   </span>
-                  <span style={{ display: "block", fontSize: 12, color: "#64748B", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span style={{ display: "block", fontSize: 12, color: "#505D70", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {m.pseudo ? `@${m.pseudo} · ` : ""}
                     {online ? "🟢 en ligne" : "hors ligne"} · {m.expired ? "accès terminé" : `${m.daysLeft} j restants`}
                   </span>
                 </span>
-                <ChevronDown size={20} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s", color: "#94A3B8" }} />
+                <ChevronDown size={20} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s", color: "#78859A" }} />
               </button>
 
               {open && (
@@ -246,7 +246,7 @@ export default function AdminMembres() {
                   </div>
 
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", borderTop: "1px solid #E2E8F0", paddingTop: 10 }}>
-                    <span style={{ width: "100%", fontSize: 12, fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>Activer un pass (30 jours)</span>
+                    <span style={{ width: "100%", fontSize: 12, fontWeight: 800, color: "#505D70", textTransform: "uppercase" }}>Activer un pass (30 jours)</span>
                     {(["ESSENTIAL", "COMPLICE", "VIP"] as const).map((p) => (
                       <button
                         key={p}
@@ -275,7 +275,7 @@ export default function AdminMembres() {
           </button>
         )}
 
-        {members && list.length === 0 &&<div style={{ textAlign: "center", color: "#64748B", padding: 30 }}>Aucun membre pour ce filtre.</div>}
+        {members && list.length === 0 &&<div style={{ textAlign: "center", color: "#505D70", padding: 30 }}>Aucun membre pour ce filtre.</div>}
       </div>
     </div>
   );

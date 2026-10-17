@@ -12,7 +12,7 @@ function PhotoPicker({ label, hint, file, onPick }: { label: string; hint: strin
     <label
       style={{
         display: "block",
-        border: `2px dashed ${file ? "#16A34A" : "#94A3B8"}`,
+        border: `2px dashed ${file ? "#16A34A" : "#78859A"}`,
         borderRadius: 16,
         padding: 12,
         cursor: "pointer",
@@ -46,7 +46,7 @@ function PhotoPicker({ label, hint, file, onPick }: { label: string; hint: strin
         <ImagePlus size={30} color={NAVY} style={{ margin: "6px auto" }} />
       )}
       <div style={{ fontWeight: 800, color: NAVY, fontSize: 14, marginTop: 6 }}>{file ? `${label} ✓ (toucher pour changer)` : label}</div>
-      <div style={{ fontSize: 12, color: "#64748B" }}>{hint}</div>
+      <div style={{ fontSize: 12, color: "#505D70" }}>{hint}</div>
     </label>
   );
 }
@@ -144,7 +144,7 @@ export default function DocumentStep({ data, onDone }: { data: VerificationData;
           </button>
         )}
       </div>
-      {sending && <p style={{ fontSize: 13, color: "#64748B", marginTop: 10 }}>Le contrôle peut prendre jusqu&apos;à une minute, ne fermez pas la page.</p>}
+      {sending && <p style={{ fontSize: 13, color: "#505D70", marginTop: 10 }}>Le contrôle peut prendre jusqu&apos;à une minute, ne fermez pas la page.</p>}
 
       {error && <ErrorText>{error}</ErrorText>}
       <Privacy>

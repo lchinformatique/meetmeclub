@@ -85,7 +85,7 @@ export default function AdminMarche() {
           <h1 style={{ margin: 0, fontSize: 24, color: "#0B2559", display: "flex", alignItems: "center", gap: 8 }}>
             <Store size={24} /> Modération du Marché
           </h1>
-          <p style={{ margin: "4px 0 0", fontSize: 14, color: "#64748B" }}>
+          <p style={{ margin: "4px 0 0", fontSize: 14, color: "#505D70" }}>
             Les annonces sont publiées tout de suite. Retirez celles qui sont signalées ou non conformes.{" "}
             <Link href="/marche" style={{ color: "#E10600", fontWeight: 700 }}>Voir le Marché</Link>
           </p>
@@ -106,9 +106,9 @@ export default function AdminMarche() {
         </div>
 
         {error && <div style={{ background: "#FEF2F2", color: "#B42318", padding: 14, borderRadius: 14, fontWeight: 700 }}>{error}</div>}
-        {items === null && <p style={{ color: "#64748B" }}>Chargement…</p>}
+        {items === null && <p style={{ color: "#505D70" }}>Chargement…</p>}
         {items?.length === 0 && !error && (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", color: "#64748B", fontWeight: 600 }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, textAlign: "center", color: "#505D70", fontWeight: 600 }}>
             {view === "reported" ? "Aucune annonce signalée. 🎉" : "Aucune annonce."}
           </div>
         )}
@@ -122,7 +122,7 @@ export default function AdminMarche() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <Link href={`/marche/annonce/${l.id}`} style={{ fontWeight: 800, color: "#0F172A", textDecoration: "none", display: "block" }}>{l.title}</Link>
                 <span style={{ fontSize: 13, color: "#E10600", fontWeight: 800 }}>{formatPrice(l)}</span>
-                <span style={{ display: "block", fontSize: 12, color: "#64748B" }}>
+                <span style={{ display: "block", fontSize: 12, color: "#505D70" }}>
                   {l.pro ? (
                     <Link href={`/marche/pro/${l.pro.slug}`} style={{ color: "#0B2559", fontWeight: 700 }}>{l.pro.name}</Link>
                   ) : "—"}
@@ -145,7 +145,7 @@ export default function AdminMarche() {
                     {r}
                   </button>
                 ))}
-                <button type="button" onClick={() => setRemoving(null)} style={{ padding: 9, borderRadius: 10, border: "none", background: "#F1F5F9", color: "#475569", fontWeight: 700, cursor: "pointer" }}>Annuler</button>
+                <button type="button" onClick={() => setRemoving(null)} style={{ padding: 9, borderRadius: 10, border: "none", background: "#F1F5F9", color: "#3B4658", fontWeight: 700, cursor: "pointer" }}>Annuler</button>
               </div>
             ) : (
               <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>

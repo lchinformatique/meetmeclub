@@ -9,7 +9,7 @@
   --red: #e10600;
   --red-soft: #fff1f0;
   --ink: #0f172a;
-  --muted: #64748b;
+  --muted: #505D70;
   --line: #e7ebf3;
   --bg: #f4f6fb;
   --online: #12b76a;
@@ -132,7 +132,7 @@
   border-radius: 999px;
   border: 1px solid var(--line);
   background: #fff;
-  color: #475569;
+  color: #3B4658;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -433,7 +433,7 @@
 
 .memberBio {
   font-size: 12.5px;
-  color: #475569;
+  color: #3B4658;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -778,7 +778,7 @@
   padding: 5px 12px;
   border-radius: 10px;
   background: #fff;
-  color: #475569;
+  color: #3B4658;
   font-size: 12px;
   font-weight: 700;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -922,7 +922,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #94a3b8;
+  background: #78859A;
   animation: typing 1.2s infinite ease-in-out;
 }
 
@@ -1461,7 +1461,7 @@
   border-radius: 50%;
   border: none;
   background: #f1f4fa;
-  color: #475569;
+  color: #3B4658;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1492,7 +1492,7 @@
   text-align: center;
   font-size: 14px;
   line-height: 1.55;
-  color: #475569;
+  color: #3B4658;
 }
 
 .formError {
@@ -1673,7 +1673,7 @@
 
 .rulesList li {
   font-size: 13.5px;
-  color: #475569;
+  color: #3B4658;
 }
 
 .rulesList strong {

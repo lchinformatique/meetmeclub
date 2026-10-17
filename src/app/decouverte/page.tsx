@@ -319,7 +319,7 @@ export default function DecouvertePage() {
                 <h2 style={{ fontSize: "clamp(1.6rem, 4vw, 2.3rem)", fontWeight: 800, color: "#0B2559", marginTop: "6px" }}>
                   Nos 4 Packs de Rendez-vous Clé en Main
                 </h2>
-                <p style={{ fontSize: "14px", color: "#64748B", maxWidth: "600px", margin: "10px auto 0" }}>
+                <p style={{ fontSize: "14px", color: "#505D70", maxWidth: "600px", margin: "10px auto 0" }}>
                   Choisissez une formule selon vos attentes. Le club s&apos;occupe de la réservation et de l&apos;accueil pour que vous n&apos;ayez qu&apos;à profiter de l&apos;instant.
                 </p>
               </div>
@@ -392,9 +392,9 @@ export default function DecouvertePage() {
                       {pack.name}
                     </div>
                     <div style={{ fontSize: "26px", fontWeight: 800, color: pack.color, marginBottom: "8px" }}>
-                      {pack.price} <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748B" }}>FCFA</span>
+                      {pack.price} <span style={{ fontSize: "13px", fontWeight: 600, color: "#505D70" }}>FCFA</span>
                     </div>
-                    <p style={{ fontSize: "13px", color: "#64748B", lineHeight: 1.4, marginBottom: "16px", minHeight: "36px" }}>
+                    <p style={{ fontSize: "13px", color: "#505D70", lineHeight: 1.4, marginBottom: "16px", minHeight: "36px" }}>
                       {pack.desc}
                     </p>
                     <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
@@ -634,7 +634,7 @@ export default function DecouvertePage() {
               ✓ Profils certifiés
             </span>
           </div>
-          <p style={{ color: "#475569", fontSize: "15px", margin: 0, lineHeight: 1.5 }}>
+          <p style={{ color: "#3B4658", fontSize: "15px", margin: 0, lineHeight: 1.5 }}>
             Faites des rencontres selon vos envies : partage de passions, discussions amicales, ou rendez-vous en toute sérénité.
           </p>
         </div>
@@ -702,7 +702,7 @@ export default function DecouvertePage() {
             />
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", color: "#475569" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", color: "#3B4658" }}>
             <span>
               <strong style={{ color: "#0F172A" }}>{filtered.length}</strong> profil(s) visible(s)
             </span>
@@ -782,7 +782,7 @@ export default function DecouvertePage() {
             <h3 style={{ fontSize: "18px", color: "#0F172A", marginBlock: "10px 4px", fontWeight: 700 }}>
               Aucun profil trouvé
             </h3>
-            <p style={{ fontSize: "14px", color: "#64748B", marginBottom: "16px" }}>
+            <p style={{ fontSize: "14px", color: "#505D70", marginBottom: "16px" }}>
               Essayez de réinitialiser vos critères de recherche.
             </p>
           </div>
@@ -967,7 +967,7 @@ export default function DecouvertePage() {
                           transition: "transform 0.15s ease",
                         }}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill={likedIds.has(profile.id) ? "#E10600" : "none"} stroke={likedIds.has(profile.id) ? "#E10600" : "#64748B"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={likedIds.has(profile.id) ? "#E10600" : "none"} stroke={likedIds.has(profile.id) ? "#E10600" : "#505D70"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                       </button>
 
                       {/* Discuter */}
@@ -1313,7 +1313,7 @@ export default function DecouvertePage() {
               Limite du Plan Gratuit atteinte
             </h2>
 
-            <p style={{ fontSize: "15px", color: "#475569", lineHeight: 1.6, marginBottom: "20px" }}>
+            <p style={{ fontSize: "15px", color: "#3B4658", lineHeight: 1.6, marginBottom: "20px" }}>
               Votre Plan Gratuit vous permet d'échanger avec <strong style={{ color: "#0F172A" }}>3 partenaires au choix</strong>.
               {upgradeModal.targetName ? ` Pour contacter ${upgradeModal.targetName} et continuer à discuter librement, ` : " "}
               débloquez le <strong style={{ color: "#0B2E6B" }}>Pass Essentiel (3 000 FCFA / mois)</strong> pour des échanges illimités !
@@ -1364,7 +1364,7 @@ export default function DecouvertePage() {
               >
                 <span>💳 Débloquer en Illimité (3 000 F · Saspay)</span>
               </a>
-              <div style={{ textAlign: "center", fontSize: "12px", color: "#64748B", fontWeight: 600 }}>
+              <div style={{ textAlign: "center", fontSize: "12px", color: "#505D70", fontWeight: 600 }}>
                 📱 Mixx by yas & Moov Money acceptés
               </div>
 
@@ -1402,7 +1402,7 @@ export default function DecouvertePage() {
                 type="button"
                 onClick={() => setUpgradeModal({ open: false })}
                 className="btn btn-ghost"
-                style={{ width: "100%", justifyContent: "center", color: "#64748B", fontSize: "13px" }}
+                style={{ width: "100%", justifyContent: "center", color: "#505D70", fontSize: "13px" }}
               >
                 Fermer
               </button>
@@ -1462,7 +1462,7 @@ export default function DecouvertePage() {
               <h2 style={{ fontSize: "21px", fontWeight: 900, color: "#0B2559", marginBottom: "8px" }}>
                 Vérification d&apos;identité obligatoire
               </h2>
-              <p style={{ fontSize: "14px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontSize: "14px", color: "#505D70", margin: 0, lineHeight: 1.5 }}>
                 Pour garantir un espace 100% réel, sécurisé et protéger l&apos;image des membres, vous devez certifier votre identité avant d&apos;entrer en contact avec des partenaires.
               </p>
             </div>
@@ -1484,7 +1484,7 @@ export default function DecouvertePage() {
                   <div style={{ fontWeight: 800, fontSize: "14px", color: "#0B2559" }}>
                     Étape 1 : Pièce d&apos;identité officielle
                   </div>
-                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                  <div style={{ fontSize: "12px", color: "#505D70", marginTop: "2px" }}>
                     CNI, Passeport, Permis de conduire, Carte d&apos;électeur, Carte consulaire ou Carte de séjour avec photo.
                   </div>
                 </div>
@@ -1506,7 +1506,7 @@ export default function DecouvertePage() {
                   <div style={{ fontWeight: 800, fontSize: "14px", color: "#0B2559" }}>
                     Étape 2 : Contrôle facial instantané (Selfie)
                   </div>
-                  <div style={{ fontSize: "12px", color: "#64748B", marginTop: "2px" }}>
+                  <div style={{ fontSize: "12px", color: "#505D70", marginTop: "2px" }}>
                     Prenez un selfie net avec votre appareil photo montrant clairement votre visage pour confirmer votre profil.
                   </div>
                 </div>
@@ -1554,7 +1554,7 @@ export default function DecouvertePage() {
                 type="button"
                 onClick={() => setSecurityModalOpen(false)}
                 className="btn btn-ghost"
-                style={{ color: "#64748B", fontSize: "13px", padding: "10px" }}
+                style={{ color: "#505D70", fontSize: "13px", padding: "10px" }}
               >
                 Plus tard
               </button>
@@ -1622,14 +1622,14 @@ export default function DecouvertePage() {
             <h2 style={{ fontSize: "26px", fontWeight: 800, color: "#E10600", marginBottom: "8px" }}>
               C'est un Match !
             </h2>
-            <p style={{ fontSize: "15px", color: "#475569", marginBottom: "24px", lineHeight: 1.5 }}>
+            <p style={{ fontSize: "15px", color: "#3B4658", marginBottom: "24px", lineHeight: 1.5 }}>
               Vous et <strong style={{ color: "#0B2E6B" }}>{matchModal.firstName}</strong> vous êtes likés mutuellement !
             </p>
             <div style={{ display: "flex", gap: "12px" }}>
               <button
                 onClick={() => setMatchModal(null)}
                 className="btn btn-ghost"
-                style={{ flex: 1, color: "#64748B" }}
+                style={{ flex: 1, color: "#505D70" }}
               >
                 Continuer
               </button>
@@ -1682,7 +1682,7 @@ export default function DecouvertePage() {
         <div style={{ fontSize: "16px", fontWeight: 800, color: "#0B2E6B" }}>
           meet <span style={{ color: "#E10600" }}>me</span> club · International
         </div>
-        <p style={{ fontSize: "13px", color: "#64748B", margin: 0 }}>
+        <p style={{ fontSize: "13px", color: "#505D70", margin: 0 }}>
           « Plus qu'une rencontre, un rendez-vous ! » · 🔞 Réservé aux 18 ans et plus
         </p>
       </footer>

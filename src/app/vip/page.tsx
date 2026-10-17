@@ -342,7 +342,7 @@ export default function VipPage() {
 
               {/* Sélection Type de Média */}
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-                <span style={{ fontSize: "12px", color: "#94A3B8", fontWeight: 700 }}>Ajouter un média :</span>
+                <span style={{ fontSize: "12px", color: "#78859A", fontWeight: 700 }}>Ajouter un média :</span>
 
                 <button
                   type="button"
@@ -464,7 +464,7 @@ export default function VipPage() {
                   onClick={() => setShowForm(false)}
                   style={{
                     background: "transparent",
-                    color: "#94A3B8",
+                    color: "#78859A",
                     border: "none",
                     padding: "10px 18px",
                     fontWeight: 600,
@@ -533,7 +533,7 @@ export default function VipPage() {
               Rejoignez le Club VIP pour participer
             </h2>
 
-            <p style={{ fontSize: "14px", color: "#94A3B8", lineHeight: 1.6, maxWidth: "540px", margin: "0 auto 20px" }}>
+            <p style={{ fontSize: "14px", color: "#78859A", lineHeight: 1.6, maxWidth: "540px", margin: "0 auto 20px" }}>
               Le Mur VIP permet aux membres d&apos;échanger librement, de publier leurs articles, photos et vidéos, et de bénéficier des <strong>Appels audio et vidéo WhatsApp en direct</strong> avec tous les membres de la plateforme.
             </p>
 
@@ -643,7 +643,7 @@ export default function VipPage() {
                         VIP
                       </span>
                     </div>
-                    <span style={{ fontSize: "12px", color: "#94A3B8" }}>
+                    <span style={{ fontSize: "12px", color: "#78859A" }}>
                       {post.authorPseudo || "@membre_vip"}
                     </span>
                   </div>
