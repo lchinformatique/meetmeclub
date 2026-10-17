@@ -44,23 +44,25 @@ export async function GET(req: NextRequest) {
       : admin.from("users").select("id, email, phone, status, role, dateOfBirth, createdAt").limit(5000),
     statsOnly
       ? Promise.resolve({ data: [] as any[] })
-      : // Uniquement les photos hébergées (http) : les anciennes photos stockées en texte
-        // brut pèsent plusieurs Mo chacune et rendaient la page très lente
-        admin.from("profile_photos").select("profileId, url, isMain").neq("status", "COVER").like("url", "http%").limit(8000),
+      : // Identifiants seulement (jamais le contenu) : chaque photo se charge ensuite à part,
+        // via /api/dashboard/photo, quand elle apparaît à l'écran → liste légère et rapide
+        admin.from("profile_photos").select("id, profileId, isMain, order").neq("status", "COVER").limit(10000),
   ]);
 
   const userById = new Map((users || []).map((u: any) => [u.id, u]));
-  const photosByProfile = new Map<string, Array<{ url: string; isMain: boolean }>>();
+  const photosByProfile = new Map<string, Array<{ url: string; isMain: boolean; order: number }>>();
   for (const ph of photos || []) {
     const list = photosByProfile.get(ph.profileId) || [];
-    list.push({ url: ph.url, isMain: Boolean(ph.isMain) });
+    list.push({ url: `/api/dashboard/photo?id=${encodeURIComponent(ph.id)}`, isMain: Boolean(ph.isMain), order: ph.order || 0 });
     photosByProfile.set(ph.profileId, list);
   }
 
   const now = Date.now();
   const members = (profiles || []).map((p: any) => {
     const u: any = userById.get(p.userId) || {};
-    const memberPhotos = (photosByProfile.get(p.id) || []).sort((a, b) => Number(b.isMain) - Number(a.isMain));
+    const memberPhotos = (photosByProfile.get(p.id) || []).sort(
+      (a, b) => Number(b.isMain) - Number(a.isMain) || a.order - b.order
+    );
     const merged = { ...p, email: u.email, createdAt: p.createdAt || u.createdAt };
     const status = getSubscriptionStatus(merged);
     let age: number | null = null;
