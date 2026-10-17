@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s | Meet Me Club",
   },
   description:
-    "Meet Me Club est la plateforme de rencontres pour adultes au Togo. Rencontrez, échangez et partagez des moments inoubliables dans des lieux soigneusement sélectionnés à Lomé.",
+    "Rencontrez des célibataires vérifiés à Lomé : chat privé, appels vidéo et vrais rendez-vous dans les meilleurs lieux. Inscription gratuite, réservée aux 18 ans et plus.",
   applicationName: "Meet Me Club",
   keywords: ["rencontres Togo", "rencontres Lomé", "dating Afrique", "rendez-vous Lomé", "meet me club"],
   authors: [{ name: "Meet Me Club" }],
@@ -21,15 +21,15 @@ export const metadata: Metadata = {
     locale: "fr_TG",
     url: "https://www.meetmeclub.net",
     siteName: "Meet Me Club",
-    title: "Meet Me Club — Plus qu'une rencontre, un rendez-vous !",
+    title: "Meet Me Club 💞 Plus qu'une rencontre, un rendez-vous !",
     description:
-      "La plateforme de rencontres sérieuses au Togo. Réservez votre rendez-vous dans les meilleurs lieux de Lomé.",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
+      "Des célibataires vérifiés t'attendent à Lomé. Discute en privé, appelle en vidéo, rencontre-les pour de vrai. Inscription gratuite en 1 minute.",
+    // Image d'aperçu : src/app/opengraph-image.jpg (logo + slogan + couple)
   },
   twitter: {
     card: "summary_large_image",
-    title: "Meet Me Club",
-    description: "Plus qu'une rencontre, un rendez-vous !",
+    title: "Meet Me Club 💞 Plus qu'une rencontre, un rendez-vous !",
+    description: "Des célibataires vérifiés t'attendent à Lomé. Inscription gratuite en 1 minute.",
   },
   manifest: "/manifest.json",
   icons: {
