@@ -1856,3 +1856,11 @@ p, span, h1, h2, h3, h4, h5, h6, a, label, button, li, div {
   }
 }
 
+
+/* Photos : visibles et agrandissables, mais pas d'« Enregistrer l'image » à l'appui long (iPhone / Android)
+   ni de glisser-déposer pour les télécharger */
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}

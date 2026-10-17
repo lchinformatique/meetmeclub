@@ -859,9 +859,6 @@ export default function DecouvertePage() {
                       )}
                     </div>
 
-                    {/* Watermark de confidentialité */}
-                    <span className="secure-watermark">Meet Me Club • Confidentiel</span>
-
                     {/* Partner Contacted Status Badge */}
                     {isAlreadyContacted && (
                       <div style={{ position: "absolute", top: "12px", left: "12px" }}>

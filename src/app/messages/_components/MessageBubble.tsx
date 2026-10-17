@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { Check, CheckCheck, Clock, MapPin, Pause, Phone, PhoneMissed, Play, Video, AlertCircle } from "lucide-react";
 import styles from "../messages.module.css";
 import { formatBubbleTime, formatSeconds, type ChatMessage } from "../_lib/chat-utils";
-import { Watermark } from "./Modals";
 
 // Liens vers le site (annonces du Marché, vitrines…) rendus cliquables ; les autres restent du texte
 const SITE_LINK = /(https?:\/\/(?:www\.)?meetmeclub\.net(\/[^\s]*)?)/g;
@@ -166,7 +165,6 @@ export default function MessageBubble({
           <button type="button" className={styles.bubbleImageBtn} onClick={() => onOpenImage(msg.imageUrl!)}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={msg.imageUrl} alt="Photo partagée" className={styles.bubbleImage} loading="lazy" draggable={false} />
-            {!mine && <Watermark />}
           </button>
         )}
         {msg.videoUrl && <video src={msg.videoUrl} controls playsInline className={styles.bubbleImage} />}
