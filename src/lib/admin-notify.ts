@@ -34,7 +34,9 @@ async function sendAdminEmail(subject: string, html: string) {
   try {
     const { Resend } = await import("resend");
     const { error } = await new Resend(apiKey).emails.send({
-      from: process.env.EMAIL_FROM || "Meet Me Club <noreply@meetmeclub.net>",
+      // Adresse d'envoi de Resend : livre toujours au propriétaire du compte Resend
+      // (lchinformatique@gmail.com), même si le domaine meetmeclub.net n'est pas encore validé
+      from: process.env.ADMIN_EMAIL_FROM || "Meet Me Club <onboarding@resend.dev>",
       to,
       subject,
       html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;border-radius:16px;border:1px solid #E2E8F0">
