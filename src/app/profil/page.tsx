@@ -201,6 +201,17 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
     });
   }
 
+  // Administrateur : nombre de paiements en attente de validation
+  const { isAdminSession } = await import("@/lib/admin-auth");
+  const isAdmin = await isAdminSession(session);
+  let pendingPayments = 0;
+  if (isAdmin) {
+    try {
+      const { listActivationRequests } = await import("@/lib/payments-server");
+      pendingPayments = (await listActivationRequests()).length;
+    } catch {}
+  }
+
   const planInfo = PLAN_LIMITS[profile.plan] || PLAN_LIMITS.FREE;
   const contactedCount = profile.partnersContacted?.length || 0;
   const maxPartners = planInfo.maxPartners;
@@ -299,6 +310,36 @@ export default async function ProfilPage({ searchParams }: { searchParams?: Prom
           initialStatus={getSubscriptionStatus(profile)}
           profile={profile}
         />
+
+        {/* Administrateur : paiements à valider (tentatives SasPay des membres) */}
+        {isAdmin && (
+          <Link
+            href="/admin/paiements"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              marginBottom: "16px",
+              padding: "16px 18px",
+              borderRadius: "16px",
+              background: pendingPayments > 0 ? "linear-gradient(135deg, #E10600 0%, #B30500 100%)" : "linear-gradient(135deg, #0B2559 0%, #163B8A 100%)",
+              color: "white",
+              textDecoration: "none",
+              boxShadow: "0 10px 26px rgba(11,37,89,0.25)",
+            }}
+          >
+            <span style={{ fontSize: "26px" }}>💳</span>
+            <span style={{ flex: 1 }}>
+              <strong style={{ display: "block", fontSize: "16px" }}>
+                {pendingPayments > 0 ? `${pendingPayments} paiement(s) à valider` : "Paiements des membres"}
+              </strong>
+              <span style={{ fontSize: "13px", opacity: 0.9 }}>
+                Comparez avec l&apos;e-mail SasPay puis validez pour activer le pass.
+              </span>
+            </span>
+            <ChevronRight size={22} />
+          </Link>
+        )}
 
         {/* Membres VIP : vérification d'identité requise pour le badge VIP vérifié */}
         {profile.plan === "VIP" && !(profile.idDocumentVerified && profile.selfieVerified) && (

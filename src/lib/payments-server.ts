@@ -120,6 +120,14 @@ export async function activatePlan(userId: string, plan: PaidPlan, opts: { email
     saveProfile({ userId, plan, subscriptionStartedAt: startedAt, subscriptionExpiresAt: expiresAt });
   } catch {}
   await closeIntents(userId).catch(() => {});
+  // Demandes en attente de ce membre : traitées (paiement confirmé ou validé)
+  await getSupabaseAdmin()
+    .from("notifications")
+    .update({ readAt: new Date().toISOString() })
+    .eq("userId", userId)
+    .eq("type", "ACTIVATION_REQUEST")
+    .is("readAt", null)
+    .then(() => null, () => null);
 
   // Historique (best effort)
   try {
@@ -282,7 +290,14 @@ export async function closeActivationRequest(requestId: string) {
 }
 
 /** Prévient les administrateurs : notification téléphone + e-mail (si ADMIN_NOTIFY_EMAIL est défini) */
-export async function notifyAdminsOfRequest(req: { userId: string; plan: PaidPlan; phone?: string; reference?: string }) {
+export async function notifyAdminsOfRequest(req: {
+  userId: string;
+  plan: PaidPlan;
+  phone?: string;
+  reference?: string;
+  /** true = le membre vient de lancer le paiement SasPay (pas encore confirmé) */
+  attempt?: boolean;
+}) {
   const admin = getSupabaseAdmin();
   const { getProfileFromSupabase } = await import("./supabase-server");
   const { sendPushToUser } = await import("./push-server");
@@ -297,8 +312,10 @@ export async function notifyAdminsOfRequest(req: { userId: string; plan: PaidPla
     adminIds.map((id) =>
       sendPushToUser(id, {
         kind: "message",
-        title: `💳 Paiement à valider : ${label}`,
-        body: `${who} · ${req.phone || req.reference || "sans référence"} — touchez pour valider`,
+        title: req.attempt ? `💳 Tentative de paiement : ${label}` : `💳 Paiement à valider : ${label}`,
+        body: req.attempt
+          ? `${who} paie via SasPay${req.phone ? ` (${req.phone})` : ""}. Validez dès réception de l'e-mail SasPay.`
+          : `${who} · ${req.phone || req.reference || "sans référence"} — touchez pour valider`,
         url: "/admin/paiements",
         tag: "activation-request",
       })
