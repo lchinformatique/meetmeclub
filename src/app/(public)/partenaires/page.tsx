@@ -128,7 +128,7 @@ export default function PartenairesPage() {
                   <input type="text" className="form-input" placeholder="Ex : Abidjan, Côte d'Ivoire" required />
                 </div>
                 <div>
-                  <label className="form-label">Numéro de téléphone (WhatsApp) *</label>
+                  <label className="form-label">Numéro de téléphone *</label>
                   <input type="tel" className="form-input" placeholder="Numéro avec l'indicatif du pays" required />
                 </div>
               </div>

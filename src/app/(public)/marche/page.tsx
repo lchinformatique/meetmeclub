@@ -1,6 +1,6 @@
 // src/app/(public)/marche/page.tsx
 // Le Marché Meet Me Club : annonces des pros et particuliers, classées par catégorie.
-// Visible de tous (même sans compte) ; les contacts WhatsApp / Facebook sont réservés aux membres.
+// Visible de tous (même sans compte) ; le contact se fait uniquement par la messagerie interne.
 
 import type { Metadata } from "next";
 import Link from "next/link";

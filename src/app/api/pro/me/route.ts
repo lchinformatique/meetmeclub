@@ -67,21 +67,17 @@ export async function PUT(req: NextRequest) {
     const name = clean(body.name, 60);
     if (!name || name.length < 2) return NextResponse.json({ error: "Indiquez le nom de votre marque ou activité." }, { status: 400 });
     const activity = typeof body.activity === "string" && ACTIVITIES[body.activity] ? body.activity : "OTHER";
-    const whatsapp = clean(body.whatsapp, 25);
-    const facebook = clean(body.facebook, 200);
+    // Téléphone : obligatoire mais PRIVÉ (vu uniquement par l'équipe). Les membres échangent
+    // exclusivement par la messagerie de Meet Me Club : aucun WhatsApp / Facebook / site affiché.
     const phone = clean(body.phone, 25);
-    if (!whatsapp && !facebook && !phone) {
-      return NextResponse.json({ error: "Ajoutez au moins un contact : WhatsApp, Facebook ou téléphone." }, { status: 400 });
+    if (!phone || phone.replace(/\D/g, "").length < 8) {
+      return NextResponse.json({ error: "Indiquez le numéro de téléphone de votre activité (visible uniquement par l'équipe)." }, { status: 400 });
     }
     const country = typeof body.country === "string" && COUNTRIES.some((c) => c.iso === body.country) ? body.country : null;
     const city = clean(body.city, 60);
     const address = clean(body.address, 160);
     if (!country || !city || !address || address.length < 5) {
       return NextResponse.json({ error: "Indiquez le pays, la ville et l'adresse de votre activité." }, { status: 400 });
-    }
-    const website = clean(body.website, 200);
-    if (website && !/^https?:\/\//i.test(website)) {
-      return NextResponse.json({ error: "Le site web doit commencer par https://" }, { status: 400 });
     }
 
     const existing = await getProByUser(session.userId);
@@ -93,10 +89,10 @@ export async function PUT(req: NextRequest) {
       city,
       country,
       address,
-      whatsapp,
-      facebook,
+      whatsapp: null,
+      facebook: null,
       phone,
-      website,
+      website: null,
       updatedAt: now,
     };
     // Images envoyées en JPEG (data URL) ; null = supprimer

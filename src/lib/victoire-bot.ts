@@ -95,7 +95,7 @@ export function getVictoireReply(userMessage: string, mediaType?: "image" | "aud
   // Numéro / contact
   if (has("numero", "whatsapp", "telephone", "contact", "support", "aide")) {
     return reply(
-      "Pour parler à l'équipe Meet Me Club, utilisez la page Contact ou le bouton d'aide en bas de l'écran. Entre membres, échangez d'abord sur la messagerie du club : elle est privée et sécurisée."
+      "Pour parler à l'équipe Meet Me Club, utilisez la page Contact ou le bouton d'aide en bas de l'écran. Entre membres et avec les pros du Marché, tous les échanges se font uniquement sur la messagerie privée du club : ne partagez pas votre WhatsApp ni votre numéro."
     );
   }
 

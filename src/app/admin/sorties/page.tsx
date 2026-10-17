@@ -1,7 +1,7 @@
 "use client";
 // src/app/admin/sorties/page.tsx
 // Sorties à confirmer (administrateur) : les deux membres ont accepté ; l'administrateur contacte
-// le lieu (WhatsApp / téléphone), négocie, puis confirme ou refuse. Les membres sont prévenus.
+// le lieu (messagerie interne / téléphone), négocie, puis confirme ou refuse. Les membres sont prévenus.
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -13,7 +13,7 @@ interface AdminSortie {
   proposer: { userId: string; firstName: string; pseudo?: string; photo?: string };
   guest: { userId: string; firstName: string; pseudo?: string; photo?: string };
   venue: { title?: string; proName?: string; address?: string; city?: string; country?: string; photo?: string | null } | null;
-  pro: { slug: string; name: string; whatsapp?: string; phone?: string; facebook?: string; address?: string; city?: string; country?: string } | null;
+  pro: { userId: string; slug: string; name: string; phone?: string; address?: string; city?: string; country?: string } | null;
   listingId: string | null;
   pack: string;
   price: number | null;
@@ -22,12 +22,6 @@ interface AdminSortie {
   status: string;
   statusLabel: string;
   teamNote?: string | null;
-}
-
-function waLink(num?: string, text?: string) {
-  if (!num) return null;
-  const digits = num.replace(/\D/g, "").replace(/^00/, "");
-  return digits.length >= 8 ? `https://wa.me/${digits}?text=${encodeURIComponent(text || "")}` : null;
 }
 
 export default function AdminSorties() {
@@ -126,7 +120,8 @@ export default function AdminSorties() {
         {items?.map((s) => {
           const when = new Date(s.scheduledAt).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
           const msg = `Bonjour ${s.pro?.name || ""}, ici l'équipe Meet Me Club. Nous souhaitons réserver pour 2 personnes le ${when} (pack ${s.pack}) suite à votre annonce « ${s.venue?.title || ""} ». Est-ce disponible ?`;
-          const wa = waLink(s.pro?.whatsapp, msg);
+          // Tous les échanges passent par la messagerie interne, y compris avec les lieux
+          const chatHref = s.pro ? `/messages?contact=${encodeURIComponent(s.pro.userId)}&message=${encodeURIComponent(msg)}` : null;
           return (
             <div key={s.id} style={{ background: "#fff", borderRadius: 18, padding: 14, boxShadow: "0 4px 14px rgba(11,37,89,0.06)", display: "grid", gap: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
@@ -149,10 +144,10 @@ export default function AdminSorties() {
 
               {s.pro && (
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {wa && (
-                    <a href={wa} target="_blank" rel="noopener noreferrer" style={{ flex: 1, minWidth: 140, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: 10, borderRadius: 10, background: "#25D366", color: "#fff", fontWeight: 800, textDecoration: "none" }}>
-                      <MessageCircle size={16} /> WhatsApp du lieu
-                    </a>
+                  {chatHref && (
+                    <Link href={chatHref} style={{ flex: 1, minWidth: 140, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: 10, borderRadius: 10, background: "#2F4A8A", color: "#fff", fontWeight: 800, textDecoration: "none" }}>
+                      <MessageCircle size={16} /> Écrire au lieu (messagerie)
+                    </Link>
                   )}
                   {s.pro.phone && (
                     <a href={`tel:${s.pro.phone.replace(/\s/g, "")}`} style={{ flex: 1, minWidth: 140, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: 10, borderRadius: 10, background: "#0B2559", color: "#fff", fontWeight: 800, textDecoration: "none" }}>

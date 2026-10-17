@@ -1033,7 +1033,7 @@ export default function ProfilEditPage() {
                   marginBottom: "8px",
                 }}
               >
-                Numéro de téléphone WhatsApp / Appel
+                Numéro de téléphone
               </label>
 
               <PhoneField id="phone-input-field" value={form.phone} defaultCountry={form.country || null} onChange={(phone) => setForm((prev) => ({ ...prev, phone }))} />

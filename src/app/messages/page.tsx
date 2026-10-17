@@ -51,6 +51,7 @@ function MessagesApp() {
   const searchParams = useSearchParams();
   const convParam = searchParams.get("conv");
   const contactParam = searchParams.get("contact") || searchParams.get("user");
+  const draftParam = (searchParams.get("message") || "").slice(0, 500);
 
   const rt = useRealtime();
 
@@ -773,6 +774,8 @@ function MessagesApp() {
                 </button>
               )}
               <Composer
+                key={activeConv.id}
+                initialDraft={activeConv.participantId === contactParam ? draftParam : undefined}
                 blocked={accessExpired && activeConv.participantId !== VICTOIRE_ID}
                 onBlocked={() => setExpiredOpen(true)}
                 onSendText={(text) => sendMessage(text)}

@@ -823,7 +823,7 @@ export default function RejoindrePage() {
                     "Réservations de tables prioritaires",
                     "1 consommation offerte / pers. au RDV",
                     "QR code de validation au comptoir",
-                    "Rappels automatiques SMS / WhatsApp",
+                    "Rappels automatiques par notification",
                   ],
                   highlight: false,
                   borderColor: "#CBD5E1",

@@ -396,7 +396,7 @@ export default function OnboardingPage() {
               </div>
 
               <div className="input-group" style={{ marginBottom: "12px" }}>
-                <label htmlFor="phone" className="input-label" style={{ fontWeight: 700, color: "#0F172A" }}>Téléphone (WhatsApp)</label>
+                <label htmlFor="phone" className="input-label" style={{ fontWeight: 700, color: "#0F172A" }}>Téléphone</label>
                 <PhoneField id="phone" value={form.phone} defaultCountry={form.country || null} onChange={(phone) => setForm((f) => ({ ...f, phone }))} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: "12px", marginBottom: "16px" }}>

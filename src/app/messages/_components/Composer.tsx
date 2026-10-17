@@ -20,6 +20,7 @@ export default function Composer({
   onTyping,
   onBlocked,
   blocked,
+  initialDraft,
 }: {
   onSendText: (text: string) => void;
   onSendFile: (file: File) => void;
@@ -28,8 +29,10 @@ export default function Composer({
   onTyping: () => void;
   onBlocked: () => void;
   blocked: boolean;
+  /** Message prérempli (ex. « au sujet de votre annonce… » depuis le Marché) */
+  initialDraft?: string;
 }) {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initialDraft || "");
   const [attachOpen, setAttachOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [locked, setLocked] = useState(false);

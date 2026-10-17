@@ -310,7 +310,7 @@ export default function SubscriptionCountdown({ initialStatus, profile }: Subscr
                 boxShadow: "0 4px 12px rgba(225,6,0,0.30)",
               }}
             >
-              <span>Club VIP (Appels WhatsApp + Feed)</span>
+              <span>Club VIP (Appels + Mur VIP)</span>
               <span style={{ fontSize: "11px", opacity: 0.9 }}>15 000 FCFA / mois</span>
             </a>
           </div>

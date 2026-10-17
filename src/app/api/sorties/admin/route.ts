@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   const proIds = Array.from(new Set((data || []).map((d: any) => d.proId).filter(Boolean)));
   const pros: Record<string, any> = {};
   if (proIds.length) {
-    const { data: ps } = await admin.from("pro_spaces").select("id, slug, name, whatsapp, phone, facebook, address, city, country").in("id", proIds);
+    const { data: ps } = await admin.from("pro_spaces").select("id, userId, slug, name, phone, address, city, country").in("id", proIds);
     (ps || []).forEach((p: any) => (pros[p.id] = p));
   }
   const { count: todo } = await admin.from("date_requests").select("id", { count: "exact", head: true }).eq("status", "WAITING_TEAM");

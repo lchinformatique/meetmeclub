@@ -4,10 +4,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Globe, MapPin, Phone } from "lucide-react";
-import { FacebookIcon, WhatsAppIcon } from "../../_components/BrandIcons";
+import { ChevronLeft, MapPin, MessageCircle } from "lucide-react";
 import { getSession } from "@/lib/session";
-import { ACTIVITIES, facebookLink, getProBySlug, listingsOfPro, whatsappLink } from "@/lib/market";
+import { ACTIVITIES, getProBySlug, listingsOfPro } from "@/lib/market";
 import ListingCard from "../../_components/ListingCard";
 import { countryName } from "@/lib/countries";
 import s from "../../marche.module.css";
@@ -32,8 +31,8 @@ export default async function VitrinePage({ params }: Props) {
   if (!pro || !pro.isActive) notFound();
   const listings = await listingsOfPro(pro.id);
   const loggedIn = Boolean(session?.userId);
-  const wa = whatsappLink(pro.whatsapp, `Bonjour ${pro.name}, je vous contacte via Meet Me Club.`);
-  const fb = facebookLink(pro.facebook);
+  const chatHref = `/messages?contact=${encodeURIComponent(pro.userId)}&message=${encodeURIComponent(`Bonjour ${pro.name}, je vous contacte depuis votre vitrine.`)}`;
+  const isMine = session?.userId === pro.userId;
 
   return (
     <div className={s.page}>
@@ -72,30 +71,18 @@ export default async function VitrinePage({ params }: Props) {
             <h2 style={{ margin: "0 0 4px", fontSize: 17, color: "#0B2559" }}>Contacter {pro.name}</h2>
             {loggedIn ? (
               <div className={s.contactBtns}>
-                {wa && (
-                  <a href={wa} target="_blank" rel="noopener noreferrer" className={s.wa}>
-                    <WhatsAppIcon size={18} /> WhatsApp
-                  </a>
+                {isMine ? (
+                  <p style={{ fontSize: 14, color: "var(--ink-soft)", margin: 0 }}>C&apos;est votre vitrine : les membres vous écrivent dans votre messagerie.</p>
+                ) : (
+                  <Link href={chatHref} className={s.btnNavy} style={{ width: "100%" }}>
+                    <MessageCircle size={18} /> Discuter sur Meet Me Club
+                  </Link>
                 )}
-                {fb && (
-                  <a href={fb} target="_blank" rel="noopener noreferrer" className={s.fb}>
-                    <FacebookIcon size={18} /> Facebook
-                  </a>
-                )}
-                {pro.phone && (
-                  <a href={`tel:${pro.phone.replace(/\s/g, "")}`} className={s.tel}>
-                    <Phone size={18} /> {pro.phone}
-                  </a>
-                )}
-                {pro.website && (
-                  <a href={pro.website} target="_blank" rel="noopener noreferrer" className={s.btnGhost} style={{ width: "100%" }}>
-                    <Globe size={18} /> Site web
-                  </a>
-                )}
+                <p style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: 0, lineHeight: 1.5 }}>🔒 Pour votre sécurité, tous les échanges se font sur la messagerie privée de Meet Me Club.</p>
               </div>
             ) : (
               <div className={s.contactBtns}>
-                <p style={{ fontSize: 14, color: "#475569", margin: 0 }}>Contacts réservés aux membres du club.</p>
+                <p style={{ fontSize: 14, color: "#475569", margin: 0 }}>Rejoignez le club pour écrire à ce membre : tous les échanges se font sur la messagerie privée.</p>
                 <Link href={`/inscription?callbackUrl=/marche/pro/${pro.slug}`} className={s.btn} style={{ width: "100%" }}>
                   Rejoindre gratuitement
                 </Link>

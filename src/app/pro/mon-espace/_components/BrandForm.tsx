@@ -131,22 +131,13 @@ export default function BrandForm({
       <p style={{ margin: 0, fontSize: 12, color: "#64748B" }}>L&apos;adresse de votre activité est affichée sur votre vitrine : transparence et confiance pour les membres.</p>
 
       <div style={{ background: "#F3FAF7", border: "1px solid #CDE9DF", borderRadius: 14, padding: 12, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
-        <strong style={{ fontSize: 14, color: "#166534" }}>Contacts (au moins un) — visibles par les membres connectés</strong>
+        <strong style={{ fontSize: 14, color: "#2E6B5D" }}>Échanges avec les membres</strong>
+        <p style={{ margin: 0, fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
+          Les membres vous écrivent uniquement sur la messagerie privée de Meet Me Club, depuis vos annonces et votre vitrine.
+        </p>
         <div>
-          <label style={label}>Numéro WhatsApp</label>
-          <PhoneField value={form.whatsapp} defaultCountry={form.country || null} onChange={(whatsapp) => setForm((f) => ({ ...f, whatsapp }))} placeholder="Numéro WhatsApp" />
-        </div>
-        <div>
-          <label style={label}>Page Facebook</label>
-          <input style={field} value={form.facebook} onChange={set("facebook")} placeholder="Lien de la page ou nom (ex. hotellebenin)" />
-        </div>
-        <div>
-          <label style={label}>Téléphone</label>
+          <label style={label}>Téléphone de l&apos;activité * (privé, visible uniquement par l&apos;équipe)</label>
           <PhoneField value={form.phone} defaultCountry={form.country || null} onChange={(phone) => setForm((f) => ({ ...f, phone }))} />
-        </div>
-        <div>
-          <label style={label}>Site web</label>
-          <input style={field} value={form.website} onChange={set("website")} placeholder="https://…" />
         </div>
       </div>
 
