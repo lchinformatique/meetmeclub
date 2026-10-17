@@ -4,7 +4,14 @@
 //   https://www.meetmeclub.net/api/payments/saspay-webhook
 
 import { NextRequest, NextResponse } from "next/server";
-import { activatePlan, claimPayment, findMemberByPhone, recordPayment, verifySaspaySignature } from "@/lib/payments-server";
+import {
+  activatePlan,
+  claimPayment,
+  findMemberByIntent,
+  findMemberByPhone,
+  recordPayment,
+  verifySaspaySignature,
+} from "@/lib/payments-server";
 
 export const dynamic = "force-dynamic";
 
@@ -38,8 +45,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, plan: payment?.plan || null, alreadyClaimed: Boolean(payment?.userId) });
     }
 
-    // Numéro du payeur = téléphone d'un membre → activation immédiate
-    const userId = await findMemberByPhone(payment.msisdn);
+    // 1. Numéro du payeur = téléphone d'un membre → activation immédiate
+    // 2. Sinon : le membre qui a touché « Payer » pour ce pass dans les 45 dernières minutes
+    const userId = (await findMemberByPhone(payment.msisdn)) || (await findMemberByIntent(payment.plan));
     if (userId) {
       await claimPayment(payment.id, userId);
       await activatePlan(userId, payment.plan, { paymentRef: payment.reference || payment.id });

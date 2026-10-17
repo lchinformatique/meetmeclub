@@ -119,6 +119,7 @@ export async function activatePlan(userId: string, plan: PaidPlan, opts: { email
   try {
     saveProfile({ userId, plan, subscriptionStartedAt: startedAt, subscriptionExpiresAt: expiresAt });
   } catch {}
+  await closeIntents(userId).catch(() => {});
 
   // Historique (best effort)
   try {
@@ -154,6 +155,52 @@ export async function activatePlan(userId: string, plan: PaidPlan, opts: { email
   } catch {}
 
   return { plan, startedAt, expiresAt };
+}
+
+// ── Intentions de paiement ─────────────────────────────────────
+// Quand un membre touche « Payer », on retient (membre, pass, heure). Si le numéro qui paie
+// n'est pas celui de son profil, le paiement reçu juste après lui est quand même attribué.
+const INTENT_TYPE = "PAYMENT_INTENT";
+const INTENT_WINDOW_MS = 45 * 60 * 1000;
+
+export async function recordPaymentIntent(userId: string, plan: PaidPlan) {
+  const admin = getSupabaseAdmin();
+  await admin.from("notifications").insert({
+    id: `intent_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    userId,
+    type: INTENT_TYPE,
+    title: plan,
+    body: "",
+    createdAt: new Date().toISOString(),
+  });
+}
+
+/** Membre ayant demandé ce pass dans les 45 dernières minutes (un seul candidat, sinon ambigu) */
+export async function findMemberByIntent(plan: PaidPlan, paidAt = Date.now()): Promise<string | null> {
+  const admin = getSupabaseAdmin();
+  const since = new Date(paidAt - INTENT_WINDOW_MS).toISOString();
+  const { data } = await admin
+    .from("notifications")
+    .select("userId, readAt, createdAt")
+    .eq("type", INTENT_TYPE)
+    .eq("title", plan)
+    .is("readAt", null)
+    .gte("createdAt", since)
+    .order("createdAt", { ascending: false })
+    .limit(20);
+  const users = Array.from(new Set((data || []).map((r: any) => r.userId)));
+  return users.length === 1 ? users[0] : null;
+}
+
+/** Intentions consommées une fois le pass activé */
+export async function closeIntents(userId: string) {
+  const admin = getSupabaseAdmin();
+  await admin
+    .from("notifications")
+    .update({ readAt: new Date().toISOString() })
+    .eq("userId", userId)
+    .eq("type", INTENT_TYPE)
+    .is("readAt", null);
 }
 
 /** Rattache un paiement reçu à un membre */

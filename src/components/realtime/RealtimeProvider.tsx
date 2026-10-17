@@ -13,6 +13,7 @@ import { useCallManager, type CallKind, type CallPeer } from "./CallManager";
 import { playMessageChime, unlockAudioOnFirstTouch } from "./tones";
 import { SASPAY_LINKS } from "@/lib/subscription-constants";
 import InactivityLock from "./InactivityLock";
+import Celebration from "./Celebration";
 
 export interface RealtimeMe {
   userId: string;
@@ -104,6 +105,13 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
   const [online, setOnline] = useState<Record<string, PresenceInfo>>({});
   const [unreadByConversation, setUnreadByConversation] = useState<Record<string, number>>({});
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // Animation de félicitations après activation d'un pass
+  const [celebratePlan, setCelebratePlan] = useState<string | null>(null);
+  useEffect(() => {
+    const onCelebrate = (e: Event) => setCelebratePlan((e as CustomEvent).detail?.plan || "ESSENTIAL");
+    window.addEventListener("mmc:celebrate", onCelebrate);
+    return () => window.removeEventListener("mmc:celebrate", onCelebrate);
+  }, []);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const [pushBannerDismissed, setPushBannerDismissed] = useState(true);
   const listeners = useRef(new Set<Listener>());
@@ -249,14 +257,7 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       } else if (event === "plan-activated") {
         // Paiement confirmé par SasPay : le nouveau pass s'affiche immédiatement
         setMe((m) => (m ? { ...m, plan: payload?.plan || m.plan } : m));
-        const toast: Toast = {
-          id: `plan-${Date.now()}`,
-          conversationId: "",
-          title: "Paiement reçu 🎉",
-          body: "Votre pass est activé — touchez pour voir votre profil",
-        };
-        setToasts((prev) => [...prev, toast].slice(-3));
-        setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== toast.id)), 8000);
+        setCelebratePlan(payload?.plan || "ESSENTIAL");
       } else if (event === "message") {
         const convId = payload?.conversationId as string;
         const viewing =
@@ -328,6 +329,13 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       const plan = planByLink[a.href.replace(/\/$/, "")] || planByLink[a.href];
       if (!plan) return;
       e.preventDefault();
+      // Retenir qui paie quel pass : le paiement reçu juste après lui sera attribué automatiquement
+      fetch("/api/payments/intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+        keepalive: true,
+      }).catch(() => {});
       window.open(a.href, "_blank", "noopener");
       router.push(`/paiement/activation?plan=${plan}`);
     };
@@ -492,6 +500,17 @@ export default function RealtimeProvider({ children }: { children: React.ReactNo
       )}
 
       {call.ui}
+
+      {celebratePlan && (
+        <Celebration
+          plan={celebratePlan}
+          onClose={() => {
+            setCelebratePlan(null);
+            // Le site entier se met à jour avec le nouveau statut
+            window.location.href = "/profil";
+          }}
+        />
+      )}
 
       {/* Verrouillage après 30 min d'inactivité (jamais pendant un appel) */}
       <InactivityLock active={Boolean(me)} paused={call.inCall} />

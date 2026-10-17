@@ -1,7 +1,7 @@
 // src/app/(public)/paiement/activation/page.tsx
 "use client";
 
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,6 +18,39 @@ function ActivationContent() {
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [pendingMsg, setPendingMsg] = useState("");
+
+  // Détection automatique : dès que SasPay confirme le paiement (webhook), le pass s'active
+  // tout seul — la page le voit et lance l'animation, sans rien saisir.
+  useEffect(() => {
+    let stopped = false;
+    let initialPlan: string | null = null;
+    const startedAt = Date.now();
+    const check = async () => {
+      if (stopped) return;
+      try {
+        const res = await fetch("/api/subscription/status", { cache: "no-store" });
+        if (res.ok) {
+          const s = await res.json();
+          if (initialPlan === null) initialPlan = s.plan;
+          const justActivated =
+            s.plan !== "FREE" &&
+            (s.plan !== initialPlan || (s.startedAt && Date.now() - new Date(s.startedAt).getTime() < 15 * 60 * 1000));
+          if (justActivated) {
+            stopped = true;
+            setSuccess(true);
+            setSelectedPlan(s.plan);
+            window.dispatchEvent(new CustomEvent("mmc:celebrate", { detail: { plan: s.plan } }));
+            return;
+          }
+        }
+      } catch {}
+      if (Date.now() - startedAt < 10 * 60 * 1000) setTimeout(check, 5000);
+    };
+    check();
+    return () => {
+      stopped = true;
+    };
+  }, []);
 
   // Vérifie le paiement auprès du serveur ; s'il n'est pas encore confirmé par SasPay,
   // réessaie automatiquement toutes les 8 secondes pendant 3 minutes.
@@ -56,10 +89,8 @@ function ActivationContent() {
         setPendingMsg("");
         if (data.plan) setSelectedPlan(data.plan);
         setSuccess(true);
-        // Retour direct sur le profil, où le nouveau plan est affiché
-        setTimeout(() => {
-          window.location.href = `/profil?activated=${data.plan || selectedPlan}`;
-        }, 2500);
+        // Animation de félicitations (puis retour sur le profil avec le nouveau statut)
+        window.dispatchEvent(new CustomEvent("mmc:celebrate", { detail: { plan: data.plan || selectedPlan } }));
         return;
       }
     } catch (err: any) {
