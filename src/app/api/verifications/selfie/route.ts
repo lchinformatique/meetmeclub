@@ -1,16 +1,20 @@
 // src/app/api/verifications/selfie/route.ts
-// GET  /api/verifications/selfie — état de la vérification du membre + geste à reproduire
-// POST /api/verifications/selfie — envoi du selfie pris en direct (contrôlé ensuite par l'administrateur)
+// GET  /api/verifications/selfie — état complet de la vérification du membre (formule, selfie, pièce, vidéo)
+// POST /api/verifications/selfie — envoi du selfie pris en direct (contrôlé ensuite par l'équipe)
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { getSupabaseAdmin } from "@/lib/supabase-server";
 import { isAdminSession } from "@/lib/admin-auth";
+import { getMemberPlan } from "@/lib/member-plan";
 import {
+  DOCUMENT_TYPES,
   GESTURES,
   forgetVerificationCache,
   getVerificationState,
+  isStateVerified,
   randomGesture,
+  randomVideoCode,
   storeSelfie,
 } from "@/lib/verification";
 
@@ -24,30 +28,42 @@ export async function GET() {
 
   try {
     if (await isAdminSession(session)) {
-      return NextResponse.json({ configured: true, status: "APPROVED", isAdmin: true });
+      return NextResponse.json({ configured: true, verified: true, callsAllowed: true, status: "APPROVED", isAdmin: true, plan: "VIP" });
     }
 
-    const state = await getVerificationState(session.userId);
+    const [state, plan] = await Promise.all([getVerificationState(session.userId), getMemberPlan(session)]);
     if (!state.configured) {
-      return NextResponse.json({ configured: false, status: "APPROVED" });
+      return NextResponse.json({ configured: false, verified: true, callsAllowed: true, status: "APPROVED", plan });
     }
 
-    // Nouveau geste imposé tant que le membre n'a rien envoyé (ou après un refus)
-    let gesture = state.gesture;
-    if ((state.status === "NONE" || state.status === "REJECTED") && state.profileId && !gesture) {
+    const admin = getSupabaseAdmin();
+    // Geste imposé (selfie) et code à prononcer (vidéo VIP), tirés au hasard une seule fois par essai
+    let gesture = state.selfie.gesture;
+    if (state.profileId && !gesture && (state.selfie.status === "NONE" || state.selfie.status === "REJECTED")) {
       gesture = randomGesture();
-      await getSupabaseAdmin().from("profiles").update({ verificationGesture: gesture }).eq("id", state.profileId);
+      await admin.from("profiles").update({ verificationGesture: gesture }).eq("id", state.profileId);
+    }
+    let videoCode = state.video.code;
+    if (state.profileId && state.docsConfigured && plan === "VIP" && !videoCode && state.video.status !== "APPROVED") {
+      videoCode = randomVideoCode();
+      await admin.from("profiles").update({ videoCode }).eq("id", state.profileId);
     }
 
+    const verified = isStateVerified(state);
     return NextResponse.json({
       configured: true,
-      status: state.status,
-      gesture,
-      gestureText: gesture ? GESTURES[gesture] : null,
-      note: state.note,
-      submittedAt: state.submittedAt,
-      hasProfilePhoto: state.hasProfilePhoto,
+      docsConfigured: state.docsConfigured,
+      plan,
+      verified,
+      callsAllowed: !state.docsConfigured || state.video.status === "APPROVED",
+      // Compatibilité : « status » = vérifié ou non
+      status: verified ? "APPROVED" : state.selfie.status,
       hasProfile: Boolean(state.profileId),
+      hasProfilePhoto: state.hasProfilePhoto,
+      selfie: { ...state.selfie, gestureText: gesture ? GESTURES[gesture] : null },
+      document: { ...state.document, typeLabel: state.document.type ? DOCUMENT_TYPES[state.document.type] : null },
+      video: { ...state.video, code: videoCode },
+      documentTypes: DOCUMENT_TYPES,
     });
   } catch (error) {
     console.error("[GET /api/verifications/selfie]", error);
@@ -85,8 +101,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    if (state.status === "APPROVED") {
-      return NextResponse.json({ error: "Votre profil est déjà vérifié." }, { status: 400 });
+    if (state.selfie.status === "APPROVED") {
+      return NextResponse.json({ error: "Votre selfie est déjà validé." }, { status: 400 });
     }
 
     const path = await storeSelfie(session.userId, jpeg);
@@ -96,7 +112,7 @@ export async function POST(req: NextRequest) {
       .update({
         verificationStatus: "PENDING",
         verificationSelfiePath: path,
-        verificationGesture: state.gesture || randomGesture(),
+        verificationGesture: state.selfie.gesture || randomGesture(),
         verificationSubmittedAt: now,
         verificationNote: null,
         updatedAt: now,
@@ -105,28 +121,8 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
     forgetVerificationCache(session.userId);
 
-    // Alerte à l'administrateur (téléphone + e-mail)
-    try {
-      const { sendAdminAlert, siteUrl } = await import("@/lib/admin-notify");
-      const { data: p } = await getSupabaseAdmin()
-        .from("profiles")
-        .select("firstName, pseudo")
-        .eq("id", state.profileId)
-        .maybeSingle();
-      const who = `${p?.firstName || "Un membre"}${p?.pseudo ? ` (@${p.pseudo})` : ""}`;
-      await sendAdminAlert({
-        title: "🛡️ Selfie à vérifier",
-        body: `${who} attend la validation de son visage.`,
-        url: "/admin/verifications",
-        tag: "verification",
-        emailSubject: `Selfie à vérifier : ${who}`,
-        emailHtml: `<p><strong>${who}</strong> a envoyé son selfie de vérification.</p>
-          <p>Comparez-le à ses photos de profil, puis validez ou refusez.</p>
-          <p><a href="${siteUrl()}/admin/verifications" style="display:inline-block;background:#0B2559;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Vérifier maintenant</a></p>`,
-      });
-    } catch (alertErr) {
-      console.warn("[selfie alert]", alertErr);
-    }
+    const { alertVerificationToReview } = await import("@/lib/admin-notify");
+    await alertVerificationToReview(state.profileId, "selfie").catch((e: unknown) => console.warn("[selfie alert]", e));
 
     return NextResponse.json({
       success: true,

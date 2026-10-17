@@ -67,7 +67,7 @@ export function getVictoireReply(userMessage: string, mediaType?: "image" | "aud
   // Vérification du visage
   if (has("verif", "selfie", "valid", "visage", "photo", "geste", "attente", "refus")) {
     return reply(
-      "Vérification du profil : 1) ajoutez une photo de profil nette, 2) ouvrez « Vérification » et prenez un selfie en direct en faisant le geste demandé, 3) l'équipe compare le selfie à vos photos. Dès la validation, vous apparaissez dans la découverte et pouvez écrire et appeler les membres. Votre selfie reste privé."
+      "Vérification du profil (menu Profil → Sécurité → « Faire ma vérification ») : en essai gratuit, un selfie en direct avec le geste demandé ; avec un pack 3 000 ou 6 000, une photo de votre pièce d'identité (carte d'identité, passeport, permis, carte d'électeur, carte d'étudiant…) ; en VIP, une courte vidéo qui débloque aussi les appels. Dès la validation, vous apparaissez dans la découverte et pouvez échanger. Tout reste privé."
     );
   }
 

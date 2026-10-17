@@ -6,15 +6,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { sendPushToUser } from "@/lib/push-server";
 import { getProfileByUserId } from "@/lib/db-store";
-import { isMemberVerified, NOT_VERIFIED_ERROR } from "@/lib/verification";
+import { isVideoVerified, VIDEO_REQUIRED_ERROR } from "@/lib/verification";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  if (!(await isMemberVerified(session.userId))) {
-    return NextResponse.json(NOT_VERIFIED_ERROR, { status: 403 });
+  // Appels : vidéo de vérification VIP validée obligatoire
+  if (!(await isVideoVerified(session.userId))) {
+    return NextResponse.json(VIDEO_REQUIRED_ERROR, { status: 403 });
   }
 
   const { targetUserId, callType, kind, conversationId } = await req.json().catch(() => ({}));

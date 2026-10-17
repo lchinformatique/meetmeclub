@@ -26,28 +26,15 @@ interface VerificationItem {
   status: "PENDING" | "APPROVED" | "REJECTED";
 }
 
-const DOCUMENT_TYPES = [
-  { value: "CNI", label: "Carte Nationale d'Identité (CNI)" },
-  { value: "PASSPORT", label: "Passeport International" },
-  { value: "PERMIS", label: "Permis de Conduire" },
-  { value: "ELECTEUR", label: "Carte d'Électeur" },
-  { value: "SEJOUR", label: "Carte de Séjour / Consulaire" },
-  { value: "AUTRE", label: "Autre justificatif officiel avec photo" },
-];
-
 export default function ProfilSecuritePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [selectedDocType, setSelectedDocType] = useState("CNI");
 
   // Upload states
-  const [submittingIdDoc, setSubmittingIdDoc] = useState(false);
-  const [idDocMessage, setIdDocMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // User profile data
   const [phone, setPhone] = useState<string | null>(null);
   const [verifications, setVerifications] = useState<VerificationItem[]>([]);
-  const [idDocSubmitted, setIdDocSubmitted] = useState(false);
   // Vérification du visage (selfie en direct contrôlé par l'équipe) : NONE | PENDING | APPROVED | REJECTED
   const [faceStatus, setFaceStatus] = useState<string>("NONE");
 
@@ -70,9 +57,6 @@ export default function ProfilSecuritePage() {
           setVerifications(data.profile.verifications || []);
           setIsVisible(data.profile.isVisible ?? true);
 
-          if (data.profile.idDocumentSubmitted || data.profile.idDocumentVerified) {
-            setIdDocSubmitted(true);
-          }
         }
       } catch {
         console.error("Erreur de chargement profil");
@@ -83,7 +67,11 @@ export default function ProfilSecuritePage() {
     loadData();
     fetch("/api/verifications/selfie", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d?.status && setFaceStatus(d.status))
+      .then((d) => {
+        if (!d) return;
+        const all = [d.selfie?.status, d.document?.status, d.video?.status];
+        setFaceStatus(d.verified ? "APPROVED" : all.includes("PENDING") ? "PENDING" : all.includes("REJECTED") ? "REJECTED" : "NONE");
+      })
       .catch(() => {});
   }, [router]);
 
@@ -111,51 +99,6 @@ export default function ProfilSecuritePage() {
       setPresenceMsg("Erreur lors de la mise à jour de la présence.");
     } finally {
       setSavingPresence(false);
-    }
-  }
-
-  async function handleIdDocumentUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setSubmittingIdDoc(true);
-    setIdDocMessage(null);
-
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        const fd = new FormData();
-        fd.append("base64", base64);
-        fd.append("documentType", selectedDocType);
-
-        const res = await fetch("/api/verifications/document", {
-          method: "POST",
-          body: fd,
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          setIdDocMessage({ type: "error", text: data.error || "Erreur de transmission." });
-          return;
-        }
-
-        setIdDocMessage({
-          type: "success",
-          text: `Justificatif (${selectedDocType}) enregistré et validé ! ✓`,
-        });
-        setIdDocSubmitted(true);
-        setVerifications((prev) => [
-          ...prev.filter((v) => v.type !== "ID_CARD"),
-          { type: "ID_CARD", status: "APPROVED" },
-        ]);
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      setIdDocMessage({ type: "error", text: "Erreur lors du téléversement de la pièce." });
-    } finally {
-      setSubmittingIdDoc(false);
-      e.target.value = "";
     }
   }
 
@@ -274,137 +217,28 @@ export default function ProfilSecuritePage() {
               <div style={{ flex: 1 }}>
                 <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 4px" }}>
                   {isFullyVerified
-                    ? "Visage vérifié · Accès au chat actif"
-                    : "Vérification du visage obligatoire"}
+                    ? "Profil vérifié · Accès au chat actif"
+                    : "Vérification du profil obligatoire"}
                 </h2>
                 <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.9)", margin: 0, lineHeight: 1.5 }}>
                   {isFullyVerified
-                    ? "Votre selfie a été comparé à vos photos et validé par l'équipe. Vous apparaissez dans la découverte et pouvez échanger avec les membres."
+                    ? "Votre vérification a été validée. Vous apparaissez dans la découverte et pouvez échanger avec les membres."
                     : faceStatus === "PENDING"
-                    ? "Votre selfie est en cours de vérification par l'équipe. Vous serez prévenu(e) dès la validation."
-                    : "Pour apparaître dans le club et échanger avec les membres, prenez un selfie en direct : l'équipe le compare à vos photos."}
+                    ? "Votre vérification est en cours. Vous serez prévenu(e) dès la validation."
+                    : "Pour apparaître dans le club et échanger avec les membres, faites votre vérification : selfie (essai gratuit), pièce d'identité (packs 3 000 et 6 000) ou vidéo (VIP)."}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* ── Section 1 : Pièce d'identité (CNI / Passeport / etc.) ── */}
-          <div className="card card-padded" style={{ background: "white", borderRadius: "16px", border: "1px solid #E2E8F0" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", marginBottom: "16px" }}>
-              <span style={{ fontSize: "32px" }}>🪪</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                  <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
-                    1. Justificatif de Pièce d&apos;Identité
-                  </h3>
-                  {idDocSubmitted ? (
-                    <span style={{ background: "#DCFCE7", color: "#166534", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>
-                      Validé ✓
-                    </span>
-                  ) : (
-                    <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>
-                      Requis pour le chat
-                    </span>
-                  )}
-                </div>
-                <p style={{ fontSize: "13px", color: "#64748B", margin: "6px 0 0", lineHeight: 1.5 }}>
-                  Toute pièce officielle prouvant l&apos;identité de la personne est acceptée. Document strictement confidentiel, non public, utilisé uniquement pour la certification 18+.
-                </p>
-              </div>
-            </div>
-
-            {/* Sélecteur de type de pièce */}
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#475569", marginBottom: "6px", textTransform: "uppercase" }}>
-                Type de document d&apos;identité
-              </label>
-              <select
-                value={selectedDocType}
-                onChange={(e) => setSelectedDocType(e.target.value)}
-                disabled={idDocSubmitted}
-                style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  borderRadius: "10px",
-                  border: "1.5px solid #CBD5E1",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#0F172A",
-                  background: "white",
-                  outline: "none",
-                }}
-              >
-                {DOCUMENT_TYPES.map((dt) => (
-                  <option key={dt.value} value={dt.value}>
-                    {dt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {idDocMessage && (
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "10px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  marginBottom: "16px",
-                  background: idDocMessage.type === "success" ? "#ECFDF5" : "#FEF2F2",
-                  color: idDocMessage.type === "success" ? "#065F46" : "#991B1B",
-                }}
-              >
-                {idDocMessage.text}
-              </div>
-            )}
-
-            {!idDocSubmitted ? (
-              <label
-                className="btn btn-outline-blue"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  cursor: submittingIdDoc ? "not-allowed" : "pointer",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                }}
-              >
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  style={{ display: "none" }}
-                  onChange={handleIdDocumentUpload}
-                  disabled={submittingIdDoc}
-                />
-                {submittingIdDoc ? (
-                  <>
-                    <Loader2 size={16} className="spin" />
-                    <span>Envoi en cours...</span>
-                  </>
-                ) : (
-                  <>
-                    <FileText size={16} />
-                    <span>Prendre en photo / Téléverser ma pièce d&apos;identité</span>
-                  </>
-                )}
-              </label>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#16A34A", fontSize: "14px", fontWeight: 700 }}>
-                <CheckCircle2 size={18} />
-                <span>Pièce d&apos;identité enregistrée et vérifiée avec succès.</span>
-              </div>
-            )}
-          </div>
-
-          {/* ── Section 2 : Vérification du visage (selfie en direct, page /verification) ── */}
+          {/* ── Section 1 : Vérification du profil (page /verification) ── */}
           <div className="card card-padded" style={{ background: "white", borderRadius: "16px", border: "1px solid #E2E8F0" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", marginBottom: "16px" }}>
               <span style={{ fontSize: "32px" }}>🤳</span>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
-                    2. Vérification du visage (caméra en direct)
+                    1. Vérification de votre profil
                   </h3>
                   {faceStatus === "APPROVED" ? (
                     <span style={{ background: "#DCFCE7", color: "#166534", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>Vérifié ✓</span>
@@ -417,8 +251,9 @@ export default function ProfilSecuritePage() {
                   )}
                 </div>
                 <p style={{ fontSize: "13px", color: "#64748B", margin: "6px 0 0", lineHeight: 1.5 }}>
-                  Selfie pris en direct avec un geste demandé, comparé à vos photos par l&apos;équipe Meet Me Club. Il reste
-                  privé et n&apos;est jamais montré aux autres membres.
+                  Essai gratuit : selfie en direct · Packs 3 000 et 6 000 : pièce d&apos;identité (carte d&apos;identité,
+                  passeport, permis, carte d&apos;électeur, carte d&apos;étudiant…) · VIP : courte vidéo. Tout reste privé et
+                  n&apos;est jamais montré aux autres membres.
                 </p>
               </div>
             </div>
@@ -426,7 +261,7 @@ export default function ProfilSecuritePage() {
             {faceStatus === "APPROVED" ? (
               <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#16A34A", fontSize: "14px", fontWeight: 700 }}>
                 <CheckCircle2 size={18} />
-                <span>Visage vérifié par l&apos;équipe.</span>
+                <span>Profil vérifié.</span>
               </div>
             ) : (
               <Link
@@ -435,7 +270,7 @@ export default function ProfilSecuritePage() {
                 style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 800, fontSize: "14px", textDecoration: "none" }}
               >
                 <Camera size={16} />
-                <span>{faceStatus === "PENDING" ? "Voir l'état de ma vérification" : "Faire ma vérification du visage"}</span>
+                <span>{faceStatus === "PENDING" ? "Voir l'état de ma vérification" : "Faire ma vérification"}</span>
               </Link>
             )}
           </div>
@@ -447,7 +282,7 @@ export default function ProfilSecuritePage() {
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
                   <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
-                    3. Choix de ma Présence dans le Club
+                    2. Choix de ma Présence dans le Club
                   </h3>
                   <span
                     style={{

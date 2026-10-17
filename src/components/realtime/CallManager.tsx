@@ -219,12 +219,12 @@ export function useCallManager(me: CallPeer | null, isOnline: (userId: string) =
         setNotice("Votre navigateur ne permet pas les appels. Utilisez Chrome, Safari ou Firefox à jour.");
         return;
       }
-      // Appels réservés aux membres dont le visage a été vérifié
+      // Appels réservés aux membres VIP dont la vidéo de vérification a été validée
       const verif = await fetch("/api/verifications/selfie", { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
-      if (verif && verif.status !== "APPROVED") {
-        setNotice("Vérification de votre visage requise avant de passer des appels (Profil → Sécurité).");
+      if (verif && verif.callsAllowed === false) {
+        setNotice("Appels débloqués après validation de votre vidéo de vérification VIP (menu Profil → Vérification).");
         return;
       }
       const callId = `${me.userId}-${Date.now()}`;

@@ -19,6 +19,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "@prisma/client": "^6.19.3",
     "@supabase/supabase-js": "^2.117.3",
     "@types/bcryptjs": "^2.4.6",

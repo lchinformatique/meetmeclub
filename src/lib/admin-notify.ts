@@ -70,3 +70,26 @@ export async function alertNewMember(m: { firstName?: string; pseudo?: string; e
       <p><a href="${siteUrl()}/admin/membres" style="display:inline-block;background:#0B2559;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Voir les membres</a></p>`,
   });
 }
+
+/** Vérification à contrôler par l'équipe (selfie, pièce d'identité renvoyée par l'IA, vidéo VIP) */
+export async function alertVerificationToReview(
+  profileId: string,
+  kind: "selfie" | "document" | "video",
+  reason?: string
+) {
+  const { getSupabaseAdmin } = await import("./supabase-server");
+  const { data: p } = await getSupabaseAdmin().from("profiles").select("firstName, pseudo").eq("id", profileId).maybeSingle();
+  const who = `${p?.firstName || "Un membre"}${p?.pseudo ? ` (@${p.pseudo})` : ""}`;
+  const what = { selfie: "son selfie", document: "sa pièce d'identité", video: "sa vidéo VIP" }[kind];
+  const title = { selfie: "🛡️ Selfie à vérifier", document: "🪪 Pièce d'identité à vérifier", video: "🎥 Vidéo VIP à vérifier" }[kind];
+  await sendAdminAlert({
+    title,
+    body: `${who} attend la validation de ${what}.`,
+    url: `/admin/verifications?type=${kind}`,
+    tag: `verification-${kind}`,
+    emailSubject: `${title.replace(/^\S+\s/, "")} : ${who}`,
+    emailHtml: `<p><strong>${who}</strong> a envoyé ${what}.</p>
+      ${reason ? `<p>Contrôle automatique : ${reason}</p>` : ""}
+      <p><a href="${siteUrl()}/admin/verifications?type=${kind}" style="display:inline-block;background:#0B2559;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Vérifier maintenant</a></p>`,
+  });
+}

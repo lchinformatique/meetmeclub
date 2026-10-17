@@ -91,8 +91,8 @@ export default function AdminHome() {
         <Link href="/admin/verifications" style={tile(selfiesPending > 0 ? "linear-gradient(135deg,#E10600,#B30500)" : "linear-gradient(135deg,#0B2559,#163B8A)")}>
           <ShieldCheck size={28} />
           <span style={{ flex: 1 }}>
-            <strong style={{ display: "block", fontSize: 17 }}>{selfiesPending > 0 ? `${selfiesPending} selfie(s) à vérifier` : "Vérification des visages"}</strong>
-            <span style={{ fontSize: 13, opacity: 0.9 }}>Selfies en direct comparés aux photos de profil</span>
+            <strong style={{ display: "block", fontSize: 17 }}>{selfiesPending > 0 ? `${selfiesPending} vérification(s) à faire` : "Vérification des membres"}</strong>
+            <span style={{ fontSize: 13, opacity: 0.9 }}>Selfies, pièces d&apos;identité et vidéos VIP</span>
           </span>
           <ChevronRight size={22} />
         </Link>
