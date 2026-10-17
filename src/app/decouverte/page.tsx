@@ -185,6 +185,7 @@ export default function DecouvertePage() {
   );
 
   function computeAge(profile: ProfileItem): number {
+    if ((profile as any).isBot) return 0;
     if (profile.age) return profile.age;
     if (!profile.user?.dateOfBirth) return 25;
     const dob = new Date(profile.user.dateOfBirth);

@@ -41,8 +41,6 @@ export default function ProfilSecuritePage() {
   const [selectedDocType, setSelectedDocType] = useState("CNI");
 
   // Upload states
-  const [submittingSelfie, setSubmittingSelfie] = useState(false);
-  const [selfieMessage, setSelfieMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [submittingIdDoc, setSubmittingIdDoc] = useState(false);
   const [idDocMessage, setIdDocMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -50,7 +48,8 @@ export default function ProfilSecuritePage() {
   const [phone, setPhone] = useState<string | null>(null);
   const [verifications, setVerifications] = useState<VerificationItem[]>([]);
   const [idDocSubmitted, setIdDocSubmitted] = useState(false);
-  const [selfieSubmitted, setSelfieSubmitted] = useState(false);
+  // Vérification du visage (selfie en direct contrôlé par l'équipe) : NONE | PENDING | APPROVED | REJECTED
+  const [faceStatus, setFaceStatus] = useState<string>("NONE");
 
   // Presence / Visibility state
   const [isVisible, setIsVisible] = useState(true);
@@ -74,9 +73,6 @@ export default function ProfilSecuritePage() {
           if (data.profile.idDocumentSubmitted || data.profile.idDocumentVerified) {
             setIdDocSubmitted(true);
           }
-          if (data.profile.selfieSubmitted || data.profile.selfieVerified) {
-            setSelfieSubmitted(true);
-          }
         }
       } catch {
         console.error("Erreur de chargement profil");
@@ -85,6 +81,10 @@ export default function ProfilSecuritePage() {
       }
     }
     loadData();
+    fetch("/api/verifications/selfie", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.status && setFaceStatus(d.status))
+      .catch(() => {});
   }, [router]);
 
   async function handleTogglePresence(newVal: boolean) {
@@ -111,56 +111,6 @@ export default function ProfilSecuritePage() {
       setPresenceMsg("Erreur lors de la mise à jour de la présence.");
     } finally {
       setSavingPresence(false);
-    }
-  }
-
-  async function handleSelfieUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setSelfieMessage({ type: "error", text: "Veuillez sélectionner un format d'image valide (JPEG ou PNG)." });
-      return;
-    }
-
-    setSubmittingSelfie(true);
-    setSelfieMessage(null);
-
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        const res = await fetch("/api/verifications/selfie", {
-          method: "POST",
-          body: (() => {
-            const fd = new FormData();
-            fd.append("base64", base64);
-            return fd;
-          })(),
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          setSelfieMessage({ type: "error", text: data.error || "Erreur de transmission." });
-          return;
-        }
-
-        setSelfieMessage({
-          type: "success",
-          text: "Contrôle facial réussi ! Selfie validé avec succès ✓",
-        });
-        setSelfieSubmitted(true);
-        setVerifications((prev) => [
-          ...prev.filter((v) => v.type !== "SELFIE"),
-          { type: "SELFIE", status: "APPROVED" },
-        ]);
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      setSelfieMessage({ type: "error", text: "Erreur lors de la capture du selfie." });
-    } finally {
-      setSubmittingSelfie(false);
-      e.target.value = "";
     }
   }
 
@@ -231,7 +181,7 @@ export default function ProfilSecuritePage() {
     );
   }
 
-  const isFullyVerified = idDocSubmitted && selfieSubmitted;
+  const isFullyVerified = faceStatus === "APPROVED";
 
   return (
     <div style={{ minHeight: "100dvh", background: "#F8FAFC" }}>
@@ -324,13 +274,15 @@ export default function ProfilSecuritePage() {
               <div style={{ flex: 1 }}>
                 <h2 style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 4px" }}>
                   {isFullyVerified
-                    ? "Identité Validée · Accès au Chat Actif"
-                    : "Sécurité & Contrôle d'Identité Obligatoire"}
+                    ? "Visage vérifié · Accès au chat actif"
+                    : "Vérification du visage obligatoire"}
                 </h2>
                 <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.9)", margin: 0, lineHeight: 1.5 }}>
                   {isFullyVerified
-                    ? "Votre pièce d'identité et votre selfie facial ont été validés avec succès. Vous pouvez contacter les partenaires et échanger sans restriction."
-                    : "Avant de pouvoir entrer en contact avec un partenaire, vous devez obligatoirement soumettre votre pièce d'identité et un selfie de contrôle facial."}
+                    ? "Votre selfie a été comparé à vos photos et validé par l'équipe. Vous apparaissez dans la découverte et pouvez échanger avec les membres."
+                    : faceStatus === "PENDING"
+                    ? "Votre selfie est en cours de vérification par l'équipe. Vous serez prévenu(e) dès la validation."
+                    : "Pour apparaître dans le club et échanger avec les membres, prenez un selfie en direct : l'équipe le compare à vos photos."}
                 </p>
               </div>
             </div>
@@ -445,122 +397,46 @@ export default function ProfilSecuritePage() {
             )}
           </div>
 
-          {/* ── Section 2 : Contrôle Facial par Selfie ── */}
+          {/* ── Section 2 : Vérification du visage (selfie en direct, page /verification) ── */}
           <div className="card card-padded" style={{ background: "white", borderRadius: "16px", border: "1px solid #E2E8F0" }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", marginBottom: "16px" }}>
               <span style={{ fontSize: "32px" }}>🤳</span>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#0B2559", margin: 0 }}>
-                    2. Contrôle Facial par Selfie (Caméra en direct)
+                    2. Vérification du visage (caméra en direct)
                   </h3>
-                  {selfieSubmitted ? (
-                    <span style={{ background: "#DCFCE7", color: "#166534", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>
-                      Validé ✓
-                    </span>
+                  {faceStatus === "APPROVED" ? (
+                    <span style={{ background: "#DCFCE7", color: "#166534", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>Vérifié ✓</span>
+                  ) : faceStatus === "PENDING" ? (
+                    <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>En cours de vérification</span>
+                  ) : faceStatus === "REJECTED" ? (
+                    <span style={{ background: "#FEE2E2", color: "#991B1B", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>À reprendre</span>
                   ) : (
-                    <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>
-                      Requis pour le chat
-                    </span>
+                    <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: "12px", fontWeight: 800, padding: "3px 10px", borderRadius: "100px" }}>Requis pour échanger</span>
                   )}
                 </div>
                 <p style={{ fontSize: "13px", color: "#64748B", margin: "6px 0 0", lineHeight: 1.5 }}>
-                  Prenez un selfie montrant clairement votre visage pour confirmer que vous êtes bien la personne correspondant à la pièce d&apos;identité. Le selfie de contrôle facial reste privé.
+                  Selfie pris en direct avec un geste demandé, comparé à vos photos par l&apos;équipe Meet Me Club. Il reste
+                  privé et n&apos;est jamais montré aux autres membres.
                 </p>
               </div>
             </div>
 
-            {/* Guide visuel de cadrage */}
-            <div
-              style={{
-                background: "#F1F5F9",
-                borderRadius: "12px",
-                padding: "16px",
-                marginBottom: "16px",
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-              }}
-            >
-              <div
-                style={{
-                  width: "56px",
-                  height: "56px",
-                  borderRadius: "50%",
-                  border: "2px dashed #0B2559",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "24px",
-                  flexShrink: 0,
-                  background: "white",
-                }}
-              >
-                👤
-              </div>
-              <div>
-                <strong style={{ fontSize: "13px", color: "#0F172A", display: "block" }}>
-                  Instructions de contrôle facial
-                </strong>
-                <span style={{ fontSize: "12px", color: "#64748B" }}>
-                  Regardez l&apos;objectif de face, sans lunettes de soleil ni chapeau, avec un bon éclairage.
-                </span>
-              </div>
-            </div>
-
-            {selfieMessage && (
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "10px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  marginBottom: "16px",
-                  background: selfieMessage.type === "success" ? "#ECFDF5" : "#FEF2F2",
-                  color: selfieMessage.type === "success" ? "#065F46" : "#991B1B",
-                }}
-              >
-                {selfieMessage.text}
-              </div>
-            )}
-
-            {!selfieSubmitted ? (
-              <label
-                className="btn btn-primary"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  cursor: submittingSelfie ? "not-allowed" : "pointer",
-                  fontWeight: 800,
-                  fontSize: "14px",
-                }}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  style={{ display: "none" }}
-                  onChange={handleSelfieUpload}
-                  disabled={submittingSelfie}
-                />
-                {submittingSelfie ? (
-                  <>
-                    <Loader2 size={16} className="spin" />
-                    <span>Contrôle facial en cours...</span>
-                  </>
-                ) : (
-                  <>
-                    <Camera size={16} />
-                    <span>Ouvrir l&apos;appareil photo & Faire mon contrôle facial 🤳</span>
-                  </>
-                )}
-              </label>
-            ) : (
+            {faceStatus === "APPROVED" ? (
               <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#16A34A", fontSize: "14px", fontWeight: 700 }}>
                 <CheckCircle2 size={18} />
-                <span>Contrôle facial confirmé et validé.</span>
+                <span>Visage vérifié par l&apos;équipe.</span>
               </div>
+            ) : (
+              <Link
+                href="/verification"
+                className="btn btn-primary"
+                style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: 800, fontSize: "14px", textDecoration: "none" }}
+              >
+                <Camera size={16} />
+                <span>{faceStatus === "PENDING" ? "Voir l'état de ma vérification" : "Faire ma vérification du visage"}</span>
+              </Link>
             )}
           </div>
 

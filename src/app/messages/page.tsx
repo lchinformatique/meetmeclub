@@ -296,7 +296,7 @@ function MessagesApp() {
           lastMessage: "Nouvelle discussion",
           lastMessageAt: new Date().toISOString(),
           unreadCount: 0,
-          isVerified: true,
+          isVerified: member.userId !== VICTOIRE_ID,
         };
       }
       const finalConv = { ...conv, firstName: conv.firstName === "Membre" ? member.firstName : conv.firstName, photoUrl: conv.photoUrl || member.photoUrl || "" };
@@ -421,7 +421,7 @@ function MessagesApp() {
     setMenuOpen(false);
     if (!conv) return;
     if (conv.participantId === VICTOIRE_ID) {
-      setNotice("Victoire est l'hôtesse d'accueil du club : les appels sont disponibles avec les membres.");
+      setNotice("Victoire est l'assistante automatique du club : les appels sont disponibles avec les membres.");
       return;
     }
     if (!isVip) return setVipOpen(true);

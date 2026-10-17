@@ -14,6 +14,7 @@ import {
   sortProfilesByPriorityAndLikes,
 } from "@/lib/db-store";
 import { prisma } from "@/lib/prisma";
+import { asAssistant } from "@/lib/victoire-bot";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +128,22 @@ export async function GET(req: NextRequest) {
       .filter((lp) => lp.isVisible && lp.userId !== session.userId && !known.has(lp.userId))
       .map(fromLocal);
     profiles = [...profiles, ...extraLocal];
+
+    // 4.b Seuls les membres dont le visage a été vérifié par l'administrateur sont affichés.
+    //     Victoire est l'assistante automatique du club : jamais présentée comme membre vérifiée.
+    try {
+      const { getApprovedUserIds } = await import("@/lib/verification");
+      const approved = await getApprovedUserIds();
+      if (approved) profiles = profiles.filter((p) => approved.has(p.userId));
+    } catch (verifErr) {
+      console.warn("[GET /api/profiles] Vérification:", verifErr);
+      profiles = profiles.filter((p) => p.userId === VICTOIRE_ID);
+    }
+    profiles = profiles.map((p) =>
+      p.userId === VICTOIRE_ID
+        ? asAssistant(p)
+        : { ...p, isVerified: true, verifications: [{ type: "SELFIE" }] }
+    );
 
     // 5. Filtres de recherche
     if (gender && ["MALE", "FEMALE", "OTHER"].includes(gender)) profiles = profiles.filter((p) => p.gender === gender);

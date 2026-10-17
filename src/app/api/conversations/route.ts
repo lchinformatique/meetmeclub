@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { getProfileByUserId, getAllProfiles } from "@/lib/db-store";
+import { isMemberVerified, NOT_VERIFIED_ERROR } from "@/lib/verification";
+import { VICTOIRE_ASSISTANT } from "@/lib/victoire-bot";
 
 export const dynamic = "force-dynamic";
 
@@ -162,15 +164,20 @@ export async function GET() {
         result.unshift({
           id: "conv_victoire_welcome",
           participantId: "user_victoire_lome",
-          firstName: "Victoire",
+          firstName: VICTOIRE_ASSISTANT.firstName,
           pseudo: "@victoire_lome",
           photoUrl: "/victoire_profile.jpg",
-          lastMessage: "En ligne à Lomé · Écrivez-lui pour faire connaissance",
+          lastMessage: "Assistante automatique · Vos questions sur le club",
           lastMessageAt: new Date().toISOString(),
           unreadCount: 0,
           isOnline: true,
-          isVerified: true,
+          isVerified: false,
         });
+      }
+
+      // Conversation existante avec Victoire : toujours présentée comme l'assistante automatique
+      for (const c of result) {
+        if (c.participantId === "user_victoire_lome") Object.assign(c, { firstName: VICTOIRE_ASSISTANT.firstName, isVerified: false });
       }
 
       return NextResponse.json({ conversations: result });
@@ -180,14 +187,14 @@ export async function GET() {
           {
             id: "conv_victoire_welcome",
             participantId: "user_victoire_lome",
-            firstName: "Victoire",
+            firstName: VICTOIRE_ASSISTANT.firstName,
             pseudo: "@victoire_lome",
             photoUrl: "/victoire_profile.jpg",
-            lastMessage: "En ligne à Lomé · Écrivez-lui pour faire connaissance",
+            lastMessage: "Assistante automatique · Vos questions sur le club",
             lastMessageAt: new Date().toISOString(),
             unreadCount: 0,
             isOnline: true,
-            isVerified: true,
+            isVerified: false,
           },
         ],
       });
@@ -217,6 +224,11 @@ export async function POST(req: NextRequest) {
       { error: "Vous ne pouvez pas chatter avec vous-même." },
       { status: 400 }
     );
+  }
+
+  // Membre non vérifié : seule l'assistante Victoire reste joignable
+  if (targetUserId !== "user_victoire_lome" && !(await isMemberVerified(session.userId))) {
+    return NextResponse.json(NOT_VERIFIED_ERROR, { status: 403 });
   }
 
 

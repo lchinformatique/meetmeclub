@@ -4,6 +4,7 @@
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { uploadToSupabaseStorage } from "./supabase-storage";
+import { asAssistant } from "./victoire-bot";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -974,7 +975,7 @@ export async function getPublicProfilesFromSupabase(currentUserId?: string) {
 
     // S'assurer que le profil de Victoire Lawson est toujours en tête pour les nouveaux utilisateurs
     if (!formatted.some((p) => p.userId === "user_victoire_lome") && currentUserId !== "user_victoire_lome") {
-      formatted.unshift({
+      formatted.unshift(asAssistant({
         id: "prof_victoire_lome",
         userId: "user_victoire_lome",
         firstName: "Victoire",
@@ -997,7 +998,7 @@ export async function getPublicProfilesFromSupabase(currentUserId?: string) {
         placeOfBirth: "Lomé",
         age: 24,
         isVerified: true,
-      });
+      }));
     }
 
     return formatted;

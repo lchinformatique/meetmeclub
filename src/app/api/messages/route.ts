@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { isMemberVerified, NOT_VERIFIED_ERROR } from "@/lib/verification";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +113,11 @@ export async function POST(req: NextRequest) {
       { error: "Message trop long (max 2000 caractères)" },
       { status: 400 }
     );
+  }
+
+  // Membre non vérifié : seule l'assistante Victoire reste joignable
+  if (!(conversationId === "conv_victoire_welcome" || conversationId.includes("victoire")) && !(await isMemberVerified(session.userId))) {
+    return NextResponse.json(NOT_VERIFIED_ERROR, { status: 403 });
   }
 
   // Si le message est adressé à Victoire, générer la réponse automatique

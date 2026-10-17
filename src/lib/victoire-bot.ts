@@ -1,132 +1,112 @@
 // src/lib/victoire-bot.ts
-// Automated realistic & charming conversational engine for Victoire (@victoire_lome)
+// Victoire est l'ASSISTANTE AUTOMATIQUE de Meet Me Club — pas une vraie personne.
+// Elle est toujours présentée comme telle (nom, bio, aucun badge « vérifié ») et ne répond
+// qu'aux questions pratiques sur le club : vérification, pass, rendez-vous, sécurité.
 
 export const VICTOIRE_USER_ID = "user_victoire_lome";
 
-export function isVictoire(userId?: string, pseudo?: string, firstName?: string): boolean {
-  if (!userId && !pseudo && !firstName) return false;
+/** Présentation affichée partout sur le site (découverte, messagerie, fiche profil) */
+export const VICTOIRE_ASSISTANT = {
+  firstName: "Victoire · Assistante",
+  lastName: "Meet Me Club",
+  profession: "Assistante automatique du club",
+  bio:
+    "🤖 Je suis l'assistante automatique de Meet Me Club, pas une vraie personne. " +
+    "Je réponds 24 h/24 à vos questions sur le club : vérification du profil, pass, rendez-vous et sécurité.",
+  age: undefined as number | undefined,
+  dateOfBirth: undefined as string | undefined,
+  relationshipStatus: undefined as string | undefined,
+  plan: "FREE",
+  likesCount: 0,
+  isBot: true,
+  isVerified: false,
+};
+
+export function isVictoire(userId?: string, pseudo?: string): boolean {
+  if (!userId && !pseudo) return false;
   return (
     userId === VICTOIRE_USER_ID ||
     userId === "prof_victoire_lome" ||
     pseudo?.toLowerCase() === "victoire_lome" ||
-    pseudo?.toLowerCase() === "@victoire_lome" ||
-    firstName?.toLowerCase() === "victoire"
+    pseudo?.toLowerCase() === "@victoire_lome"
   );
 }
 
+/** Remplace l'ancienne présentation de Victoire par celle de l'assistante */
+export function asAssistant<T extends Record<string, any>>(p: T): T {
+  return { ...p, ...VICTOIRE_ASSISTANT, verifications: [] };
+}
+
+const SIGNATURE = "\n\n— Victoire, assistante automatique 🤖";
+
 export function getVictoireReply(userMessage: string, mediaType?: "image" | "audio" | "location"): string {
-  const text = (userMessage || "").toLowerCase().trim();
+  const text = (userMessage || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
+  const has = (...words: string[]) => words.some((w) => text.includes(w));
+  const reply = (s: string) => s + SIGNATURE;
 
-  // 1. Réponse si photo envoyée
-  if (mediaType === "image" || text.includes("photo") || text.includes("📷")) {
-    const photoReplies = [
-      "Waouh, magnifique photo ! Tu as vraiment beaucoup de charme et une très belle énergie ✨",
-      "J'adore cette photo ! C'est super de pouvoir mettre un visage sur nos échanges. Tu as l'air très sympa 😊",
-      "Superbe cliché ! Tu es très élégant. Tu as pris cette photo où à Lomé ?",
-    ];
-    return photoReplies[Math.floor(Math.random() * photoReplies.length)];
+  if (mediaType === "image" || mediaType === "audio") {
+    return reply(
+      "Je suis une assistante automatique : je ne peux pas voir les photos ni écouter les notes vocales. Écrivez-moi votre question en quelques mots et je vous guide."
+    );
+  }
+  if (mediaType === "location") {
+    return reply("Merci ! Pour vos rendez-vous, choisissez de préférence un lieu public et fréquenté de Lomé, et prévenez un proche.");
   }
 
-  // 2. Réponse si localisation partagée
-  if (mediaType === "location" || text.includes("📍") || text.includes("gps") || text.includes("maps")) {
-    return "Super repère ! J'adore ce coin à Lomé, c'est tellement agréable pour se poser et discuter. On pourrait s'y croiser un de ces jours pour un café ou un verre en terrasse 🍹 Qu'en dis-tu ?";
+  // Est-ce une vraie personne ?
+  if (has("robot", "bot", "vraie", "vrai personne", "humain", "reel", "qui es-tu", "qui es tu", "t'es qui")) {
+    return reply(
+      "Je ne suis pas une vraie personne : je suis l'assistante automatique de Meet Me Club. Les autres profils, eux, sont de vrais membres dont le visage a été vérifié par l'équipe."
+    );
   }
 
-  // 3. Réponse si note vocale
-  if (mediaType === "audio" || text.includes("🎙️") || text.includes("vocale")) {
-    return "J'ai bien écouté ta note vocale ! Tu as une voix très douce et chaleureuse, c'est très agréable à écouter 😊";
+  // Vérification du visage
+  if (has("verif", "selfie", "valid", "visage", "photo", "geste", "attente", "refus")) {
+    return reply(
+      "Vérification du profil : 1) ajoutez une photo de profil nette, 2) ouvrez « Vérification » et prenez un selfie en direct en faisant le geste demandé, 3) l'équipe compare le selfie à vos photos. Dès la validation, vous apparaissez dans la découverte et pouvez écrire et appeler les membres. Votre selfie reste privé."
+    );
   }
 
-  // 4. Salutations
-  if (
-    text.match(/\b(salut|bonjour|coucou|hello|bonsoir|hey|hi|yo)\b/) ||
-    text === "cc" ||
-    text === "bjr" ||
-    text === "slt"
-  ) {
-    const greetings = [
-      "Coucou ! Ravie de faire ta connaissance 😊 Comment vas-tu aujourd'hui ? Tu es dans quel quartier à Lomé ?",
-      "Bonjour ! 👋 Ça me fait vraiment plaisir de te lire. Tu as passé une bonne journée ?",
-      "Coucou toi ! Bienvenue sur le club. J'espère que tout va bien pour toi aujourd'hui ! Qu'est-ce qui t'amène sur Meet Me Club ? ✨",
-    ];
-    return greetings[Math.floor(Math.random() * greetings.length)];
+  // Pass / paiement
+  if (has("pass", "prix", "tarif", "payer", "paiement", "abonnement", "vip", "complice", "essentiel", "flooz", "tmoney", "mixx")) {
+    return reply(
+      "Les pass se prennent dans « Tarifs » (paiement mobile sécurisé). Après le paiement, votre pass est activé automatiquement. En cas de souci, contactez le support depuis la page Contact avec la référence de votre paiement."
+    );
   }
 
-  // 5. Compliments
-  if (
-    text.includes("belle") ||
-    text.includes("jolie") ||
-    text.includes("magnifique") ||
-    text.includes("canon") ||
-    text.includes("charme") ||
-    text.includes("beauté") ||
-    text.includes("ravissante") ||
-    text.includes("mignonne")
-  ) {
-    const compliments = [
-      "Oh c'est adorable, merci beaucoup ! 🥰 Tu es très galant. Toi aussi tu as l'air d'être quelqu'un de super gentil. Tu fais quoi dans la vie ?",
-      "C'est très gentil à toi, tu me fais sourire ! 😊 Qu'est-ce qui t'a le plus plu dans mon profil ?",
-      "Merci du fond du cœur ! 🥰 J'aime les personnes attentionnées comme toi. Raconte-moi un peu tes passions !",
-    ];
-    return compliments[Math.floor(Math.random() * compliments.length)];
+  // Rendez-vous
+  if (has("rendez", "rdv", "sortie", "rencontrer", "lieu", "restaurant", "resto", "cafe", "diner")) {
+    return reply(
+      "Pour proposer un rendez-vous à un membre, ouvrez votre conversation avec lui puis le menu « Rendez-vous ». Conseils : un lieu public, en journée ou en début de soirée, et un proche prévenu de votre sortie."
+    );
   }
 
-  // 6. Activité / Métier
-  if (
-    text.includes("tu fais quoi") ||
-    text.includes("travail") ||
-    text.includes("boulot") ||
-    text.includes("profession") ||
-    text.includes("styliste") ||
-    text.includes("mode")
-  ) {
-    return "Je suis styliste et créatrice de mode ici à Lomé ! 👗 J'adore imaginer des pièces uniques et profiter des soirées calmes en bord de mer. Et toi, dans quel domaine travailles-tu ?";
+  // Sécurité
+  if (has("arnaque", "argent", "signaler", "harcel", "danger", "securite", "bloquer", "faux")) {
+    return reply(
+      "Sécurité : n'envoyez jamais d'argent à un membre et ne partagez pas vos codes. Pour signaler un comportement suspect, écrivez au support depuis la page Contact en indiquant le pseudo du membre."
+    );
   }
 
-  // 7. Rencontre / Rendez-vous / Sortie
-  if (
-    text.includes("rencontrer") ||
-    text.includes("rendez-vous") ||
-    text.includes("sortie") ||
-    text.includes("café") ||
-    text.includes("boire") ||
-    text.includes("resto") ||
-    text.includes("dîner") ||
-    text.includes("verre") ||
-    text.includes("voir")
-  ) {
-    return "J'adorerais ! J'aime les personnes spontanées qui savent ce qu'elles veulent. Tu préfères un endroit calme pour discuter ou plutôt un lieu branché avec de la bonne musique ? 🍸";
+  // Numéro / contact
+  if (has("numero", "whatsapp", "telephone", "contact", "support", "aide")) {
+    return reply(
+      "Pour parler à l'équipe Meet Me Club, utilisez la page Contact ou le bouton d'aide en bas de l'écran. Entre membres, échangez d'abord sur la messagerie du club : elle est privée et sécurisée."
+    );
   }
 
-  // 8. Demande de numéro / WhatsApp
-  if (
-    text.includes("numéro") ||
-    text.includes("whatsapp") ||
-    text.includes("téléphone") ||
-    text.includes("numero") ||
-    text.includes("contact")
-  ) {
-    return "On apprend un peu plus à se connaître ici sur le club d'abord, c'est tellement plus convivial et direct ! Mais promis, si le feeling passe bien, on échangera nos numéros très vite 😉 Tu habites vers où à Lomé ?";
+  // Salutations et le reste
+  if (has("salut", "bonjour", "bonsoir", "coucou", "hello", "hey") || ["cc", "bjr", "slt"].includes(text)) {
+    return reply(
+      "Bonjour et bienvenue sur Meet Me Club ! Je suis l'assistante automatique du club. Je peux vous aider sur : la vérification de votre profil, les pass, les rendez-vous et la sécurité. Quelle est votre question ?"
+    );
   }
 
-  // 9. Âge / Présentation
-  if (text.includes("âge") || text.includes("ans") || text.includes("age")) {
-    return "J'ai 24 ans ! Et toi, quel âge as-tu ? 😊";
-  }
-
-  // 10. Quartier / Lomé
-  if (text.includes("lome") || text.includes("lomé") || text.includes("quartier") || text.includes("habite")) {
-    return "Je suis entre Tokoin et Nyékonakpoè ! J'aime beaucoup me promener vers la marina ou la plage de Lomé le soir. Et toi, tu es dans quel quartier ?";
-  }
-
-  // 11. Réponses contextuelles générales et engageantes
-  const generalReplies = [
-    "C'est super intéressant ! Dis-moi, tu cherches quoi comme type de relation sur Meet Me Club ? Une belle rencontre sérieuse ou plutôt des sorties conviviales ? 😊",
-    "J'aime beaucoup ta façon d'échanger ! Tu as des projets sympas prévus pour ce week-end à Lomé ? ✨",
-    "Tout à fait d'accord avec toi ! D'ailleurs, quels sont tes endroits préférés pour te détendre à Lomé ?",
-    "Tu as l'air d'être quelqu'un de très ouvert d'esprit. C'est rare et très agréable ! Dis-moi en plus sur toi 😉",
-    "C'est noté ! Et si on devait organiser une sortie idéale selon toi, ce serait quoi le programme ? 💖",
-  ];
-
-  return generalReplies[Math.floor(Math.random() * generalReplies.length)];
+  return reply(
+    "Je suis l'assistante automatique du club et je réponds aux questions pratiques. Écrivez par exemple « vérification », « pass », « rendez-vous » ou « sécurité ». Pour une autre demande, contactez l'équipe depuis la page Contact."
+  );
 }

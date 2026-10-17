@@ -74,6 +74,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import SecurityProtectionProvider from "@/components/SecurityProtectionProvider";
 import RealtimeProvider from "@/components/realtime/RealtimeProvider";
+import VerificationGate from "@/components/VerificationGate";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -98,6 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <SecurityProtectionProvider>
           <RealtimeProvider>
+            <VerificationGate />
             {children}
             <CustomerSupportWidget />
             <MobileBottomNav />

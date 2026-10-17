@@ -219,6 +219,14 @@ export function useCallManager(me: CallPeer | null, isOnline: (userId: string) =
         setNotice("Votre navigateur ne permet pas les appels. Utilisez Chrome, Safari ou Firefox à jour.");
         return;
       }
+      // Appels réservés aux membres dont le visage a été vérifié
+      const verif = await fetch("/api/verifications/selfie", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      if (verif && verif.status !== "APPROVED") {
+        setNotice("Vérification de votre visage requise avant de passer des appels (Profil → Sécurité).");
+        return;
+      }
       const callId = `${me.userId}-${Date.now()}`;
       const s: CallSession = { callId, peer, kind, conversationId, direction: "out", status: "outgoing" };
       update(s);

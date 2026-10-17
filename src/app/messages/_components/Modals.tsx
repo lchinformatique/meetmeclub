@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import styles from "../messages.module.css";
 import Avatar from "./Avatar";
-import { GOAL_LABELS, LOME_SPOTS, isRenderableUrl, type Member } from "../_lib/chat-utils";
+import { GOAL_LABELS, LOME_SPOTS, VICTOIRE_ID, isRenderableUrl, type Member } from "../_lib/chat-utils";
 import { SASPAY_LINKS } from "@/lib/subscription-constants";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
@@ -70,7 +70,7 @@ export function PartnerSheet({
         <div className={styles.sheetName}>
           {member.firstName}
           {member.age ? `, ${member.age} ans` : ""}
-          <BadgeCheck size={18} className={styles.verified} />
+          {member.userId !== VICTOIRE_ID && <BadgeCheck size={18} className={styles.verified} />}
         </div>
         <div className={styles.sheetSub}>
           {member.pseudo ? `@${member.pseudo.replace(/^@/, "")} · ` : ""}

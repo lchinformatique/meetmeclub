@@ -1,8 +1,8 @@
 "use client";
 // src/app/onboarding/page.tsx
-// Multi-step onboarding wizard — 8 steps with mandatory verification, consent & strict image validation
+// Multi-step onboarding wizard — 8 steps with consent & strict image validation, then live selfie on /verification
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -88,13 +88,6 @@ export default function OnboardingPage() {
   const [photoPreview, setPhotoPreview] = useState<string[]>([]);
   const [interestsLoaded, setInterestsLoaded] = useState(false);
 
-  // ── Verification Biométrique par Selfie ─────────────────────────
-  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
-  const [selfieVerified, setSelfieVerified] = useState(false);
-  const [cameraActive, setCameraActive] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
   // ── Consentement et Conditions d'Utilisation ───────────────────
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [dataAccuracyAccepted, setDataAccuracyAccepted] = useState(false);
@@ -108,61 +101,6 @@ export default function OnboardingPage() {
     setInterests(data.interests || []);
     setInterestsLoaded(true);
   }, [interestsLoaded]);
-
-  // ── Camera Selfie Handling ────────────────────────────────────
-  const startCamera = async () => {
-    try {
-      setCameraActive(true);
-      setError("");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-    } catch {
-      setError("Impossible d'accéder à la caméra de votre téléphone. Vous pouvez utiliser le bouton 'Télécharger mon selfie'.");
-      setCameraActive(false);
-    }
-  };
-
-  const captureSelfie = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth || 480;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-        setSelfiePreview(dataUrl);
-        setSelfieVerified(true);
-        setError("");
-      }
-      const stream = video.srcObject as MediaStream;
-      stream?.getTracks().forEach((track) => track.stop());
-      setCameraActive(false);
-    }
-  };
-
-  const handleSelfieUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setError("");
-    if (file.type !== "image/jpeg" && file.type !== "image/png") {
-      setError("Format refusé : Le selfie doit être une photo en JPEG (.jpg, .jpeg) ou PNG (.png).");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Taille d'image excessive : Le selfie ne doit pas dépasser 5 Mo.");
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setSelfiePreview(url);
-    setSelfieVerified(true);
-  };
 
   // ── Navigation ────────────────────────────────────────────────
   async function goNext() {
@@ -257,12 +195,6 @@ export default function OnboardingPage() {
       return;
     }
 
-    // 3. Contrôle du selfie d'identité obligatoire
-    if (!selfieVerified) {
-      setError("Vérification obligatoire : Vous devez confirmer votre identité par un selfie net sur votre téléphone pour valider votre inscription.");
-      return;
-    }
-
     // 4. Contrôle des consentements obligatoires
     if (!termsAccepted || !dataAccuracyAccepted || !confidentialityAccepted) {
       setError("Consentement requis : Vous devez cocher les 3 cases pour accepter les conditions d'utilisation et valider l'exactitude de vos informations.");
@@ -274,23 +206,19 @@ export default function OnboardingPage() {
       await saveProgress();
       if (form.photos.length > 0) await uploadPhotos();
 
-      // Enregistrer la confirmation d'identité par selfie et les consentements
+      // Enregistrer les consentements (la vérification du visage se fait ensuite sur /verification)
       await fetch("/api/profiles/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          isVerified: true,
-          selfieVerified: true,
-          selfieVerifiedAt: new Date().toISOString(),
           termsAccepted: true,
           termsAcceptedAt: new Date().toISOString(),
           availabilities: form.availabilities,
         }),
       });
 
-      // Redirection immédiate vers les membres de sa catégorie choisie
-      const targetCategory = encodeURIComponent(form.relationshipGoal || "EXCHANGE");
-      router.push(`/decouverte?category=${targetCategory}&welcome=1`);
+      // Étape suivante obligatoire : selfie en direct contrôlé par l'équipe
+      router.push("/verification");
     } catch {
       setError("Erreur lors de la validation. Veuillez réessayer.");
     } finally {
@@ -735,7 +663,7 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              {/* 2. Confirmation d'identité par Selfie sur téléphone */}
+              {/* 2. Vérification du visage (étape suivante, page /verification) */}
               <div
                 style={{
                   background: "#F0FDF4",
@@ -748,112 +676,16 @@ export default function OnboardingPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                   <label style={{ fontSize: "14px", fontWeight: 800, color: "#166534" }}>
-                    2. Confirmation d&apos;identité par Selfie sur votre téléphone *
+                    2. Vérification de votre visage (étape suivante)
                   </label>
                 </div>
-                <p style={{ fontSize: "12px", color: "#374151", lineHeight: 1.5, marginBottom: "14px" }}>
-                  Pour garantir l&apos;authenticité des membres et bannir les faux profils, confirmez votre identité avec un selfie clair de votre visage.
+                <p style={{ fontSize: "12px", color: "#374151", lineHeight: 1.5, margin: 0 }}>
+                  Pour bannir les faux profils, vous prendrez ensuite un selfie en direct avec la caméra, en faisant un geste
+                  demandé. L&apos;équipe Meet Me Club le compare à vos photos avant d&apos;activer votre profil. Ce selfie reste
+                  privé et n&apos;est jamais montré aux autres membres.
                 </p>
-
-                {/* Caméra active en direct */}
-                {cameraActive && (
-                  <div style={{ textAlign: "center", marginBottom: "14px" }}>
-                    <div
-                      style={{
-                        position: "relative",
-                        width: "220px",
-                        height: "220px",
-                        margin: "0 auto 12px",
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        border: "3px solid #10B981",
-                        boxShadow: "0 8px 24px rgba(16, 185, 129, 0.3)",
-                      }}
-                    >
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    </div>
-                    <canvas ref={canvasRef} style={{ display: "none" }} />
-                    <button
-                      type="button"
-                      onClick={captureSelfie}
-                      className="btn btn-primary"
-                      style={{ padding: "10px 22px", fontSize: "14px", fontWeight: 700, borderRadius: "9999px" }}
-                    >
-                      📸 Prendre la photo maintenant
-                    </button>
-                  </div>
-                )}
-
-                {/* Aperçu du selfie capturé */}
-                {selfiePreview && !cameraActive && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px", background: "white", padding: "12px 14px", borderRadius: "14px", border: "1px solid #86EFAC", marginBottom: "12px" }}>
-                    <div
-                      style={{
-                        width: "60px",
-                        height: "60px",
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        border: "2px solid #10B981",
-                        position: "relative",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={selfiePreview} alt="Selfie de vérification" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "13px", fontWeight: 800, color: "#166534" }}>
-                        ✅ Identité confirmée par selfie
-                      </div>
-                      <div style={{ fontSize: "11px", color: "#64748B", marginTop: "2px" }}>
-                        Conforme pour vérification biométrique
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => { setSelfiePreview(null); setSelfieVerified(false); }}
-                      style={{ background: "#F1F5F9", border: "none", color: "#64748B", borderRadius: "8px", padding: "6px 10px", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}
-                    >
-                      Reprendre
-                    </button>
-                  </div>
-                )}
-
-                {/* Boutons d'action pour le selfie */}
-                {!selfiePreview && !cameraActive && (
-                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                    <button
-                      type="button"
-                      onClick={startCamera}
-                      className="btn btn-primary"
-                      style={{ flex: 1, padding: "10px 14px", fontSize: "13px", fontWeight: 700, minWidth: "160px" }}
-                    >
-                      📷 Ouvrir la caméra
-                    </button>
-                    <label
-                      htmlFor="selfie-file"
-                      className="btn btn-outline-blue"
-                      style={{ flex: 1, padding: "10px 14px", fontSize: "13px", fontWeight: 700, textAlign: "center", cursor: "pointer", minWidth: "160px" }}
-                    >
-                      📁 Télécharger selfie
-                      <input
-                        id="selfie-file"
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        capture="user"
-                        style={{ display: "none" }}
-                        onChange={handleSelfieUpload}
-                      />
-                    </label>
-                  </div>
-                )}
               </div>
+
 
               {/* 3. Vos Disponibilités */}
               <div style={{ marginBottom: "24px" }}>

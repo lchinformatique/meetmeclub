@@ -48,13 +48,13 @@ export const VICTOIRE_ID = "user_victoire_lome";
 export const VICTOIRE_CONVERSATION: Conversation = {
   id: "conv_victoire_welcome",
   participantId: VICTOIRE_ID,
-  firstName: "Victoire",
+  firstName: "Victoire · Assistante",
   pseudo: "@victoire_lome",
   photoUrl: "/victoire_profile.jpg",
-  lastMessage: "Écrivez-moi pour faire connaissance 💬",
+  lastMessage: "Assistante automatique · Vos questions sur le club",
   lastMessageAt: new Date().toISOString(),
   unreadCount: 0,
-  isVerified: true,
+  isVerified: false,
 };
 
 export const GOAL_LABELS: Record<string, string> = {

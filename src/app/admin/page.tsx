@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Crown, Megaphone, UserPlus, Users, Wallet, Clock, Sparkles, Zap, CircleOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Megaphone, UserPlus, Users, Wallet, Clock, Sparkles, Zap, CircleOff, ShieldCheck } from "lucide-react";
 import { useRealtime } from "@/components/realtime/RealtimeProvider";
 
 interface Stats {
@@ -23,6 +23,7 @@ export default function AdminHome() {
   const rt = useRealtime();
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
+  const [selfiesPending, setSelfiesPending] = useState(0);
 
   // Chiffres seuls (requête légère) — chargés une fois à l'ouverture
   useEffect(() => {
@@ -33,6 +34,10 @@ export default function AdminHome() {
         setStats(d.stats);
       })
       .catch((e) => setError(e.message));
+    fetch("/api/verifications/admin?countOnly=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setSelfiesPending(d.pending || 0))
+      .catch(() => {});
   }, []);
 
   const onlineCount = Object.keys(rt.online).length;
@@ -79,6 +84,15 @@ export default function AdminHome() {
           <span style={{ flex: 1 }}>
             <strong style={{ display: "block", fontSize: 17 }}>{pending > 0 ? `${pending} paiement(s) à valider` : "Paiements"}</strong>
             <span style={{ fontSize: 13, opacity: 0.9 }}>Tentatives SasPay, validation et activation des pass</span>
+          </span>
+          <ChevronRight size={22} />
+        </Link>
+
+        <Link href="/admin/verifications" style={tile(selfiesPending > 0 ? "linear-gradient(135deg,#E10600,#B30500)" : "linear-gradient(135deg,#0B2559,#163B8A)")}>
+          <ShieldCheck size={28} />
+          <span style={{ flex: 1 }}>
+            <strong style={{ display: "block", fontSize: 17 }}>{selfiesPending > 0 ? `${selfiesPending} selfie(s) à vérifier` : "Vérification des visages"}</strong>
+            <span style={{ fontSize: 13, opacity: 0.9 }}>Selfies en direct comparés aux photos de profil</span>
           </span>
           <ChevronRight size={22} />
         </Link>
