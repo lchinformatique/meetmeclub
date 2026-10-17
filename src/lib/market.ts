@@ -6,6 +6,7 @@
 
 import { getSupabaseAdmin } from "./supabase-server";
 import type { MemberPlan } from "./member-plan";
+import { queryTerms, scoreListing } from "./market-search";
 
 export * from "./market-constants";
 import { CATEGORIES, COMPLICE_MONTHLY_SALES } from "./market-constants";
@@ -144,13 +145,25 @@ export async function searchListings(query: MarketQuery) {
   if (query.kind === "SALE" || query.kind === "SERVICE") req = req.eq("kind", query.kind);
   if (query.city) req = req.ilike("city", `%${query.city.replace(/[%_,()]/g, "")}%`);
   if (query.country && /^[A-Z]{2}$/.test(query.country)) req = req.eq("country", query.country);
-  if (query.q) {
-    const term = query.q.replace(/[%_,()]/g, " ").trim().slice(0, 60);
-    if (term) req = req.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
-  }
   const page = Math.max(1, query.page || 1);
-  req = req.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  const terms = query.q ? queryTerms(query.q) : [];
 
+  // Recherche par mots : les annonces filtrées sont classées par pertinence (accents, pluriels, synonymes)
+  if (terms.length) {
+    const { data, error } = await req.limit(1000);
+    if (error) {
+      if (isMissingTable(error)) return { listings: [] as Listing[], total: 0, ready: false };
+      throw error;
+    }
+    const ranked = ((data || []) as Listing[])
+      .map((l) => ({ l, s: scoreListing(l as any, terms) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s || b.l.createdAt.localeCompare(a.l.createdAt))
+      .map((x) => x.l);
+    return { listings: ranked.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), total: ranked.length, ready: true };
+  }
+
+  req = req.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   const { data, count, error } = await req;
   if (error) {
     if (isMissingTable(error)) return { listings: [] as Listing[], total: 0, ready: false };
