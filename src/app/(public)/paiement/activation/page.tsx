@@ -44,7 +44,8 @@ function ActivationContent() {
           }
         }
       } catch {}
-      if (Date.now() - startedAt < 10 * 60 * 1000) setTimeout(check, 5000);
+      // Vérifie pendant 1 heure (le temps que l'équipe valide si besoin)
+      if (Date.now() - startedAt < 60 * 60 * 1000) setTimeout(check, Date.now() - startedAt < 10 * 60 * 1000 ? 5000 : 20000);
     };
     check();
     return () => {
@@ -72,6 +73,11 @@ function ActivationContent() {
 
         if (res.status === 401 && data.needLogin) {
           router.push(`/connexion?callbackUrl=${encodeURIComponent(`/paiement/activation?plan=${selectedPlan}`)}`);
+          return;
+        }
+        if (res.status === 202 && data.requested) {
+          // Demande transmise à l'équipe : la validation déclenchera l'animation (notification + temps réel)
+          setPendingMsg(data.message);
           return;
         }
         if (res.status === 202 && data.pending) {

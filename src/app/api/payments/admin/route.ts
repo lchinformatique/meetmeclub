@@ -6,7 +6,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { findPermanentVipAccount } from "@/lib/subscription-constants";
-import { activatePlan, claimPayment, type PaidPlan } from "@/lib/payments-server";
+import {
+  activatePlan,
+  claimPayment,
+  closeActivationRequest,
+  listActivationRequests,
+  type PaidPlan,
+} from "@/lib/payments-server";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +44,10 @@ export async function GET() {
     names = Object.fromEntries((profs || []).map((p: any) => [p.userId, p.pseudo || p.firstName]));
   }
 
+  const requests = await listActivationRequests().catch(() => []);
+
   return NextResponse.json({
+    requests,
     tableReady: !error,
     tableError: error?.message || null,
     webhookSecretConfigured: Boolean(process.env.SASPAY_WEBHOOK_SECRET),
@@ -48,7 +57,27 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "Réservé aux administrateurs" }, { status: 403 });
-  const { identifier, plan, paymentId } = await req.json().catch(() => ({}));
+  const { identifier, plan, paymentId, requestId, action } = await req.json().catch(() => ({}));
+
+  // Demande d'un membre : Valider (active le pass) ou Refuser
+  if (requestId && (action === "approve" || action === "reject")) {
+    const closed = await closeActivationRequest(String(requestId));
+    if (!closed) return NextResponse.json({ error: "Demande introuvable ou déjà traitée" }, { status: 404 });
+    if (action === "reject") {
+      const { sendPushToUser } = await import("@/lib/push-server");
+      await sendPushToUser(closed.userId, {
+        kind: "message",
+        title: "Paiement non retrouvé",
+        body: "Nous n'avons pas trouvé votre paiement. Contactez le support WhatsApp avec votre reçu SasPay.",
+        url: "/paiement/activation",
+        tag: "activation-request",
+      }).catch(() => 0);
+      return NextResponse.json({ success: true, rejected: true });
+    }
+    const approvedPlan = (["ESSENTIAL", "COMPLICE", "VIP"].includes(plan) ? plan : closed.title) as PaidPlan;
+    const result = await activatePlan(closed.userId, approvedPlan, { paymentRef: `VALIDATION_${closed.id}` });
+    return NextResponse.json({ success: true, userId: closed.userId, ...result });
+  }
   if (!identifier || !["ESSENTIAL", "COMPLICE", "VIP"].includes(plan)) {
     return NextResponse.json({ error: "Pseudo/e-mail du membre et pass obligatoires" }, { status: 400 });
   }

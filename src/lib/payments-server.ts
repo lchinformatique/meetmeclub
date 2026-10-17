@@ -203,6 +203,132 @@ export async function closeIntents(userId: string) {
     .is("readAt", null);
 }
 
+// ── Demandes de validation manuelle ────────────────────────────
+// Paiement non reconnu automatiquement → le membre envoie une demande ; l'administrateur
+// compare avec l'e-mail SasPay et valide en un toucher sur /admin/paiements.
+const REQUEST_TYPE = "ACTIVATION_REQUEST";
+
+export interface ActivationRequest {
+  id: string;
+  userId: string;
+  plan: PaidPlan;
+  phone?: string;
+  reference?: string;
+  createdAt: string;
+  member?: string;
+}
+
+/** Crée la demande (une seule en attente par membre) ; retourne true si elle est nouvelle */
+export async function recordActivationRequest(userId: string, plan: PaidPlan, phone?: string, reference?: string) {
+  const admin = getSupabaseAdmin();
+  const { data: existing } = await admin
+    .from("notifications")
+    .select("id")
+    .eq("userId", userId)
+    .eq("type", REQUEST_TYPE)
+    .is("readAt", null)
+    .limit(1);
+  const body = JSON.stringify({ phone: phone || "", reference: reference || "" });
+  if (existing?.length) {
+    await admin.from("notifications").update({ title: plan, body }).eq("id", existing[0].id);
+    return false;
+  }
+  await admin.from("notifications").insert({
+    id: `actreq_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    userId,
+    type: REQUEST_TYPE,
+    title: plan,
+    body,
+    createdAt: new Date().toISOString(),
+  });
+  return true;
+}
+
+export async function listActivationRequests(): Promise<ActivationRequest[]> {
+  const admin = getSupabaseAdmin();
+  const { data } = await admin
+    .from("notifications")
+    .select("id, userId, title, body, createdAt")
+    .eq("type", REQUEST_TYPE)
+    .is("readAt", null)
+    .order("createdAt", { ascending: false })
+    .limit(100);
+  const rows = data || [];
+  const ids = Array.from(new Set(rows.map((r: any) => r.userId)));
+  let names: Record<string, string> = {};
+  if (ids.length) {
+    const { data: profs } = await admin.from("profiles").select("userId, pseudo, firstName").in("userId", ids);
+    names = Object.fromEntries((profs || []).map((p: any) => [p.userId, p.pseudo ? `${p.firstName || ""} (@${p.pseudo})`.trim() : p.firstName]));
+  }
+  return rows.map((r: any) => {
+    let extra: any = {};
+    try {
+      extra = JSON.parse(r.body || "{}");
+    } catch {}
+    return { id: r.id, userId: r.userId, plan: r.title, phone: extra.phone, reference: extra.reference, createdAt: r.createdAt, member: names[r.userId] || r.userId };
+  });
+}
+
+export async function closeActivationRequest(requestId: string) {
+  const admin = getSupabaseAdmin();
+  const { data } = await admin
+    .from("notifications")
+    .update({ readAt: new Date().toISOString() })
+    .eq("id", requestId)
+    .eq("type", REQUEST_TYPE)
+    .select("id, userId, title")
+    .maybeSingle();
+  return data as { id: string; userId: string; title: PaidPlan } | null;
+}
+
+/** Prévient les administrateurs : notification téléphone + e-mail (si ADMIN_NOTIFY_EMAIL est défini) */
+export async function notifyAdminsOfRequest(req: { userId: string; plan: PaidPlan; phone?: string; reference?: string }) {
+  const admin = getSupabaseAdmin();
+  const { getProfileFromSupabase } = await import("./supabase-server");
+  const { sendPushToUser } = await import("./push-server");
+  const member = await getProfileFromSupabase(req.userId).catch(() => null);
+  const who = member?.pseudo ? `${member.firstName || ""} (@${member.pseudo})` : member?.firstName || "Un membre";
+  const label = PLAN_LABEL[req.plan];
+
+  // Administrateurs : rôle ADMIN + compte vip_master
+  const { data: admins } = await admin.from("users").select("id").in("role", ["ADMIN", "SUPER_ADMIN"]).limit(20);
+  const adminIds = Array.from(new Set([...(admins || []).map((a: any) => a.id), "user_vip_master"]));
+  await Promise.allSettled(
+    adminIds.map((id) =>
+      sendPushToUser(id, {
+        kind: "message",
+        title: `💳 Paiement à valider : ${label}`,
+        body: `${who} · ${req.phone || req.reference || "sans référence"} — touchez pour valider`,
+        url: "/admin/paiements",
+        tag: "activation-request",
+      })
+    )
+  );
+
+  const to = process.env.ADMIN_NOTIFY_EMAIL;
+  const apiKey = process.env.RESEND_API_KEY;
+  if (to && apiKey) {
+    try {
+      const { Resend } = await import("resend");
+      const site = process.env.NEXT_PUBLIC_APP_URL || "https://www.meetmeclub.net";
+      await new Resend(apiKey).emails.send({
+        from: process.env.EMAIL_FROM || "noreply@meetmeclub.net",
+        to,
+        subject: `Paiement à valider — ${label} — ${who}`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:480px">
+          <h2 style="color:#0B2559">Demande d'activation : ${label}</h2>
+          <p><strong>Membre :</strong> ${who}</p>
+          <p><strong>Numéro utilisé :</strong> ${req.phone || "—"}<br/><strong>Référence :</strong> ${req.reference || "—"}</p>
+          <p>Vérifiez l'e-mail de paiement SasPay correspondant, puis validez :</p>
+          <p><a href="${site}/admin/paiements" style="display:inline-block;background:#E10600;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold">Valider sur Meet Me Club</a></p>
+        </div>`,
+      });
+    } catch (err) {
+      console.warn("[notifyAdminsOfRequest] e-mail", err);
+    }
+  }
+}
+
 /** Rattache un paiement reçu à un membre */
 export async function claimPayment(paymentId: string, userId: string) {
   const admin = getSupabaseAdmin();

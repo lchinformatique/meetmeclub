@@ -22,7 +22,37 @@ interface Payment {
 const PLAN_LABEL: Record<string, string> = { ESSENTIAL: "Essentiel", COMPLICE: "Complice", VIP: "VIP" };
 
 export default function AdminPaiementsPage() {
-  const [data, setData] = useState<{ tableReady: boolean; tableError: string | null; webhookSecretConfigured: boolean; payments: Payment[] } | null>(null);
+  const [data, setData] = useState<{
+    tableReady: boolean;
+    tableError: string | null;
+    webhookSecretConfigured: boolean;
+    payments: Payment[];
+    requests: Array<{ id: string; userId: string; plan: string; phone?: string; reference?: string; createdAt: string; member?: string }>;
+  } | null>(null);
+  const [requestBusy, setRequestBusy] = useState<string | null>(null);
+
+  async function decide(requestId: string, action: "approve" | "reject", label: string) {
+    if (!confirm(action === "approve" ? `Valider et activer le pass de ${label} ?` : `Refuser la demande de ${label} ?`)) return;
+    setRequestBusy(requestId);
+    setResult(null);
+    try {
+      const res = await fetch("/api/payments/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) setResult({ ok: false, text: d.error || "Échec" });
+      else
+        setResult({
+          ok: true,
+          text: action === "approve" ? `Pass activé pour ${label}. Le membre a reçu sa notification et son animation.` : `Demande de ${label} refusée.`,
+        });
+      load();
+    } finally {
+      setRequestBusy(null);
+    }
+  }
   const [error, setError] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [plan, setPlan] = useState("ESSENTIAL");
@@ -107,6 +137,46 @@ export default function AdminPaiementsPage() {
                 ? "Aucun paiement reçu de SasPay pour l'instant : si un membre a payé, le webhook n'arrive pas (vérifiez le journal des webhooks SasPay)."
                 : `${data.payments.length} paiement(s) reçu(s).`}
             </span>
+          </div>
+        )}
+
+        {/* Demandes des membres à valider (comparer avec l'e-mail SasPay) */}
+        {data && (
+          <div style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
+            <strong style={{ color: "#0B2559" }}>
+              Demandes à valider {data.requests.length > 0 && <span style={{ color: "#E10600" }}>({data.requests.length})</span>}
+            </strong>
+            {data.requests.length === 0 && <span style={{ fontSize: 14, color: "#64748B" }}>Aucune demande en attente.</span>}
+            {data.requests.map((r) => (
+              <div key={r.id} style={{ border: "1.5px solid #E2E8F0", borderRadius: 14, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontWeight: 800, color: "#0F172A" }}>
+                  {r.member} · Pass {PLAN_LABEL[r.plan] || r.plan}
+                </div>
+                <div style={{ fontSize: 13, color: "#475569" }}>
+                  Numéro : <strong>{r.phone || "—"}</strong> · Réf. : <strong>{r.reference || "—"}</strong>
+                  <br />
+                  Demandé le {new Date(r.createdAt).toLocaleString("fr-FR")}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    disabled={requestBusy === r.id}
+                    onClick={() => decide(r.id, "reject", r.member || "ce membre")}
+                    style={{ flex: "0 0 35%", height: 44, borderRadius: 12, border: "1.5px solid #CBD5E1", background: "#fff", color: "#475569", fontWeight: 800, cursor: "pointer" }}
+                  >
+                    Refuser
+                  </button>
+                  <button
+                    type="button"
+                    disabled={requestBusy === r.id}
+                    onClick={() => decide(r.id, "approve", r.member || "ce membre")}
+                    style={{ flex: 1, height: 44, borderRadius: 12, border: "none", background: "#067647", color: "#fff", fontWeight: 800, cursor: "pointer" }}
+                  >
+                    {requestBusy === r.id ? "…" : `Valider · Pass ${PLAN_LABEL[r.plan] || r.plan}`}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

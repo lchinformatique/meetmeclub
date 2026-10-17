@@ -4,10 +4,17 @@
 // le membre fournit la référence de son reçu ou le numéro mobile money utilisé.
 // Le pass activé est celui qui correspond au montant réellement payé.
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getSession } from "@/lib/session";
 import { PLAN_LIMITS } from "@/lib/db-store";
-import { activatePlan, claimPayment, findUnclaimedPayment } from "@/lib/payments-server";
+import {
+  activatePlan,
+  claimPayment,
+  findUnclaimedPayment,
+  notifyAdminsOfRequest,
+  recordActivationRequest,
+  type PaidPlan,
+} from "@/lib/payments-server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +28,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { phone, transactionRef } = await req.json().catch(() => ({}));
+    const { phone, transactionRef, plan } = await req.json().catch(() => ({}));
     if (!phone && !transactionRef) {
       return NextResponse.json(
         { error: "Indiquez la référence de votre reçu SasPay ou le numéro mobile money utilisé pour payer." },
@@ -52,12 +59,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (!payment?.plan) {
-      // Paiement pas encore reçu (quelques secondes de délai possibles) : la page réessaie
+      // Paiement pas reconnu automatiquement : demande de validation envoyée à l'administrateur
+      const requestedPlan = ["ESSENTIAL", "COMPLICE", "VIP"].includes(plan) ? (plan as PaidPlan) : "ESSENTIAL";
+      const isNew = await recordActivationRequest(session.userId, requestedPlan, phone, transactionRef).catch(() => false);
+      if (isNew) {
+        after(() => notifyAdminsOfRequest({ userId: session.userId, plan: requestedPlan, phone, reference: transactionRef }).catch(() => {}));
+      }
       return NextResponse.json(
         {
           pending: true,
+          requested: true,
           message:
-            "Nous n'avons pas encore reçu la confirmation de votre paiement. Elle arrive en général en quelques secondes : patientez, la vérification continue automatiquement.",
+            "Demande envoyée ✓ Notre équipe vérifie votre paiement SasPay et active votre pass très vite. Vous recevrez une notification, inutile de rester sur cette page.",
         },
         { status: 202 }
       );
